@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Miasta</h1>
+    <a href="{% url 'leads:city_create' %}" class="btn btn-primary">+ Dodaj miasto</a>
+</div>
+
+{% if cities %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {% for city in cities %}
+        <a href="{% url 'leads:city_detail' city.pk %}" class="card bg-base-200 hover:bg-base-300 transition-colors">
+            <div class="card-body">
+                <h2 class="card-title">{{ city.name }}</h2>
+                <p class="text-sm text-gray-500">{{ city.leads.count }} leadów</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="hero min-h-64 bg-base-200 rounded-box">
+        <div class="hero-content text-center">
+            <div>
+                <h2 class="text-xl font-bold mb-2">Brak miast</h2>
+                <p class="text-gray-500">Dodaj pierwsze miasto żeby zacząć prospecting</p>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
