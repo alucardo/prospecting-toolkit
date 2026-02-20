@@ -1,6 +1,52 @@
 from apify_client import ApifyClient
 from django.conf import settings
+import requests
+from django.conf import settings
 
+def get_account_info():
+    response = requests.get(
+        'https://api.apify.com/v2/users/me/usage/monthly',
+        headers={'Authorization': f'Bearer {settings.APIFY_API_TOKEN}'}
+    )
+    return response.json()
+
+def get_apify_balance():
+    import requests
+    from django.core.cache import cache
+
+    cached = cache.get('apify_balance')
+    if cached:
+        return cached
+
+    headers = {'Authorization': f'Bearer {settings.APIFY_API_TOKEN}'}
+
+    usage_response = requests.get(
+        'https://api.apify.com/v2/users/me/usage/monthly',
+        headers=headers
+    )
+    user_response = requests.get(
+        'https://api.apify.com/v2/users/me',
+        headers=headers
+    )
+
+    usage_data = usage_response.json().get('data', {})
+    user_data = user_response.json().get('data', {})
+
+    monthly_limit = user_data.get('plan', {}).get('monthlyUsageCreditsUsd', 5.00)
+    spent = usage_data.get('totalUsageCreditsUsdAfterVolumeDiscount', 0)
+    remaining = monthly_limit - spent
+
+    result = {
+        'spent': round(spent, 4),
+        'remaining': round(remaining, 4),
+        'limit': monthly_limit,
+        'cycle_start': usage_data.get('usageCycle', {}).get('startAt', ''),
+        'cycle_end': usage_data.get('usageCycle', {}).get('endAt', ''),
+    }
+
+    cache.set('apify_balance', result, timeout=1500)  # cache na 25 minut
+
+    return result
 
 def run_google_maps_scraper(keyword, city, limit):
     client = ApifyClient(settings.APIFY_API_TOKEN)

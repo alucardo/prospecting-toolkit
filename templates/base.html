@@ -11,6 +11,10 @@
 
     <div class="navbar bg-base-200 px-6">
         <span class="text-xl font-bold">🎯 Prospecting Toolkit</span>
+        <div class="ml-6 flex gap-2">
+            <a href="{% url 'leads:dashboard' %}" class="btn btn-ghost btn-sm">Dashboard</a>
+            <a href="{% url 'leads:city_index' %}" class="btn btn-ghost btn-sm">Miasta</a>
+        </div>
     </div>
 
     <main class="container mx-auto px-6 py-8">
