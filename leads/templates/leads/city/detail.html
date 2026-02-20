@@ -8,6 +8,100 @@
     <span class="badge badge-neutral">{{ city.leads.count }} leadów</span>
 </div>
 
-<p class="text-gray-500">Tu będą leady i formularz scrapingu.</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <div class="md:col-span-1">
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <h2 class="card-title text-lg mb-2">Nowy scraping</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-control mb-3">
+                        <label class="label">
+                            <span class="label-text">Branża</span>
+                        </label>
+                        {{ form.keyword }}
+                    </div>
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text">Limit</span>
+                        </label>
+                        {{ form.limit }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">🔍 Szukaj</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="md:col-span-2">
+        <h2 class="text-lg font-bold mb-3">Historia scrapingów</h2>
+        {% if search_queries %}
+            <div class="flex flex-col gap-2">
+                {% for sq in search_queries %}
+                <div class="card bg-base-200">
+                    <div class="card-body py-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <span class="font-medium">{{ sq.keyword }}</span>
+                                <span class="text-sm text-gray-500 ml-2">limit: {{ sq.limit }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="badge
+                                    {% if sq.status == 'SUCCEEDED' %}badge-success
+                                    {% elif sq.status == 'RUNNING' %}badge-warning
+                                    {% elif sq.status == 'FAILED' %}badge-error
+                                    {% else %}badge-neutral{% endif %}">
+                                    {{ sq.status }}
+                                </span>
+                                <span class="text-xs text-gray-400">{{ sq.created_at|date:"d.m.Y H:i" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="hero min-h-32 bg-base-200 rounded-box">
+                <p class="text-gray-500">Brak scrapingów dla tego miasta</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% if city.leads.count > 0 %}
+<div class="mt-8">
+    <h2 class="text-lg font-bold mb-3">Leady ({{ city.leads.count }})</h2>
+    <div class="overflow-x-auto">
+        <table class="table table-zebra">
+            <thead>
+                <tr>
+                    <th>Nazwa</th>
+                    <th>Telefon</th>
+                    <th>Adres</th>
+                    <th>Email</th>
+                    <th>Strona WWW</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in city.leads.all %}
+                <tr>
+                    <td>{{ lead.name }}</td>
+                    <td>{{ lead.phone }}</td>
+                    <td>{{ lead.address }}</td>
+                    <td>{{ lead.email }}</td>
+                    <td>
+                        {% if lead.website %}
+                        <a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 {% endblock %}

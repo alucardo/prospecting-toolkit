@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
-from ..models import City
-from ..forms import CityForm
+from ..models import City, SearchQuery
+from ..forms import CityForm, SearchQueryForm
+from ..services.apify import run_google_maps_scraper, fetch_and_save_leads
+
 
 def city_index(request):
     cities = City.objects.all()
@@ -27,8 +29,36 @@ def city_create(request):
 
 def city_detail(request, pk):
     city = City.objects.get(pk=pk)
+    form = SearchQueryForm()
+
+    if request.method == 'POST':
+        form = SearchQueryForm(request.POST)
+        if form.is_valid():
+            search_query = form.save(commit=False)
+            search_query.city = city
+            search_query.status = 'running'
+            search_query.save()
+
+            run_id, status = run_google_maps_scraper(
+                keyword=search_query.keyword,
+                city=city.name,
+                limit=search_query.limit,
+            )
+
+            search_query.apify_run_id = run_id
+            search_query.status = status
+            search_query.save()
+
+            leads_count = fetch_and_save_leads(search_query)
+
+            return redirect('leads:city_detail', pk=city.pk)
+
+    search_queries = city.search_queries.all().order_by('-created_at')
+
     context = {
         'city': city,
+        'form': form,
+        'search_queries': search_queries,
     }
     return render(request, 'leads/city/detail.html', context)
 

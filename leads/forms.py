@@ -27,3 +27,17 @@ class SearchQueryForm(forms.ModelForm):
                 'class': 'input input-bordered w-full',
             }),
         }
+
+class SearchQueryForm(forms.ModelForm):
+    class Meta:
+        model = SearchQuery
+        fields = ['keyword', 'limit']
+        widgets = {
+            'keyword': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'np. restauracje, mechanicy, dentyści',
+            }),
+            'limit': forms.NumberInput(attrs={
+                'class': 'input input-bordered w-full',
+            }),
+        }
