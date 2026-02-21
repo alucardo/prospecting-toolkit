@@ -127,6 +127,18 @@ class CallLog(models.Model):
         return f"{self.lead.name} — {self.get_status_display()} ({self.called_at|date:'d.m.Y'})"
 
 
+class LeadContact(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='contacts')
+    name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=100, blank=True)
+    email = models.CharField(max_length=255, blank=True)
+    note = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.lead.name})"
+
+
 class LeadStatusHistory(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='status_history')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='status_changes')

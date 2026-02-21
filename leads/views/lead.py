@@ -4,7 +4,7 @@ from django.contrib.postgres.search import TrigramSimilarity
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from ..models import Lead, City, LeadStatusHistory
-from ..forms import LeadForm, LeadNoteForm
+from ..forms import LeadForm, LeadNoteForm, LeadContactForm
 
 
 @login_required
@@ -89,6 +89,7 @@ def lead_detail(request, pk):
     lead = Lead.objects.get(pk=pk)
     call_logs = lead.call_logs.all().order_by('-called_at')
     note_form = LeadNoteForm()
+    contact_form = LeadContactForm()
 
     full_history = request.GET.get('full_history') == '1'
     status_history_qs = lead.status_history.select_related('user').order_by('-changed_at')
@@ -102,6 +103,7 @@ def lead_detail(request, pk):
         'status_history': status_history,
         'status_history_count': status_history_count,
         'full_history': full_history,
+        'contact_form': contact_form,
     }
     return render(request, 'leads/lead/detail.html', context)
 

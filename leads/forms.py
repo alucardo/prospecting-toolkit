@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote
+from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote, LeadContact
 
 
 class CallLogForm(forms.ModelForm):
@@ -98,6 +98,30 @@ class LeadForm(forms.ModelForm):
                 'class': 'checkbox',
             }),
         }
+
+class LeadContactForm(forms.ModelForm):
+    class Meta:
+        model = LeadContact
+        fields = ['name', 'phone', 'email', 'note']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Imię i nazwisko',
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Numer telefonu',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'Adres email',
+            }),
+            'note': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'np. szef, kierownik',
+            }),
+        }
+
 
 class LeadNoteForm(forms.ModelForm):
     class Meta:
