@@ -63,3 +63,13 @@ def lead_delete(request, pk):
         lead.delete()
         return redirect('leads:lead_index')
     return redirect('leads:lead_index')
+
+def lead_bulk_action(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        selected_ids = request.POST.getlist('selected_leads')
+
+        if action == 'reject' and selected_ids:
+            Lead.objects.filter(pk__in=selected_ids).update(status='rejected')
+
+    return redirect('leads:lead_index')

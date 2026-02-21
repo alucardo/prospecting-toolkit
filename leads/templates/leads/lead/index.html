@@ -18,63 +18,66 @@
     </div>
 
     {% if leads %}
-        <div class="overflow-x-auto">
-            <table class="table table-zebra">
-                <thead>
-                    <tr>
-                        <th>Status</th>
-                        <th>Nazwa</th>
-                        <th>Miasto</th>
-                        <th>Kontakty</th>
-                        <th>Telefon</th>
-                        <th>Email</th>
-                        <th>Strona WWW</th>
-                        <th>Źródło</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for lead in leads %}
-                    <tr>
-                        <td>
-                            <span class="badge
-                                {% if lead.status == 'interested' %}badge-success
-                                {% elif lead.status == 'not_interested' %}badge-error
-                                {% elif lead.status == 'call_later' %}badge-warning
-                                {% elif lead.status == 'talked' %}badge-info
-                                {% elif lead.status == 'rejected' %}badge-error
-                                {% elif lead.status == 'no_answer' %}badge-neutral
-                                {% else %}badge-ghost{% endif %}">
-                                {{ lead.get_status_display }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">
-                                {{ lead.name }}
-                            </a>
-                        </td>
-                        <td>
-                            <a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">
-                                {{ lead.city }}
-                            </a>
-                        </td>
-                        <td>{{ lead.call_count }}</td>
-                        <td>{{ lead.phone }}</td>
-                        <td>{{ lead.email }}</td>
-                        <td>
-                            {% if lead.website %}
-                            <a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>
-                            {% endif %}
-                        </td>
-                        <td><span class="badge badge-neutral">{{ lead.source }}</span></td>
-                        <td>
-                            <a href="{% url 'leads:lead_edit' lead.pk %}" class="btn btn-ghost btn-xs">✏️</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <form method="post" action="{% url 'leads:lead_bulk_action' %}">
+            {% csrf_token %}
+            <div class="flex items-center gap-3 mb-4">
+                <select name="action" class="select select-bordered select-sm">
+                    <option value="">— Bulk action —</option>
+                    <option value="reject">Oznacz jako odrzucone</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-warning">Zastosuj</button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select_all" class="checkbox checkbox-sm"></th>
+                            <th>Nazwa</th>
+                            <th>Miasto</th>
+                            <th>Telefon</th>
+                            <th>Email</th>
+                            <th>Strona WWW</th>
+                            <th>Źródło</th>
+                            <th>Status</th>
+                            <th>Kontakty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr>
+                            <td><input type="checkbox" name="selected_leads" value="{{ lead.pk }}" class="checkbox checkbox-sm"></td>
+                            <td><a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">{{ lead.name }}</a></td>
+                            <td><a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">{{ lead.city }}</a></td>
+                            <td>{{ lead.phone }}</td>
+                            <td>{{ lead.email }}</td>
+                            <td>{% if lead.website %}<a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>{% endif %}</td>
+                            <td><span class="badge badge-neutral">{{ lead.source }}</span></td>
+                            <td>
+                                <span class="badge
+                                    {% if lead.status == 'interested' %}badge-success
+                                    {% elif lead.status == 'not_interested' %}badge-error
+                                    {% elif lead.status == 'call_later' %}badge-warning
+                                    {% elif lead.status == 'talked' %}badge-info
+                                    {% elif lead.status == 'rejected' %}badge-error
+                                    {% elif lead.status == 'no_answer' %}badge-neutral
+                                    {% else %}badge-ghost{% endif %}">
+                                    {{ lead.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ lead.call_count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+
+        <script>
+            document.getElementById('select_all').addEventListener('change', function() {
+                document.querySelectorAll('input[name="selected_leads"]').forEach(cb => cb.checked = this.checked);
+            });
+        </script>
     {% else %}
         <div class="hero min-h-64 bg-base-200 rounded-box">
             <div class="hero-content text-center">
