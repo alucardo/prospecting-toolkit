@@ -40,14 +40,16 @@
             <option value="to_scrape" {% if email_filter == 'to_scrape' %}selected{% endif %}>Do przeszukania</option>
         </select>
 
-        <select name="status" class="select select-bordered">
-            <option value="">— Wszystkie statusy —</option>
+        <div class="flex flex-wrap gap-2 items-center">
             {% for value, label in status_choices %}
-            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
-                {{ label }}
-            </option>
+            <label class="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" name="status" value="{{ value }}"
+                    class="checkbox checkbox-sm"
+                    {% if value in status_filter %}checked{% endif %}>
+                <span class="text-sm">{{ label }}</span>
+            </label>
             {% endfor %}
-        </select>
+        </div>
 
         <button type="submit" class="btn btn-primary">Szukaj</button>
         {% if search or city_filter or status_filter %}

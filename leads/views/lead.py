@@ -10,7 +10,7 @@ def lead_index(request):
     show_rejected = request.GET.get('show_rejected') == '1'
     search = request.GET.get('search', '').strip()
     city_filter = request.GET.get('city', '')
-    status_filter = request.GET.get('status', '')
+    status_filter = request.GET.getlist('status')
     email_filter = request.GET.get('email_filter', '')
 
     leads = Lead.objects.select_related('city').annotate(
@@ -24,7 +24,7 @@ def lead_index(request):
         leads = leads.filter(city__pk=city_filter)
 
     if status_filter:
-        leads = leads.filter(status=status_filter)
+        leads = leads.filter(status__in=status_filter)
 
     if email_filter == 'to_scrape':
         leads = leads.filter(
