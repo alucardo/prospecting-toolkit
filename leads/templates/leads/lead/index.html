@@ -35,6 +35,11 @@
             {% endfor %}
         </select>
 
+        <select name="email_filter" class="select select-bordered">
+            <option value="">— Email —</option>
+            <option value="to_scrape" {% if email_filter == 'to_scrape' %}selected{% endif %}>Do przeszukania</option>
+        </select>
+
         <select name="status" class="select select-bordered">
             <option value="">— Wszystkie statusy —</option>
             {% for value, label in status_choices %}
@@ -59,7 +64,8 @@
             <select name="action" class="select select-bordered select-sm">
                 <option value="">— Bulk action —</option>
                 <option value="reject">Oznacz jako odrzucone</option>
-            </select>
+                    <option value="scrape_emails">Szukaj emaili na stronach</option>
+                </select>
             <button type="submit" class="btn btn-sm btn-warning">Zastosuj</button>
         </div>
 

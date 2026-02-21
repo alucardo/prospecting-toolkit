@@ -11,6 +11,7 @@ def lead_index(request):
     search = request.GET.get('search', '').strip()
     city_filter = request.GET.get('city', '')
     status_filter = request.GET.get('status', '')
+    email_filter = request.GET.get('email_filter', '')
 
     leads = Lead.objects.select_related('city').annotate(
         call_count=Count('call_logs')
@@ -24,6 +25,17 @@ def lead_index(request):
 
     if status_filter:
         leads = leads.filter(status=status_filter)
+
+    if email_filter == 'to_scrape':
+        leads = leads.filter(
+            website__isnull=False,
+            email_scraped=False,
+            email='',
+        ).exclude(website='').exclude(
+            website__icontains='facebook.com'
+        ).exclude(
+            website__icontains='fb.com'
+        )
 
     if search:
         leads = leads.annotate(
@@ -51,6 +63,7 @@ def lead_index(request):
         'city_filter': city_filter,
         'status_filter': status_filter,
         'status_choices': Lead.STATUS_CHOICES,
+        'email_filter': email_filter,
     }
     return render(request, 'leads/lead/index.html', context)
 
@@ -101,17 +114,13 @@ def lead_delete(request, pk):
     return redirect('leads:lead_index')
 
 
-from ..services.email_scraper import scrape_email
+from ..tasks import scrape_lead_email, scrape_leads_emails_bulk
 
 
 def lead_scrape_email(request, pk):
     lead = Lead.objects.get(pk=pk)
     if request.method == 'POST':
-        email, source = scrape_email(lead.website)
-        if email:
-            lead.email = email
-            lead.email_scraped = True
-        lead.save()
+        scrape_lead_email.delay(lead.pk)
     return redirect('leads:lead_detail', pk=lead.pk)
 
 
@@ -122,5 +131,8 @@ def lead_bulk_action(request):
 
         if action == 'reject' and selected_ids:
             Lead.objects.filter(pk__in=selected_ids).update(status='rejected')
+
+        if action == 'scrape_emails' and selected_ids:
+            scrape_leads_emails_bulk.delay(selected_ids)
 
     return redirect('leads:lead_index')

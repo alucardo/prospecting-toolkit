@@ -54,7 +54,7 @@ def city_detail(request, pk):
             search_query.status = status
             search_query.save()
 
-            leads_count = fetch_and_save_leads(search_query)
+            leads_count, leads_skipped = fetch_and_save_leads(search_query)
 
             return redirect('leads:city_detail', pk=city.pk)
 

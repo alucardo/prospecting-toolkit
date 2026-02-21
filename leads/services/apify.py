@@ -81,6 +81,12 @@ def fetch_results(run_id):
 
     return items
 
+def normalize_address(address):
+    if not address:
+        return ''
+    return address.split(',')[0].strip().lower()
+
+
 def fetch_and_save_leads(search_query):
     from leads.models import Lead
 
@@ -90,17 +96,31 @@ def fetch_and_save_leads(search_query):
     dataset_id = run["defaultDatasetId"]
 
     leads_created = 0
+    leads_skipped = 0
+
     for item in client.dataset(dataset_id).iterate_items():
+        name = item.get('title', '').strip()
+        address = item.get('address', '')
+
+        existing = Lead.objects.filter(
+            name__iexact=name,
+            city=search_query.city
+        )
+        if existing.exists():
+            if any(normalize_address(l.address) == normalize_address(address) for l in existing):
+                leads_skipped += 1
+                continue
+
         Lead.objects.create(
             city=search_query.city,
             source='google_maps',
-            name=item.get('title', ''),
+            name=name,
             phone=item.get('phone', ''),
-            address=item.get('address', ''),
+            address=address,
             email=item.get('email', ''),
             website=item.get('website', ''),
             raw_data=item,
         )
         leads_created += 1
 
-    return leads_created
+    return leads_created, leads_skipped
