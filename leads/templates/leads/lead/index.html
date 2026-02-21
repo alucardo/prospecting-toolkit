@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Leady ({{ leads.count }})</h1>
+        <a href="{% url 'leads:lead_create' %}" class="btn btn-primary">+ Dodaj lead</a>
+    </div>
+
+    {% if leads %}
+        <div class="overflow-x-auto">
+            <table class="table table-zebra">
+                <thead>
+                    <tr>
+                        <th>Nazwa</th>
+                        <th>Miasto</th>
+                        <th>Telefon</th>
+                        <th>Email</th>
+                        <th>Strona WWW</th>
+                        <th>Źródło</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">
+                                {{ lead.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">
+                                {{ lead.city }}
+                            </a>
+                        </td>
+                        <td>{{ lead.phone }}</td>
+                        <td>{{ lead.email }}</td>
+                        <td>
+                            {% if lead.website %}
+                            <a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge badge-neutral">{{ lead.source }}</span></td>
+                        <td>
+                            <a href="{% url 'leads:lead_edit' lead.pk %}" class="btn btn-ghost btn-xs">✏️</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="hero min-h-64 bg-base-200 rounded-box">
+            <div class="hero-content text-center">
+                <p class="text-gray-500">Brak leadów</p>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}

@@ -86,17 +86,21 @@
             </thead>
             <tbody>
                 {% for lead in city.leads.all %}
-                <tr>
-                    <td>{{ lead.name }}</td>
-                    <td>{{ lead.phone }}</td>
-                    <td>{{ lead.address }}</td>
-                    <td>{{ lead.email }}</td>
-                    <td>
-                        {% if lead.website %}
-                        <a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>
-                        {% endif %}
-                    </td>
-                </tr>
+                    <tr>
+                        <td>
+                            <a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">
+                                {{ lead.name }}
+                            </a>
+                        </td>
+                        <td>{{ lead.phone }}</td>
+                        <td>{{ lead.address }}</td>
+                        <td>{{ lead.email }}</td>
+                        <td>
+                            {% if lead.website %}
+                            <a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>
+                            {% endif %}
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

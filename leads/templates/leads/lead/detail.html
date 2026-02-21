@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:lead_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
+    <h1 class="text-2xl font-bold">{{ lead.name }}</h1>
+    <a href="{% url 'leads:lead_edit' lead.pk %}" class="btn btn-ghost btn-sm">✏️ Edytuj</a>
+</div>
+
+{% endblock %}

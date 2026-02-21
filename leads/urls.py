@@ -5,10 +5,15 @@ app_name = 'leads'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
-    path('settings/', views.settings, name='settings'),
     path('cities/', views.city_index, name='city_index'),
     path('cities/new/', views.city_create, name='city_create'),
     path('cities/<int:pk>/', views.city_detail, name='city_detail'),
     path('cities/<int:pk>/edit/', views.city_edit, name='city_edit'),
     path('cities/<int:pk>/delete/', views.city_delete, name='city_delete'),
+    path('leads/', views.lead_index, name='lead_index'),
+    path('leads/new/', views.lead_create, name='lead_create'),
+    path('leads/<int:pk>/', views.lead_detail, name='lead_detail'),
+    path('leads/<int:pk>/edit/', views.lead_edit, name='lead_edit'),
+    path('leads/<int:pk>/delete/', views.lead_delete, name='lead_delete'),
+    path('settings/', views.settings, name='settings'),
 ]

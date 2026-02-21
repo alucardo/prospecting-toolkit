@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery
+from .models import City, SearchQuery, Lead
 
 
 class CityForm(forms.ModelForm):
@@ -13,18 +13,31 @@ class CityForm(forms.ModelForm):
             })
         }
 
-
-class SearchQueryForm(forms.ModelForm):
+class LeadForm(forms.ModelForm):
     class Meta:
-        model = SearchQuery
-        fields = ['keyword', 'limit']
+        model = Lead
+        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'source']
         widgets = {
-            'keyword': forms.TextInput(attrs={
-                'class': 'input input-bordered w-full',
-                'placeholder': 'np. restauracje, mechanicy, dentyści',
+            'city': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
             }),
-            'limit': forms.NumberInput(attrs={
+            'name': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'input input-bordered w-full',
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'input input-bordered w-full',
+            }),
+            'source': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
             }),
         }
 
