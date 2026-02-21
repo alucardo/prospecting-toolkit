@@ -2,10 +2,12 @@ from django.shortcuts import render, redirect
 from django.db.models import Count, Q
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 from ..models import Lead, City
 from ..forms import LeadForm, LeadNoteForm
 
 
+@login_required
 def lead_index(request):
     show_rejected = request.GET.get('show_rejected') == '1'
     search = request.GET.get('search', '').strip()
@@ -68,6 +70,7 @@ def lead_index(request):
     return render(request, 'leads/lead/index.html', context)
 
 
+@login_required
 def lead_create(request):
     form = LeadForm()
     if request.method == 'POST':
@@ -81,6 +84,7 @@ def lead_create(request):
     return render(request, 'leads/lead/new.html', context)
 
 
+@login_required
 def lead_detail(request, pk):
     lead = Lead.objects.get(pk=pk)
     call_logs = lead.call_logs.all().order_by('-called_at')
@@ -93,6 +97,7 @@ def lead_detail(request, pk):
     return render(request, 'leads/lead/detail.html', context)
 
 
+@login_required
 def lead_edit(request, pk):
     lead = Lead.objects.get(pk=pk)
     form = LeadForm(instance=lead)
@@ -108,6 +113,7 @@ def lead_edit(request, pk):
     return render(request, 'leads/lead/edit.html', context)
 
 
+@login_required
 def lead_delete(request, pk):
     lead = Lead.objects.get(pk=pk)
     if request.method == 'POST':
@@ -119,6 +125,7 @@ def lead_delete(request, pk):
 from ..tasks import scrape_lead_email, scrape_leads_emails_bulk
 
 
+@login_required
 def lead_scrape_email(request, pk):
     lead = Lead.objects.get(pk=pk)
     if request.method == 'POST':
@@ -126,6 +133,7 @@ def lead_scrape_email(request, pk):
     return redirect('leads:lead_detail', pk=lead.pk)
 
 
+@login_required
 def lead_bulk_action(request):
     if request.method == 'POST':
         action = request.POST.get('action')

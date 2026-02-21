@@ -1,9 +1,11 @@
 from django.shortcuts import render
 from django.utils import timezone
 from django.db.models import Count, Q
+from django.contrib.auth.decorators import login_required
 from leads.models import CallLog
 
 
+@login_required
 def dashboard(request):
     now = timezone.now()
     today = now.date()

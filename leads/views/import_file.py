@@ -1,6 +1,7 @@
 import pandas as pd
 import math
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from ..models import ImportFile, Lead
 from ..forms import ImportFileForm
 
@@ -20,6 +21,7 @@ def normalize_address(address):
     return address.split(',')[0].strip().lower()
 
 
+@login_required
 def import_upload(request):
     form = ImportFileForm()
 
@@ -37,6 +39,7 @@ def import_upload(request):
     return render(request, 'leads/import/upload.html', context)
 
 
+@login_required
 def import_map(request, pk):
     import_file = get_object_or_404(ImportFile, pk=pk)
 

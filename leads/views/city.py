@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.db.models import Count, Q
+from django.contrib.auth.decorators import login_required
 from ..models import City, SearchQuery
 from ..forms import CityForm, SearchQueryForm
 from ..services.apify import run_google_maps_scraper, fetch_and_save_leads
 
 
+@login_required
 def city_index(request):
     cities = City.objects.annotate(
         leads_potential=Count('leads', filter=Q(leads__status__in=['new', 'no_answer', 'call_later', 'interested'])),
@@ -17,6 +19,7 @@ def city_index(request):
     return render(request, 'leads/city/index.html', context)
 
 
+@login_required
 def city_create(request):
     form = CityForm()
 
@@ -32,6 +35,7 @@ def city_create(request):
     return render(request, 'leads/city/new.html', context)
 
 
+@login_required
 def city_detail(request, pk):
     city = City.objects.get(pk=pk)
     form = SearchQueryForm()
@@ -67,6 +71,7 @@ def city_detail(request, pk):
     }
     return render(request, 'leads/city/detail.html', context)
 
+@login_required
 def city_edit(request, pk):
     city = City.objects.get(pk=pk)
     form = CityForm(instance=city)
@@ -84,6 +89,7 @@ def city_edit(request, pk):
     return render(request, 'leads/city/edit.html', context)
 
 
+@login_required
 def city_delete(request, pk):
     city = City.objects.get(pk=pk)
     if request.method == 'POST':

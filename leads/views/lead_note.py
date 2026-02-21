@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from ..models import Lead, LeadNote
 from ..forms import LeadNoteForm
 
 
+@login_required
 def lead_note_create(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
     if request.method == 'POST':
@@ -14,6 +16,7 @@ def lead_note_create(request, pk):
     return redirect('leads:lead_detail', pk=lead.pk)
 
 
+@login_required
 def lead_note_edit(request, pk, note_pk):
     lead = get_object_or_404(Lead, pk=pk)
     note = get_object_or_404(LeadNote, pk=note_pk, lead=lead)
@@ -27,6 +30,7 @@ def lead_note_edit(request, pk, note_pk):
     return render(request, 'leads/lead/note_edit.html', {'form': form, 'lead': lead, 'note': note})
 
 
+@login_required
 def lead_note_delete(request, pk, note_pk):
     lead = get_object_or_404(Lead, pk=pk)
     note = get_object_or_404(LeadNote, pk=note_pk, lead=lead)

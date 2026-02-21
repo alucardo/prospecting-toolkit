@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from ..models import Lead, CallLog
 from ..forms import CallLogForm
 
 
+@login_required
 def call_log_create(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
     form = CallLogForm()
@@ -22,6 +24,7 @@ def call_log_create(request, pk):
     return render(request, 'leads/call_log/new.html', context)
 
 
+@login_required
 def call_log_edit(request, pk, call_pk):
     lead = get_object_or_404(Lead, pk=pk)
     call_log = get_object_or_404(CallLog, pk=call_pk)
@@ -40,6 +43,7 @@ def call_log_edit(request, pk, call_pk):
     }
     return render(request, 'leads/call_log/edit.html', context)
 
+@login_required
 def call_log_delete(request, pk, call_pk):
     lead = get_object_or_404(Lead, pk=pk)
     call_log = get_object_or_404(CallLog, pk=call_pk)
