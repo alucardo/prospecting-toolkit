@@ -5,29 +5,7 @@
 <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
 
 <div class="card bg-base-200 max-w-sm">
-    <div class="card-body">
-        <h2 class="card-title text-lg">💳 Apify — saldo</h2>
-        <div class="mt-2">
-            <div class="flex justify-between mb-1">
-                <span class="text-sm text-gray-500">Wykorzystano</span>
-                <span class="font-medium">${{ balance.spent }}</span>
-            </div>
-            <div class="flex justify-between mb-3">
-                <span class="text-sm text-gray-500">Pozostało</span>
-                <span class="font-medium text-success">${{ balance.remaining }}</span>
-            </div>
-            <progress class="progress progress-primary w-full"
-                value="{{ balance.spent }}"
-                max="{{ balance.limit }}">
-            </progress>
-            <p class="text-xs text-gray-400 mt-2">
-                Cykl: {{ balance.cycle_start|slice:":10" }} — {{ balance.cycle_end|slice:":10" }}
-            </p>
-            <p class="text-xs text-gray-400 mt-2">
-                Odświeżanie co 25 min
-            </p>
-        </div>
-    </div>
+
 </div>
 
 {% endblock %}
