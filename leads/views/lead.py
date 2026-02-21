@@ -1,13 +1,16 @@
 from django.shortcuts import render, redirect
 from django.db.models import Count, Q
 from django.contrib.postgres.search import TrigramSimilarity
-from ..models import Lead
+from django.core.paginator import Paginator
+from ..models import Lead, City
 from ..forms import LeadForm
 
 
 def lead_index(request):
     show_rejected = request.GET.get('show_rejected') == '1'
     search = request.GET.get('search', '').strip()
+    city_filter = request.GET.get('city', '')
+    status_filter = request.GET.get('status', '')
 
     leads = Lead.objects.select_related('city').annotate(
         call_count=Count('call_logs')
@@ -15,6 +18,12 @@ def lead_index(request):
 
     if not show_rejected:
         leads = leads.exclude(status='rejected')
+
+    if city_filter:
+        leads = leads.filter(city__pk=city_filter)
+
+    if status_filter:
+        leads = leads.filter(status=status_filter)
 
     if search:
         leads = leads.annotate(
@@ -27,10 +36,21 @@ def lead_index(request):
             Q(similarity__gt=0.1)
         ).order_by('-similarity')
 
+    cities = City.objects.all()
+
+    paginator = Paginator(leads, 20)
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
+
     context = {
-        'leads': leads,
+        'leads': page,
+        'total_count': paginator.count,
         'show_rejected': show_rejected,
         'search': search,
+        'cities': cities,
+        'city_filter': city_filter,
+        'status_filter': status_filter,
+        'status_choices': Lead.STATUS_CHOICES,
     }
     return render(request, 'leads/lead/index.html', context)
 

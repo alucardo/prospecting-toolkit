@@ -2,98 +2,148 @@
 
 {% block content %}
 
-    <div class="flex justify-between items-center mb-6">
-        <div class="flex items-center gap-3">
-        <h1 class="text-2xl font-bold">Leady ({{ leads.count }})</h1>
-        <form method="get" class="mb-4">
-            {% if show_rejected %}
-                <input type="hidden" name="show_rejected" value="1">
-            {% endif %}
-            <div class="flex gap-2">
-                <input type="text" name="search" value="{{ search }}"
-                    placeholder="Szukaj po nazwie, telefonie, adresie..."
-                    class="input input-bordered flex-1">
-                <button type="submit" class="btn btn-primary">Szukaj</button>
-                {% if search %}
-                    <a href="{% url 'leads:lead_index' %}{% if show_rejected %}?show_rejected=1{% endif %}"
-                        class="btn btn-ghost">Wyczyść</a>
-                {% endif %}
-            </div>
-        </form>
+<div class="flex justify-between items-center mb-4">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">Leady ({{ total_count }})</h1>
+        {% if show_rejected %}
+            <a href="{% url 'leads:lead_index' %}" class="btn btn-sm btn-warning">Ukryj odrzucone</a>
+        {% else %}
+            <a href="{% url 'leads:lead_index' %}?show_rejected=1" class="btn btn-sm btn-ghost">Pokaż odrzucone</a>
+        {% endif %}
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'leads:import_upload' %}" class="btn btn-outline">📂 Importuj plik</a>
+        <a href="{% url 'leads:lead_create' %}" class="btn btn-primary">+ Dodaj lead</a>
+    </div>
+</div>
+
+<form method="get" class="mb-4">
+    {% if show_rejected %}
+        <input type="hidden" name="show_rejected" value="1">
+    {% endif %}
+    <div class="flex gap-2 flex-wrap">
+        <input type="text" name="search" value="{{ search }}"
+            placeholder="Szukaj po nazwie, telefonie, adresie..."
+            class="input input-bordered flex-1 min-w-48">
+
+        <select name="city" class="select select-bordered">
+            <option value="">— Wszystkie miasta —</option>
+            {% for city in cities %}
+            <option value="{{ city.pk }}" {% if city_filter == city.pk|stringformat:"s" %}selected{% endif %}>
+                {{ city.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <select name="status" class="select select-bordered">
+            <option value="">— Wszystkie statusy —</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-primary">Szukaj</button>
+        {% if search or city_filter or status_filter %}
+            <a href="{% url 'leads:lead_index' %}{% if show_rejected %}?show_rejected=1{% endif %}"
+                class="btn btn-ghost">Wyczyść</a>
+        {% endif %}
+    </div>
+</form>
+
+{% if leads %}
+    <form method="post" action="{% url 'leads:lead_bulk_action' %}">
+        {% csrf_token %}
+        <div class="flex items-center gap-3 mb-4">
+            <select name="action" class="select select-bordered select-sm">
+                <option value="">— Bulk action —</option>
+                <option value="reject">Oznacz jako odrzucone</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-warning">Zastosuj</button>
         </div>
-        <div class="flex gap-2">
-            <a href="{% url 'leads:import_upload' %}" class="btn btn-outline">📂 Importuj plik</a>
-            <a href="{% url 'leads:lead_create' %}" class="btn btn-primary">+ Dodaj lead</a>
+
+        <div class="overflow-x-auto">
+            <table class="table table-zebra">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select_all" class="checkbox checkbox-sm"></th>
+                        <th>Nazwa</th>
+                        <th>Miasto</th>
+                        <th>Telefon</th>
+                        <th>Email</th>
+                        <th>Strona WWW</th>
+                        <th>Źródło</th>
+                        <th>Status</th>
+                        <th>Kontakty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads %}
+                    <tr>
+                        <td><input type="checkbox" name="selected_leads" value="{{ lead.pk }}" class="checkbox checkbox-sm"></td>
+                        <td><a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">{{ lead.name }}</a></td>
+                        <td><a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">{{ lead.city }}</a></td>
+                        <td>{{ lead.phone }}</td>
+                        <td>{{ lead.email }}</td>
+                        <td>{% if lead.website %}<a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>{% endif %}</td>
+                        <td><span class="badge badge-neutral">{{ lead.source }}</span></td>
+                        <td>
+                            <span class="badge
+                                {% if lead.status == 'interested' %}badge-success
+                                {% elif lead.status == 'not_interested' %}badge-error
+                                {% elif lead.status == 'call_later' %}badge-warning
+                                {% elif lead.status == 'talked' %}badge-info
+                                {% elif lead.status == 'rejected' %}badge-error
+                                {% elif lead.status == 'no_answer' %}badge-neutral
+                                {% else %}badge-ghost{% endif %}">
+                                {{ lead.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ lead.call_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+    {% if leads.has_other_pages %}
+    <div class="flex justify-center mt-6">
+        <div class="join">
+            {% if leads.has_previous %}
+                <a href="?page={{ leads.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if show_rejected %}&show_rejected=1{% endif %}"
+                    class="join-item btn">«</a>
+            {% endif %}
+
+            {% for num in leads.paginator.page_range %}
+                {% if leads.number == num %}
+                    <button class="join-item btn btn-active">{{ num }}</button>
+                {% elif num > leads.number|add:"-3" and num < leads.number|add:"3" %}
+                    <a href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if show_rejected %}&show_rejected=1{% endif %}"
+                        class="join-item btn">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if leads.has_next %}
+                <a href="?page={{ leads.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if show_rejected %}&show_rejected=1{% endif %}"
+                    class="join-item btn">»</a>
+            {% endif %}
         </div>
     </div>
-
-    {% if leads %}
-        <form method="post" action="{% url 'leads:lead_bulk_action' %}">
-            {% csrf_token %}
-            <div class="flex items-center gap-3 mb-4">
-                <select name="action" class="select select-bordered select-sm">
-                    <option value="">— Bulk action —</option>
-                    <option value="reject">Oznacz jako odrzucone</option>
-                </select>
-                <button type="submit" class="btn btn-sm btn-warning">Zastosuj</button>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="table table-zebra">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="select_all" class="checkbox checkbox-sm"></th>
-                            <th>Nazwa</th>
-                            <th>Miasto</th>
-                            <th>Telefon</th>
-                            <th>Email</th>
-                            <th>Strona WWW</th>
-                            <th>Źródło</th>
-                            <th>Status</th>
-                            <th>Kontakty</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for lead in leads %}
-                        <tr>
-                            <td><input type="checkbox" name="selected_leads" value="{{ lead.pk }}" class="checkbox checkbox-sm"></td>
-                            <td><a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">{{ lead.name }}</a></td>
-                            <td><a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">{{ lead.city }}</a></td>
-                            <td>{{ lead.phone }}</td>
-                            <td>{{ lead.email }}</td>
-                            <td>{% if lead.website %}<a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>{% endif %}</td>
-                            <td><span class="badge badge-neutral">{{ lead.source }}</span></td>
-                            <td>
-                                <span class="badge
-                                    {% if lead.status == 'interested' %}badge-success
-                                    {% elif lead.status == 'not_interested' %}badge-error
-                                    {% elif lead.status == 'call_later' %}badge-warning
-                                    {% elif lead.status == 'talked' %}badge-info
-                                    {% elif lead.status == 'rejected' %}badge-error
-                                    {% elif lead.status == 'no_answer' %}badge-neutral
-                                    {% else %}badge-ghost{% endif %}">
-                                    {{ lead.get_status_display }}
-                                </span>
-                            </td>
-                            <td>{{ lead.call_count }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </form>
-
-        <script>
-            document.getElementById('select_all').addEventListener('change', function() {
-                document.querySelectorAll('input[name="selected_leads"]').forEach(cb => cb.checked = this.checked);
-            });
-        </script>
-    {% else %}
-        <div class="hero min-h-64 bg-base-200 rounded-box">
-            <div class="hero-content text-center">
-                <p class="text-gray-500">Brak leadów</p>
-            </div>
-        </div>
     {% endif %}
+
+    <script>
+        document.getElementById('select_all').addEventListener('change', function() {
+            document.querySelectorAll('input[name="selected_leads"]').forEach(cb => cb.checked = this.checked);
+        });
+    </script>
+{% else %}
+    <div class="hero min-h-64 bg-base-200 rounded-box">
+        <div class="hero-content text-center">
+            <p class="text-gray-500">Brak leadów</p>
+        </div>
+    </div>
+{% endif %}
 
 {% endblock %}
