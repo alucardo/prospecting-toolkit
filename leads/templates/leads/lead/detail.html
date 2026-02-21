@@ -41,6 +41,12 @@
                         <a href="{{ lead.website }}" target="_blank" class="link link-primary">{{ lead.website }}</a>
                     </div>
                     {% endif %}
+                    {% if lead.analysis_url %}
+                    <div>
+                        <span class="text-gray-500">Analiza:</span>
+                        <a href="{{ lead.analysis_url }}" target="_blank" class="link link-primary">Zobacz plik</a>
+                    </div>
+                    {% endif %}
                     <div>
                         <span class="text-gray-500">Miasto:</span>
                         <a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">{{ lead.city }}</a>
@@ -71,11 +77,15 @@
                     <div class="card-body py-3">
                         <div class="flex justify-between items-start">
                             <div>
+                                <span class="badge badge-outline badge-sm">
+                                    {% if log.type == 'email' %}Email{% else %}Telefon{% endif %}
+                                </span>
                                 <span class="badge
                                     {% if log.status == 'interested' %}badge-success
                                     {% elif log.status == 'not_interested' %}badge-error
                                     {% elif log.status == 'call_later' %}badge-warning
                                     {% elif log.status == 'talked' %}badge-info
+                                    {% elif log.status == 'email_sent' %}badge-info
                                     {% else %}badge-neutral{% endif %}">
                                     {{ log.get_status_display }}
                                 </span>

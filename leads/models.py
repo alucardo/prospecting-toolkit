@@ -69,6 +69,7 @@ class Lead(models.Model):
     email = models.CharField(max_length=255, blank=True)
     website = models.CharField(max_length=500, blank=True)
 
+    analysis_url = models.URLField(max_length=500, blank=True)
     cold_email_sent = models.BooleanField(default=False)
     email_scraped = models.BooleanField(default=False)
 
@@ -79,11 +80,20 @@ class Lead(models.Model):
         return f"{self.name} ({self.city})"
 
 class CallLog(models.Model):
+    TYPE_CALL = 'call'
+    TYPE_EMAIL = 'email'
+
+    TYPE_CHOICES = [
+        (TYPE_CALL, 'Telefon'),
+        (TYPE_EMAIL, 'Email'),
+    ]
+
     STATUS_NO_ANSWER = 'no_answer'
     STATUS_TALKED = 'talked'
     STATUS_CALL_LATER = 'call_later'
     STATUS_NOT_INTERESTED = 'not_interested'
     STATUS_INTERESTED = 'interested'
+    STATUS_EMAIL_SENT = 'email_sent'
 
     STATUS_CHOICES = [
         (STATUS_NO_ANSWER, 'Nie odebrano'),
@@ -91,6 +101,7 @@ class CallLog(models.Model):
         (STATUS_CALL_LATER, 'Zadzwonić później'),
         (STATUS_NOT_INTERESTED, 'Nie zainteresowany'),
         (STATUS_INTERESTED, 'Zainteresowany'),
+        (STATUS_EMAIL_SENT, 'Wysłano email'),
     ]
 
     lead = models.ForeignKey(
@@ -98,6 +109,7 @@ class CallLog(models.Model):
         on_delete=models.CASCADE,
         related_name='call_logs'
     )
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES, default=TYPE_CALL)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     note = models.TextField(blank=True)
     next_contact_date = models.DateField(null=True, blank=True)

@@ -19,6 +19,9 @@
                             <span class="label-text">{{ field.label }}</span>
                         </label>
                         {{ field }}
+                        {% if field.errors %}
+                        <div class="text-error text-sm mt-1">{{ field.errors }}</div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                     <button type="submit" class="btn btn-primary w-full mt-2">Zapisz</button>

@@ -3,10 +3,23 @@ from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote
 
 
 class CallLogForm(forms.ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get('status')
+        next_contact_date = cleaned_data.get('next_contact_date')
+
+        if status == 'email_sent' and not next_contact_date:
+            self.add_error('next_contact_date', 'Data następnego kontaktu jest wymagana gdy wysłano email.')
+
+        return cleaned_data
+
     class Meta:
         model = CallLog
-        fields = ['status', 'note', 'next_contact_date']
+        fields = ['type', 'status', 'note', 'next_contact_date']
         widgets = {
+            'type': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
+            }),
             'status': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
             }),
@@ -48,7 +61,7 @@ class ImportFileForm(forms.ModelForm):
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'source', 'status', 'cold_email_sent', 'email_scraped']
+        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'analysis_url', 'source', 'status', 'cold_email_sent', 'email_scraped']
         widgets = {
             'city': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
@@ -67,6 +80,10 @@ class LeadForm(forms.ModelForm):
             }),
             'website': forms.URLInput(attrs={
                 'class': 'input input-bordered w-full',
+            }),
+            'analysis_url': forms.URLInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'https://...',
             }),
             'source': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
