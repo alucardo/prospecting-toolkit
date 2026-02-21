@@ -161,4 +161,48 @@
     {% endif %}
 </div>
 
+<div class="mt-6">
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-bold">Historia statusów ({{ status_history_count }})</h2>
+        {% if status_history_count > 5 %}
+            {% if full_history %}
+                <a href="?" class="btn btn-ghost btn-sm">Pokaż mniej</a>
+            {% else %}
+                <a href="?full_history=1" class="btn btn-ghost btn-sm">Pokaż wszystkie</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    {% if status_history %}
+    <div class="flex flex-col gap-1 mb-6">
+        {% for entry in status_history %}
+        <div class="flex justify-between items-center text-sm px-3 py-2 bg-base-200 rounded-lg">
+            <span class="badge
+                {% if entry.status == 'interested' %}badge-success
+                {% elif entry.status == 'not_interested' %}badge-error
+                {% elif entry.status == 'call_later' %}badge-warning
+                {% elif entry.status == 'talked' %}badge-info
+                {% elif entry.status == 'client' %}badge-primary
+                {% elif entry.status == 'rejected' %}badge-error
+                {% else %}badge-neutral{% endif %}">
+                {{ entry.get_status_display }}
+            </span>
+            <div class="flex items-center gap-3 text-gray-400 text-xs">
+                {% if entry.user %}<span>{{ entry.user.username }}</span>{% endif %}
+                <span>{{ entry.changed_at|date:"d.m.Y H:i" }}</span>
+                <form method="post" action="{% url 'leads:lead_status_history_delete' lead.pk entry.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost btn-xs text-error">🗑</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="hero min-h-16 bg-base-200 rounded-box mb-6">
+        <p class="text-gray-500">Brak historii statusów</p>
+    </div>
+    {% endif %}
+</div>
+
 {% endblock %}

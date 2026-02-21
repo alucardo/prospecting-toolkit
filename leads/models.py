@@ -127,6 +127,19 @@ class CallLog(models.Model):
         return f"{self.lead.name} — {self.get_status_display()} ({self.called_at|date:'d.m.Y'})"
 
 
+class LeadStatusHistory(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='status_history')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='status_changes')
+    status = models.CharField(max_length=50)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    def get_status_display(self):
+        return dict(Lead.STATUS_CHOICES).get(self.status, self.status)
+
+    def __str__(self):
+        return f"{self.lead.name} → {self.status} ({self.changed_at})"
+
+
 class LeadNote(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notes')
     content = models.TextField()

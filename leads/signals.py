@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import CallLog
+from .models import CallLog, LeadStatusHistory
 
 
 @receiver(post_save, sender=CallLog)
@@ -33,6 +33,11 @@ def update_lead_status(sender, instance, created, **kwargs):
     }
 
     new_status = STATUS_MAP.get(instance.status)
-    if new_status:
+    if new_status and lead.status != new_status:
+        LeadStatusHistory.objects.create(
+            lead=lead,
+            user=instance.user,
+            status=new_status,
+        )
         lead.status = new_status
         lead.save()

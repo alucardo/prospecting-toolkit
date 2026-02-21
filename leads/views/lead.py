@@ -3,7 +3,7 @@ from django.db.models import Count, Q
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from ..models import Lead, City
+from ..models import Lead, City, LeadStatusHistory
 from ..forms import LeadForm, LeadNoteForm
 
 
@@ -89,10 +89,19 @@ def lead_detail(request, pk):
     lead = Lead.objects.get(pk=pk)
     call_logs = lead.call_logs.all().order_by('-called_at')
     note_form = LeadNoteForm()
+
+    full_history = request.GET.get('full_history') == '1'
+    status_history_qs = lead.status_history.select_related('user').order_by('-changed_at')
+    status_history = status_history_qs if full_history else status_history_qs[:5]
+    status_history_count = status_history_qs.count()
+
     context = {
         'lead': lead,
         'call_logs': call_logs,
         'note_form': note_form,
+        'status_history': status_history,
+        'status_history_count': status_history_count,
+        'full_history': full_history,
     }
     return render(request, 'leads/lead/detail.html', context)
 
@@ -100,12 +109,20 @@ def lead_detail(request, pk):
 @login_required
 def lead_edit(request, pk):
     lead = Lead.objects.get(pk=pk)
+    old_status = lead.status
     form = LeadForm(instance=lead)
     if request.method == 'POST':
         form = LeadForm(request.POST, instance=lead)
         if form.is_valid():
+            new_status = form.cleaned_data['status']
+            if old_status != new_status:
+                LeadStatusHistory.objects.create(
+                    lead=lead,
+                    user=request.user,
+                    status=new_status,
+                )
             form.save()
-            return redirect('leads:lead_index')
+            return redirect('leads:lead_detail', pk=lead.pk)
     context = {
         'form': form,
         'lead': lead,
