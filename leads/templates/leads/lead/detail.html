@@ -5,7 +5,96 @@
 <div class="flex items-center gap-4 mb-6">
     <a href="{% url 'leads:lead_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
     <h1 class="text-2xl font-bold">{{ lead.name }}</h1>
+    <span class="badge
+        {% if lead.status == 'interested' %}badge-success
+        {% elif lead.status == 'not_interested' %}badge-error
+        {% elif lead.status == 'call_later' %}badge-warning
+        {% elif lead.status == 'talked' %}badge-info
+        {% elif lead.status == 'rejected' %}badge-error
+        {% elif lead.status == 'no_answer' %}badge-neutral
+        {% else %}badge-ghost{% endif %}">
+        {{ lead.get_status_display }}
+    </span>
     <a href="{% url 'leads:lead_edit' lead.pk %}" class="btn btn-ghost btn-sm">✏️ Edytuj</a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <div class="md:col-span-1">
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <h2 class="card-title text-lg">Dane kontaktowe</h2>
+                <div class="flex flex-col gap-2 text-sm">
+                    {% if lead.phone %}
+                    <div><span class="text-gray-500">Telefon:</span> {{ lead.phone }}</div>
+                    {% endif %}
+                    {% if lead.email %}
+                    <div><span class="text-gray-500">Email:</span> {{ lead.email }}</div>
+                    {% endif %}
+                    {% if lead.address %}
+                    <div><span class="text-gray-500">Adres:</span> {{ lead.address }}</div>
+                    {% endif %}
+                    {% if lead.website %}
+                    <div>
+                        <span class="text-gray-500">WWW:</span>
+                        <a href="{{ lead.website }}" target="_blank" class="link link-primary">{{ lead.website }}</a>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <span class="text-gray-500">Miasto:</span>
+                        <a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">{{ lead.city }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="md:col-span-2">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-bold">Historia kontaktów ({{ call_logs.count }})</h2>
+            <a href="{% url 'leads:call_log_create' lead.pk %}" class="btn btn-primary btn-sm">+ Dodaj kontakt</a>
+        </div>
+
+        {% if call_logs %}
+            <div class="flex flex-col gap-2">
+                {% for log in call_logs %}
+                <div class="card bg-base-200">
+                    <div class="card-body py-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="badge
+                                    {% if log.status == 'interested' %}badge-success
+                                    {% elif log.status == 'not_interested' %}badge-error
+                                    {% elif log.status == 'call_later' %}badge-warning
+                                    {% elif log.status == 'talked' %}badge-info
+                                    {% else %}badge-neutral{% endif %}">
+                                    {{ log.get_status_display }}
+                                </span>
+                                {% if log.note %}
+                                <p class="text-sm mt-2">{{ log.note }}</p>
+                                {% endif %}
+                                {% if log.next_contact_date %}
+                                <p class="text-xs text-gray-500 mt-1">
+                                    📅 Następny kontakt: {{ log.next_contact_date|date:"d.m.Y" }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-400">{{ log.called_at|date:"d.m.Y H:i" }}</span>
+                                <a href="{% url 'leads:call_log_edit' lead.pk log.pk %}" class="btn btn-ghost btn-xs">✏️</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="hero min-h-32 bg-base-200 rounded-box">
+                <p class="text-gray-500">Brak historii kontaktów</p>
+            </div>
+        {% endif %}
+    </div>
+
 </div>
 
 {% endblock %}

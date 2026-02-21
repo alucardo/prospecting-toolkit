@@ -15,5 +15,8 @@ urlpatterns = [
     path('leads/<int:pk>/', views.lead_detail, name='lead_detail'),
     path('leads/<int:pk>/edit/', views.lead_edit, name='lead_edit'),
     path('leads/<int:pk>/delete/', views.lead_delete, name='lead_delete'),
+    path('leads/<int:pk>/calls/new/', views.call_log_create, name='call_log_create'),
+    path('leads/<int:pk>/calls/<int:call_pk>/edit/', views.call_log_edit, name='call_log_edit'),
+    path('leads/<int:pk>/calls/<int:call_pk>/delete/', views.call_log_delete, name='call_log_delete'),
     path('settings/', views.settings, name='settings'),
 ]

@@ -77,6 +77,7 @@
         <table class="table table-zebra">
             <thead>
                 <tr>
+                    <th>Status</th>
                     <th>Nazwa</th>
                     <th>Telefon</th>
                     <th>Adres</th>
@@ -87,6 +88,18 @@
             <tbody>
                 {% for lead in city.leads.all %}
                     <tr>
+                        <td>
+                            <span class="badge
+                                {% if lead.status == 'interested' %}badge-success
+                                {% elif lead.status == 'not_interested' %}badge-error
+                                {% elif lead.status == 'call_later' %}badge-warning
+                                {% elif lead.status == 'talked' %}badge-info
+                                {% elif lead.status == 'rejected' %}badge-error
+                                {% elif lead.status == 'no_answer' %}badge-neutral
+                                {% else %}badge-ghost{% endif %}">
+                                {{ lead.get_status_display }}
+                            </span>
+                        </td>
                         <td>
                             <a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">
                                 {{ lead.name }}

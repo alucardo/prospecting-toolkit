@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import City, SearchQuery, Lead
+from .models import City, SearchQuery, Lead, CallLog
 
 
 @admin.register(City)
@@ -20,3 +20,8 @@ class LeadAdmin(admin.ModelAdmin):
     list_display = ['name', 'phone', 'city', 'source', 'created_at']
     list_filter = ['source', 'city']
     search_fields = ['name', 'phone', 'email']
+
+@admin.register(CallLog)
+class CallLogAdmin(admin.ModelAdmin):
+    list_display = ['lead', 'status', 'next_contact_date', 'called_at']
+    list_filter = ['status']

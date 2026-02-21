@@ -1,6 +1,25 @@
 from django import forms
-from .models import City, SearchQuery, Lead
+from .models import City, SearchQuery, Lead, CallLog
 
+
+class CallLogForm(forms.ModelForm):
+    class Meta:
+        model = CallLog
+        fields = ['status', 'note', 'next_contact_date']
+        widgets = {
+            'status': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
+            }),
+            'note': forms.Textarea(attrs={
+                'class': 'textarea textarea-bordered w-full',
+                'rows': 3,
+                'placeholder': 'Notatka z rozmowy...',
+            }),
+            'next_contact_date': forms.DateInput(attrs={
+                'class': 'input input-bordered w-full',
+                'type': 'date',
+            }),
+        }
 
 class CityForm(forms.ModelForm):
     class Meta:
@@ -16,7 +35,7 @@ class CityForm(forms.ModelForm):
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'source']
+        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'source', 'status']
         widgets = {
             'city': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
@@ -37,6 +56,9 @@ class LeadForm(forms.ModelForm):
                 'class': 'input input-bordered w-full',
             }),
             'source': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
+            }),
+            'status': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
             }),
         }

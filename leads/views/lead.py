@@ -1,10 +1,13 @@
 from django.shortcuts import render, redirect
+from django.db.models import Count
 from ..models import Lead
 from ..forms import LeadForm
 
 
 def lead_index(request):
-    leads = Lead.objects.select_related('city').order_by('-created_at')
+    leads = Lead.objects.select_related('city').annotate(
+        call_count=Count('call_logs')
+    ).order_by('-created_at')
     context = {
         'leads': leads,
     }
@@ -25,8 +28,10 @@ def lead_create(request):
 
 def lead_detail(request, pk):
     lead = Lead.objects.get(pk=pk)
+    call_logs = lead.call_logs.all().order_by('-called_at')
     context = {
         'lead': lead,
+        'call_logs': call_logs,
     }
     return render(request, 'leads/lead/detail.html', context)
 
