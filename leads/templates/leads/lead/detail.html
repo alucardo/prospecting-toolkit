@@ -106,4 +106,46 @@
 
 </div>
 
+<div class="mt-6">
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-bold">Notatki ({{ lead.notes.count }})</h2>
+    </div>
+
+    <div class="card bg-base-200 mb-3">
+        <div class="card-body py-3">
+            <form method="post" action="{% url 'leads:lead_note_create' lead.pk %}">
+                {% csrf_token %}
+                {{ note_form }}
+                <button type="submit" class="btn btn-primary btn-sm mt-2">+ Dodaj notatkę</button>
+            </form>
+        </div>
+    </div>
+
+    {% if lead.notes.all %}
+        <div class="flex flex-col gap-2">
+            {% for note in lead.notes.all|dictsortreversed:"created_at" %}
+            <div class="card bg-base-200">
+                <div class="card-body py-3">
+                    <div class="flex justify-between items-start">
+                        <p class="text-sm">{{ note.content }}</p>
+                        <div class="flex items-center gap-2 ml-4 shrink-0">
+                            <span class="text-xs text-gray-400">{{ note.created_at|date:"d.m.Y H:i" }}</span>
+                            <a href="{% url 'leads:lead_note_edit' lead.pk note.pk %}" class="btn btn-ghost btn-xs">✏️</a>
+                            <form method="post" action="{% url 'leads:lead_note_delete' lead.pk note.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-ghost btn-xs text-error">🗑</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="hero min-h-24 bg-base-200 rounded-box">
+            <p class="text-gray-500">Brak notatek</p>
+        </div>
+    {% endif %}
+</div>
+
 {% endblock %}

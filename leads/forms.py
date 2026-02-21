@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery, Lead, CallLog, ImportFile
+from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote
 
 
 class CallLogForm(forms.ModelForm):
@@ -81,6 +81,19 @@ class LeadForm(forms.ModelForm):
                 'class': 'checkbox',
             }),
         }
+
+class LeadNoteForm(forms.ModelForm):
+    class Meta:
+        model = LeadNote
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'textarea textarea-bordered w-full',
+                'rows': 3,
+                'placeholder': 'Treść notatki...',
+            }),
+        }
+
 
 class SearchQueryForm(forms.ModelForm):
     source = forms.ChoiceField(

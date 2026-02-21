@@ -108,6 +108,16 @@ class CallLog(models.Model):
         return f"{self.lead.name} — {self.get_status_display()} ({self.called_at|date:'d.m.Y'})"
 
 
+class LeadNote(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notes')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Notatka do {self.lead.name} ({self.created_at})"
+
+
 class ImportFile(models.Model):
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='import_files')
     file = models.FileField(upload_to='imports/')

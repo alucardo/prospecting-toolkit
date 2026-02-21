@@ -3,7 +3,7 @@ from django.db.models import Count, Q
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.paginator import Paginator
 from ..models import Lead, City
-from ..forms import LeadForm
+from ..forms import LeadForm, LeadNoteForm
 
 
 def lead_index(request):
@@ -84,9 +84,11 @@ def lead_create(request):
 def lead_detail(request, pk):
     lead = Lead.objects.get(pk=pk)
     call_logs = lead.call_logs.all().order_by('-called_at')
+    note_form = LeadNoteForm()
     context = {
         'lead': lead,
         'call_logs': call_logs,
+        'note_form': note_form,
     }
     return render(request, 'leads/lead/detail.html', context)
 

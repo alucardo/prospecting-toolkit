@@ -22,5 +22,8 @@ urlpatterns = [
     path('leads/<int:pk>/calls/<int:call_pk>/edit/', views.call_log_edit, name='call_log_edit'),
     path('leads/<int:pk>/calls/<int:call_pk>/delete/', views.call_log_delete, name='call_log_delete'),
     path('leads/<int:pk>/scrape-email/', views.lead_scrape_email, name='lead_scrape_email'),
+    path('leads/<int:pk>/notes/new/', views.lead_note_create, name='lead_note_create'),
+    path('leads/<int:pk>/notes/<int:note_pk>/edit/', views.lead_note_edit, name='lead_note_edit'),
+    path('leads/<int:pk>/notes/<int:note_pk>/delete/', views.lead_note_delete, name='lead_note_delete'),
     path('settings/', views.settings, name='settings'),
 ]
