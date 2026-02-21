@@ -9,7 +9,16 @@ class City(models.Model):
 
 
 class SearchQuery(models.Model):
+    SOURCE_GOOGLE_MAPS = 'google_maps'
+    SOURCE_UBER_EATS = 'uber_eats'
+
+    SOURCE_CHOICES = [
+        (SOURCE_GOOGLE_MAPS, 'Google Maps'),
+        (SOURCE_UBER_EATS, 'Uber Eats'),
+    ]
+
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='search_queries')
+    source = models.CharField(max_length=50, choices=SOURCE_CHOICES, default=SOURCE_GOOGLE_MAPS)
     keyword = models.CharField(max_length=255)
     limit = models.IntegerField(default=100)
     apify_run_id = models.CharField(max_length=255, blank=True)
@@ -92,6 +101,7 @@ class CallLog(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     note = models.TextField(blank=True)
     next_contact_date = models.DateField(null=True, blank=True)
+    is_reminder_active = models.BooleanField(default=False)
     called_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

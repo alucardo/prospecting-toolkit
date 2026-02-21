@@ -18,6 +18,12 @@
                     {% csrf_token %}
                     <div class="form-control mb-3">
                         <label class="label">
+                            <span class="label-text">Źródło</span>
+                        </label>
+                        {{ form.source }}
+                    </div>
+                    <div class="form-control mb-3">
+                        <label class="label">
                             <span class="label-text">Branża</span>
                         </label>
                         {{ form.keyword }}
@@ -45,6 +51,7 @@
                             <div>
                                 <span class="font-medium">{{ sq.keyword }}</span>
                                 <span class="text-sm text-gray-500 ml-2">limit: {{ sq.limit }}</span>
+                                <span class="badge badge-ghost ml-2">{{ sq.get_source_display }}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="badge

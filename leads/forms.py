@@ -83,9 +83,14 @@ class LeadForm(forms.ModelForm):
         }
 
 class SearchQueryForm(forms.ModelForm):
+    source = forms.ChoiceField(
+        choices=[(SearchQuery.SOURCE_GOOGLE_MAPS, 'Google Maps')],
+        widget=forms.Select(attrs={'class': 'select select-bordered w-full'}),
+    )
+
     class Meta:
         model = SearchQuery
-        fields = ['keyword', 'limit']
+        fields = ['source', 'keyword', 'limit']
         widgets = {
             'keyword': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',

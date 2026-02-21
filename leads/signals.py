@@ -10,7 +10,19 @@ def update_lead_status(sender, instance, created, **kwargs):
 
     lead = instance.lead
 
-    # rejected ustawiamy tylko ręcznie, nie przez kontakt
+    # Dezaktywuj poprzednie przypomnienia jeśli nowy kontakt jest skuteczny
+    if instance.status != 'no_answer':
+        CallLog.objects.filter(
+            lead=lead,
+            is_reminder_active=True
+        ).exclude(pk=instance.pk).update(is_reminder_active=False)
+
+    # Aktywuj przypomnienie dla nowego kontaktu jeśli ma datę
+    if instance.next_contact_date:
+        instance.is_reminder_active = True
+        instance.save()
+
+    # Aktualizuj status leada
     STATUS_MAP = {
         'no_answer': 'no_answer',
         'talked': 'talked',
