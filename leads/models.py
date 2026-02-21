@@ -91,3 +91,13 @@ class CallLog(models.Model):
 
     def __str__(self):
         return f"{self.lead.name} — {self.get_status_display()} ({self.called_at|date:'d.m.Y'})"
+
+
+class ImportFile(models.Model):
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='import_files')
+    file = models.FileField(upload_to='imports/')
+    original_filename = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.original_filename} ({self.city})"

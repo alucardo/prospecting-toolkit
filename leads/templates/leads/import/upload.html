@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="max-w-lg">
+        <div class="flex items-center gap-4 mb-6">
+            <a href="{% url 'leads:lead_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
+            <h1 class="text-2xl font-bold">Import leadów z pliku</h1>
+        </div>
+
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text">Miasto</span>
+                        </label>
+                        {{ form.city }}
+                    </div>
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text">Plik (CSV)</span>
+                        </label>
+                        {{ form.file }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Wgraj plik</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

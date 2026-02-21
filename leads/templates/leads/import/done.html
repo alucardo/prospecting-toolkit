@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="max-w-lg">
+        <h1 class="text-2xl font-bold mb-6">Import zakończony</h1>
+
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Miasto</span>
+                        <span class="font-medium">{{ city }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Dodano leadów</span>
+                        <span class="font-medium text-success">{{ created }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Pominięto duplikatów</span>
+                        <span class="font-medium text-warning">{{ skipped }}</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'leads:lead_index' %}" class="btn btn-primary w-full">Zobacz leady</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

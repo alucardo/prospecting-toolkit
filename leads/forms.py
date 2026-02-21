@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery, Lead, CallLog
+from .models import City, SearchQuery, Lead, CallLog, ImportFile
 
 
 class CallLogForm(forms.ModelForm):
@@ -30,6 +30,19 @@ class CityForm(forms.ModelForm):
                 'class': 'input input-bordered w-full',
                 'placeholder': 'np. Katowice',
             })
+        }
+
+class ImportFileForm(forms.ModelForm):
+    class Meta:
+        model = ImportFile
+        fields = ['city', 'file']
+        widgets = {
+            'city': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
+            }),
+            'file': forms.FileInput(attrs={
+                'class': 'file-input file-input-bordered w-full',
+            }),
         }
 
 class LeadForm(forms.ModelForm):

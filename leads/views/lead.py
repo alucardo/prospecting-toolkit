@@ -5,11 +5,18 @@ from ..forms import LeadForm
 
 
 def lead_index(request):
+    show_rejected = request.GET.get('show_rejected') == '1'
+
     leads = Lead.objects.select_related('city').annotate(
         call_count=Count('call_logs')
     ).order_by('-created_at')
+
+    if not show_rejected:
+        leads = leads.exclude(status='rejected')
+
     context = {
         'leads': leads,
+        'show_rejected': show_rejected,
     }
     return render(request, 'leads/lead/index.html', context)
 

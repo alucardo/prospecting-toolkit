@@ -3,8 +3,18 @@
 {% block content %}
 
     <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3">
         <h1 class="text-2xl font-bold">Leady ({{ leads.count }})</h1>
-        <a href="{% url 'leads:lead_create' %}" class="btn btn-primary">+ Dodaj lead</a>
+            {% if show_rejected %}
+                <a href="{% url 'leads:lead_index' %}" class="btn btn-sm btn-warning">Ukryj odrzucone</a>
+            {% else %}
+                <a href="{% url 'leads:lead_index' %}?show_rejected=1" class="btn btn-sm btn-ghost">Pokaż odrzucone</a>
+            {% endif %}
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'leads:import_upload' %}" class="btn btn-outline">📂 Importuj plik</a>
+            <a href="{% url 'leads:lead_create' %}" class="btn btn-primary">+ Dodaj lead</a>
+        </div>
     </div>
 
     {% if leads %}

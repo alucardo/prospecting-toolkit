@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <div class="max-w-lg">
+        <h1 class="text-2xl font-bold mb-2">Mapowanie kolumn</h1>
+        <p class="text-gray-500 mb-6">Plik: {{ import_file.original_filename }} → {{ import_file.city }}</p>
+
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field, label in lead_fields %}
+                    <div class="form-control mb-3">
+                        <label class="label">
+                            <span class="label-text">{{ label }}</span>
+                        </label>
+                        <select name="{{ field }}" class="select select-bordered w-full">
+                            <option value="">— pomiń —</option>
+                            {% for col in columns %}
+                            <option value="{{ col }}">{{ col }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-full mt-2">Importuj</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
