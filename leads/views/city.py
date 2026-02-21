@@ -1,11 +1,16 @@
 from django.shortcuts import render, redirect
+from django.db.models import Count, Q
 from ..models import City, SearchQuery
 from ..forms import CityForm, SearchQueryForm
 from ..services.apify import run_google_maps_scraper, fetch_and_save_leads
 
 
 def city_index(request):
-    cities = City.objects.all()
+    cities = City.objects.annotate(
+        leads_potential=Count('leads', filter=Q(leads__status__in=['new', 'no_answer', 'call_later', 'interested'])),
+        leads_refused=Count('leads', filter=Q(leads__status='not_interested')),
+        leads_clients=Count('leads', filter=Q(leads__status='client')),
+    )
     context = {
         'cities': cities,
     }

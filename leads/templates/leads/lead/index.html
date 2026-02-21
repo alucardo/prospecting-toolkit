@@ -96,6 +96,7 @@
                                 {% elif lead.status == 'talked' %}badge-info
                                 {% elif lead.status == 'rejected' %}badge-error
                                 {% elif lead.status == 'no_answer' %}badge-neutral
+                                {% elif lead.status == 'client' %}badge-primary
                                 {% else %}badge-ghost{% endif %}">
                                 {{ lead.get_status_display }}
                             </span>

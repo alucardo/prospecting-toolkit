@@ -16,7 +16,11 @@
                         <a href="{% url 'leads:city_detail' city.pk %}" class="card-title">{{ city.name }}</a>
                         <a href="{% url 'leads:city_edit' city.pk %}" class="btn btn-ghost btn-xs">✏️ Edytuj</a>
                     </div>
-                    <p class="text-sm text-gray-500">{{ city.leads.count }} leadów</p>
+                    <div class="flex gap-3 mt-1 text-sm">
+                        <span class="text-blue-500">{{ city.leads_potential }} potencjalnych</span>
+                        <span class="text-error">{{ city.leads_refused }} odmów</span>
+                        <span class="text-success">{{ city.leads_clients }} klientów</span>
+                    </div>
                 </div>
             </div>
         {% endfor %}

@@ -48,7 +48,7 @@ class ImportFileForm(forms.ModelForm):
 class LeadForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'source', 'status']
+        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'source', 'status', 'cold_email_sent', 'email_scraped']
         widgets = {
             'city': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
@@ -73,6 +73,12 @@ class LeadForm(forms.ModelForm):
             }),
             'status': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
+            }),
+            'cold_email_sent': forms.CheckboxInput(attrs={
+                'class': 'checkbox',
+            }),
+            'email_scraped': forms.CheckboxInput(attrs={
+                'class': 'checkbox',
             }),
         }
 

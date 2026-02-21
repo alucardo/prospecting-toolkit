@@ -28,6 +28,7 @@ class Lead(models.Model):
     STATUS_NOT_INTERESTED = 'not_interested'
     STATUS_INTERESTED = 'interested'
     STATUS_REJECTED = 'rejected'
+    STATUS_CLIENT = 'client'
 
     STATUS_CHOICES = [
         (STATUS_NEW, 'Nowy'),
@@ -36,6 +37,7 @@ class Lead(models.Model):
         (STATUS_CALL_LATER, 'Zadzwonić później'),
         (STATUS_NOT_INTERESTED, 'Nie zainteresowany'),
         (STATUS_INTERESTED, 'Zainteresowany'),
+        (STATUS_CLIENT, 'Klient'),
         (STATUS_REJECTED, 'Odrzucony'),
     ]
 
@@ -57,6 +59,9 @@ class Lead(models.Model):
     address = models.CharField(max_length=500, blank=True)
     email = models.CharField(max_length=255, blank=True)
     website = models.CharField(max_length=500, blank=True)
+
+    cold_email_sent = models.BooleanField(default=False)
+    email_scraped = models.BooleanField(default=False)
 
     raw_data = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)

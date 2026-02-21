@@ -101,6 +101,20 @@ def lead_delete(request, pk):
     return redirect('leads:lead_index')
 
 
+from ..services.email_scraper import scrape_email
+
+
+def lead_scrape_email(request, pk):
+    lead = Lead.objects.get(pk=pk)
+    if request.method == 'POST':
+        email, source = scrape_email(lead.website)
+        if email:
+            lead.email = email
+            lead.email_scraped = True
+        lead.save()
+    return redirect('leads:lead_detail', pk=lead.pk)
+
+
 def lead_bulk_action(request):
     if request.method == 'POST':
         action = request.POST.get('action')
