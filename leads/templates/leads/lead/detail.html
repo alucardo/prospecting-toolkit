@@ -99,6 +99,9 @@
                                 {% endif %}
                             </div>
                             <div class="flex items-center gap-2">
+                                {% if log.user %}
+                                <span class="text-xs text-gray-400">{{ log.user.username }}</span>
+                                {% endif %}
                                 <span class="text-xs text-gray-400">{{ log.called_at|date:"d.m.Y H:i" }}</span>
                                 <a href="{% url 'leads:call_log_edit' lead.pk log.pk %}" class="btn btn-ghost btn-xs">✏️</a>
                             </div>

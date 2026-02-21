@@ -14,19 +14,20 @@ def dashboard(request):
     month_start = today.replace(day=1)
 
     # Statystyki kontaktów
-    calls_today = CallLog.objects.filter(called_at__date=today).count()
-    calls_week = CallLog.objects.filter(called_at__date__gte=week_start).count()
-    calls_month = CallLog.objects.filter(called_at__date__gte=month_start).count()
+    calls_today = CallLog.objects.filter(called_at__date=today, user=request.user).count()
+    calls_week = CallLog.objects.filter(called_at__date__gte=week_start, user=request.user).count()
+    calls_month = CallLog.objects.filter(called_at__date__gte=month_start, user=request.user).count()
 
     effective = Q(status__in=['talked', 'interested', 'not_interested'])
-    effective_today = CallLog.objects.filter(effective, called_at__date=today).count()
-    effective_week = CallLog.objects.filter(effective, called_at__date__gte=week_start).count()
-    effective_month = CallLog.objects.filter(effective, called_at__date__gte=month_start).count()
+    effective_today = CallLog.objects.filter(effective, called_at__date=today, user=request.user).count()
+    effective_week = CallLog.objects.filter(effective, called_at__date__gte=week_start, user=request.user).count()
+    effective_month = CallLog.objects.filter(effective, called_at__date__gte=month_start, user=request.user).count()
 
     # Przypomnienia
     reminders = CallLog.objects.filter(
         is_reminder_active=True,
         next_contact_date__lte=tomorrow,
+        user=request.user,
     ).select_related('lead', 'lead__city').order_by('next_contact_date')
 
     context = {

@@ -14,6 +14,7 @@ def call_log_create(request, pk):
         if form.is_valid():
             call_log = form.save(commit=False)
             call_log.lead = lead
+            call_log.user = request.user
             call_log.save()
             return redirect('leads:lead_detail', pk=lead.pk)
 

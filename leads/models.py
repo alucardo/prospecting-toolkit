@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class City(models.Model):
@@ -107,6 +108,12 @@ class CallLog(models.Model):
     lead = models.ForeignKey(
         Lead,
         on_delete=models.CASCADE,
+        related_name='call_logs'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name='call_logs'
     )
     type = models.CharField(max_length=50, choices=TYPE_CHOICES, default=TYPE_CALL)
