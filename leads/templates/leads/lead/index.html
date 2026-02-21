@@ -5,11 +5,21 @@
     <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-3">
         <h1 class="text-2xl font-bold">Leady ({{ leads.count }})</h1>
+        <form method="get" class="mb-4">
             {% if show_rejected %}
-                <a href="{% url 'leads:lead_index' %}" class="btn btn-sm btn-warning">Ukryj odrzucone</a>
-            {% else %}
-                <a href="{% url 'leads:lead_index' %}?show_rejected=1" class="btn btn-sm btn-ghost">Pokaż odrzucone</a>
+                <input type="hidden" name="show_rejected" value="1">
             {% endif %}
+            <div class="flex gap-2">
+                <input type="text" name="search" value="{{ search }}"
+                    placeholder="Szukaj po nazwie, telefonie, adresie..."
+                    class="input input-bordered flex-1">
+                <button type="submit" class="btn btn-primary">Szukaj</button>
+                {% if search %}
+                    <a href="{% url 'leads:lead_index' %}{% if show_rejected %}?show_rejected=1{% endif %}"
+                        class="btn btn-ghost">Wyczyść</a>
+                {% endif %}
+            </div>
+        </form>
         </div>
         <div class="flex gap-2">
             <a href="{% url 'leads:import_upload' %}" class="btn btn-outline">📂 Importuj plik</a>

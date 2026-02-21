@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect
-from django.db.models import Count
+from django.db.models import Count, Q
+from django.contrib.postgres.search import TrigramSimilarity
 from ..models import Lead
 from ..forms import LeadForm
 
 
 def lead_index(request):
     show_rejected = request.GET.get('show_rejected') == '1'
+    search = request.GET.get('search', '').strip()
 
     leads = Lead.objects.select_related('city').annotate(
         call_count=Count('call_logs')
@@ -14,9 +16,21 @@ def lead_index(request):
     if not show_rejected:
         leads = leads.exclude(status='rejected')
 
+    if search:
+        leads = leads.annotate(
+            similarity=TrigramSimilarity('name', search)
+        ).filter(
+            Q(name__icontains=search) |
+            Q(address__icontains=search) |
+            Q(phone__icontains=search) |
+            Q(email__icontains=search) |
+            Q(similarity__gt=0.1)
+        ).order_by('-similarity')
+
     context = {
         'leads': leads,
         'show_rejected': show_rejected,
+        'search': search,
     }
     return render(request, 'leads/lead/index.html', context)
 
@@ -33,6 +47,7 @@ def lead_create(request):
     }
     return render(request, 'leads/lead/new.html', context)
 
+
 def lead_detail(request, pk):
     lead = Lead.objects.get(pk=pk)
     call_logs = lead.call_logs.all().order_by('-called_at')
@@ -41,6 +56,7 @@ def lead_detail(request, pk):
         'call_logs': call_logs,
     }
     return render(request, 'leads/lead/detail.html', context)
+
 
 def lead_edit(request, pk):
     lead = Lead.objects.get(pk=pk)
@@ -63,6 +79,7 @@ def lead_delete(request, pk):
         lead.delete()
         return redirect('leads:lead_index')
     return redirect('leads:lead_index')
+
 
 def lead_bulk_action(request):
     if request.method == 'POST':
