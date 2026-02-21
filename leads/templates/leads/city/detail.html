@@ -5,7 +5,8 @@
 <div class="flex items-center gap-4 mb-6">
     <a href="{% url 'leads:city_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
     <h1 class="text-2xl font-bold">{{ city.name }}</h1>
-    <span class="badge badge-neutral">{{ city.leads.count }} leadów</span>
+    <span class="badge badge-neutral">{{ leads_count }} leadów</span>
+    <a href="{% url 'leads:lead_index' %}?city={{ city.pk }}" class="btn btn-outline btn-sm ml-auto">Zobacz leady</a>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -75,12 +76,6 @@
         {% endif %}
     </div>
 
-</div>
-
-<div class="mt-6">
-    <a href="{% url 'leads:lead_index' %}?city={{ city.pk }}" class="btn btn-outline">
-        Zobacz leady ({{ city.leads.count }})
-    </a>
 </div>
 
 {% endblock %}

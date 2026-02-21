@@ -63,11 +63,13 @@ def city_detail(request, pk):
             return redirect('leads:city_detail', pk=city.pk)
 
     search_queries = city.search_queries.all().order_by('-created_at')
+    leads_count = city.leads.exclude(status='rejected').count()
 
     context = {
         'city': city,
         'form': form,
         'search_queries': search_queries,
+        'leads_count': leads_count,
     }
     return render(request, 'leads/city/detail.html', context)
 

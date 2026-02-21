@@ -4,27 +4,93 @@
 
 <h1 class="text-2xl font-bold mb-6">Ustawienia</h1>
 
-<div class="card bg-base-200 max-w-sm">
-    <div class="card-body">
-        <h2 class="card-title text-lg">💳 Apify — saldo</h2>
-        <div class="mt-2">
-            <div class="flex justify-between mb-1">
-                <span class="text-sm text-gray-500">Wykorzystano</span>
-                <span class="font-medium">${{ balance.spent }}</span>
+<div class="flex flex-col gap-6 max-w-lg">
+
+    <!-- Apify -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h2 class="card-title text-lg">💳 Apify — saldo</h2>
+            <div class="mt-2">
+                <div class="flex justify-between mb-1">
+                    <span class="text-sm text-gray-500">Wykorzystano</span>
+                    <span class="font-medium">${{ balance.spent }}</span>
+                </div>
+                <div class="flex justify-between mb-3">
+                    <span class="text-sm text-gray-500">Pozostało</span>
+                    <span class="font-medium text-success">${{ balance.remaining }}</span>
+                </div>
+                <progress class="progress progress-primary w-full"
+                    value="{{ balance.spent }}"
+                    max="{{ balance.limit }}">
+                </progress>
+                <p class="text-xs text-gray-400 mt-2">
+                    Cykl: {{ balance.cycle_start|slice:":10" }} — {{ balance.cycle_end|slice:":10" }}
+                </p>
             </div>
-            <div class="flex justify-between mb-3">
-                <span class="text-sm text-gray-500">Pozostało</span>
-                <span class="font-medium text-success">${{ balance.remaining }}</span>
-            </div>
-            <progress class="progress progress-primary w-full"
-                value="{{ balance.spent }}"
-                max="{{ balance.limit }}">
-            </progress>
-            <p class="text-xs text-gray-400 mt-2">
-                Cykl: {{ balance.cycle_start|slice:":10" }} — {{ balance.cycle_end|slice:":10" }}
-            </p>
         </div>
     </div>
+
+    <!-- Klucze API -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h2 class="card-title text-lg">🔑 Klucze API</h2>
+            <p class="text-sm text-gray-400 mb-4">Wymagane do analizy wizytówek Google.</p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-medium">OpenAI API Key</span>
+                    </label>
+                    <input
+                        type="password"
+                        name="openai_api_key"
+                        value="{{ app_settings.openai_api_key }}"
+                        placeholder="sk-..."
+                        class="input input-bordered w-full font-mono text-sm"
+                    />
+                    <label class="label">
+                        <span class="label-text-alt text-gray-400">Klucz z <a href="https://platform.openai.com/api-keys" target="_blank" class="link">platform.openai.com</a> — model gpt-4o-mini</span>
+                    </label>
+                </div>
+
+                <div class="divider text-xs text-gray-400">DataForSEO</div>
+
+                <div class="form-control mb-4">
+                    <label class="label">
+                        <span class="label-text font-medium">Login (email)</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="dataforseo_login"
+                        value="{{ app_settings.dataforseo_login }}"
+                        placeholder="email@example.com"
+                        class="input input-bordered w-full"
+                    />
+                </div>
+
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-medium">Hasło</span>
+                    </label>
+                    <input
+                        type="password"
+                        name="dataforseo_password"
+                        value="{{ app_settings.dataforseo_password }}"
+                        placeholder="••••••••"
+                        class="input input-bordered w-full"
+                    />
+                    <label class="label">
+                        <span class="label-text-alt text-gray-400">Dane z <a href="https://app.dataforseo.com/api-dashboard" target="_blank" class="link">app.dataforseo.com</a></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full">Zapisz ustawienia</button>
+            </form>
+        </div>
+    </div>
+
 </div>
 
 {% endblock %}

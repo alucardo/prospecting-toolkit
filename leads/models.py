@@ -127,6 +127,28 @@ class CallLog(models.Model):
         return f"{self.lead.name} — {self.get_status_display()} ({self.called_at|date:'d.m.Y'})"
 
 
+class GoogleBusinessAnalysis(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='business_analyses')
+    raw_data = models.JSONField(null=True, blank=True)
+    rating = models.FloatField(null=True, blank=True)
+    reviews_count = models.IntegerField(null=True, blank=True)
+    has_description = models.BooleanField(default=False)
+    has_website = models.BooleanField(default=False)
+    has_phone = models.BooleanField(default=False)
+    has_hours = models.BooleanField(default=False)
+    photos_count = models.IntegerField(null=True, blank=True)
+    categories = models.JSONField(null=True, blank=True)
+    ai_summary = models.TextField(blank=True)
+    issues = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Analiza wizytówki {self.lead.name} ({self.created_at:%d.%m.%Y})"
+
+
 class LeadContact(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='contacts')
     name = models.CharField(max_length=255)
@@ -170,3 +192,21 @@ class ImportFile(models.Model):
 
     def __str__(self):
         return f"{self.original_filename} ({self.city})"
+
+
+class AppSettings(models.Model):
+    """Singleton — zawsze tylko jeden rekord."""
+    openai_api_key = models.CharField(max_length=255, blank=True)
+    dataforseo_login = models.CharField(max_length=255, blank=True)
+    dataforseo_password = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        verbose_name = 'Ustawienia aplikacji'
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return 'Ustawienia aplikacji'

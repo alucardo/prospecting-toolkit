@@ -255,4 +255,83 @@
     {% endif %}
 </div>
 
+<!-- ANALIZA WIZYTÓWKI GOOGLE -->
+<div class="mt-6">
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-bold">🔍 Analiza wizytówki Google</h2>
+        <form method="post" action="{% url 'leads:google_business_analyze' lead.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-sm">Analizuj wizytówkę</button>
+        </form>
+    </div>
+
+    {% with analysis=lead.business_analyses.first %}
+    {% if analysis %}
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex gap-4 flex-wrap">
+                    {% if analysis.rating %}
+                    <div class="stat p-0">
+                        <div class="stat-title text-xs">Ocena</div>
+                        <div class="stat-value text-2xl {% if analysis.rating >= 4.5 %}text-success{% elif analysis.rating >= 4.0 %}text-warning{% else %}text-error{% endif %}">{{ analysis.rating }}</div>
+                    </div>
+                    {% endif %}
+                    {% if analysis.reviews_count is not None %}
+                    <div class="stat p-0">
+                        <div class="stat-title text-xs">Opinii</div>
+                        <div class="stat-value text-2xl">{{ analysis.reviews_count }}</div>
+                    </div>
+                    {% endif %}
+                    {% if analysis.photos_count is not None %}
+                    <div class="stat p-0">
+                        <div class="stat-title text-xs">Zdjęć</div>
+                        <div class="stat-value text-2xl">{{ analysis.photos_count }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                <span class="text-xs text-gray-400">{{ analysis.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+
+            {% if analysis.issues %}
+            <div class="mb-4">
+                <h3 class="font-semibold mb-2">Problemy:</h3>
+                <div class="flex flex-col gap-1">
+                    {% for issue in analysis.issues %}
+                    <div class="flex items-center gap-2 text-sm">
+                        {% if issue.type == 'error' %}
+                            <span class="badge badge-error badge-sm">!</span>
+                        {% else %}
+                            <span class="badge badge-warning badge-sm">⚠</span>
+                        {% endif %}
+                        {{ issue.text }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="flex gap-2 mb-4 flex-wrap">
+                <span class="badge {% if analysis.has_description %}badge-success{% else %}badge-error{% endif %}">Opis</span>
+                <span class="badge {% if analysis.has_website %}badge-success{% else %}badge-error{% endif %}">Strona WWW</span>
+                <span class="badge {% if analysis.has_phone %}badge-success{% else %}badge-error{% endif %}">Telefon</span>
+                <span class="badge {% if analysis.has_hours %}badge-success{% else %}badge-error{% endif %}">Godziny</span>
+            </div>
+
+            {% if analysis.ai_summary %}
+            <div>
+                <h3 class="font-semibold mb-2">Analiza AI:</h3>
+                <div class="text-sm whitespace-pre-wrap bg-base-100 rounded-lg p-4">{{ analysis.ai_summary }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="hero min-h-24 bg-base-200 rounded-box">
+        <p class="text-gray-500">Brak analizy — kliknij "Analizuj wizytówkę"</p>
+    </div>
+    {% endif %}
+    {% endwith %}
+</div>
+
 {% endblock %}
