@@ -351,14 +351,14 @@
         <!-- STAN: brak danych lub blad - przycisk pobierania -->
         <div class="flex flex-col items-end gap-1">
             {% if not lead.google_maps_url %}
-            <p class="text-xs text-warning">&#9888; Brak linku do wizytowki — dane beda pobrane po nazwie firmy. <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">Dodaj link</a></p>
+            <p class="text-xs text-warning">&#9888; Brak linku do wizytowki — <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">dodaj link</a> by pobrac dane z Google.</p>
             {% else %}
             <p class="text-xs text-success">&#10003; Link do wizytowki ustawiony</p>
-            {% endif %}
             <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-primary btn-sm">&#128229; Pobierz dane z Google</button>
             </form>
+            {% endif %}
         </div>
 
         {% elif analysis.status == 'fetched' %}

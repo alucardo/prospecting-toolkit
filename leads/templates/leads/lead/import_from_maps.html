@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:lead_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
+    <h1 class="text-2xl font-bold">Dodaj lead z Google Maps</h1>
+</div>
+
+{% if messages %}
+    {% for msg in messages %}
+    <div class="alert {% if msg.tags == 'error' %}alert-error{% else %}alert-success{% endif %} mb-4">
+        {{ msg }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% if not preview %}
+<!-- KROK 1: podaj link -->
+<div class="card bg-base-200 max-w-lg">
+    <div class="card-body gap-4">
+        <h2 class="card-title text-base">📍 Wklej link do wizytówki</h2>
+        <p class="text-sm text-gray-500">
+            Otwórz Google Maps → znajdź wizytówkę → skopiuj URL z paska adresu przeglądarki (ten długi).
+        </p>
+        <form method="post" class="flex flex-col gap-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="fetch">
+            <input
+                type="url"
+                name="maps_url"
+                value="{{ maps_url|default:'' }}"
+                placeholder="https://www.google.com/maps/place/..."
+                class="input input-bordered w-full"
+                required
+                autofocus
+            >
+            <button type="submit" class="btn btn-primary">🔍 Pobierz dane</button>
+        </form>
+    </div>
+</div>
+
+{% else %}
+<!-- KROK 2: podgląd i zatwierdzenie -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Podgląd pobranych danych -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h2 class="card-title text-base">📋 Pobrane dane</h2>
+            <div class="flex flex-col gap-1 text-sm">
+                <div><span class="text-gray-500">Nazwa:</span> <span class="font-semibold">{{ preview.name }}</span></div>
+                {% if preview.category %}<div><span class="text-gray-500">Kategoria:</span> {{ preview.category }}</div>{% endif %}
+                {% if preview.phone %}<div><span class="text-gray-500">Telefon:</span> {{ preview.phone }}</div>{% endif %}
+                {% if preview.website %}<div><span class="text-gray-500">WWW:</span> <a href="{{ preview.website }}" target="_blank" class="link link-primary break-all">{{ preview.website|truncatechars:50 }}</a></div>{% endif %}
+                {% if preview.address %}<div><span class="text-gray-500">Adres:</span> {{ preview.address }}</div>{% endif %}
+                {% if preview.city_name %}<div><span class="text-gray-500">Miasto:</span> {{ preview.city_name }}</div>{% endif %}
+                {% if preview.rating %}<div><span class="text-gray-500">Ocena:</span> ⭐ {{ preview.rating }}</div>{% endif %}
+                {% if preview.description %}<div class="mt-2 text-gray-500 text-xs italic">{{ preview.description }}{% if preview.description|length >= 200 %}...{% endif %}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Formularz tworzenia leada -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h2 class="card-title text-base">✅ Zatwierdź i dodaj</h2>
+            <form method="post" class="flex flex-col gap-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                <input type="hidden" name="maps_url" value="{{ preview.maps_url }}">
+
+                <div>
+                    <label class="label label-text text-xs">Nazwa</label>
+                    <input type="text" name="name" value="{{ preview.name }}" class="input input-bordered input-sm w-full" required>
+                </div>
+
+                <div>
+                    <label class="label label-text text-xs">Telefon</label>
+                    <input type="text" name="phone" value="{{ preview.phone }}" class="input input-bordered input-sm w-full">
+                </div>
+
+                <div>
+                    <label class="label label-text text-xs">Strona WWW</label>
+                    <input type="text" name="website" value="{{ preview.website }}" class="input input-bordered input-sm w-full">
+                </div>
+
+                <div>
+                    <label class="label label-text text-xs">Adres</label>
+                    <input type="text" name="address" value="{{ preview.address }}" class="input input-bordered input-sm w-full">
+                </div>
+
+                <div>
+                    <label class="label label-text text-xs">Miasto</label>
+                    {% if matched_city %}
+                    <input type="hidden" name="city_id" value="{{ matched_city.pk }}">
+                    <div class="input input-bordered input-sm w-full flex items-center gap-2 bg-base-300">
+                        <span class="text-success">✓</span> {{ matched_city.name }}
+                        <span class="text-xs text-gray-400 ml-auto">dopasowano automatycznie</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Nie to miasto? Wpisz inne:</p>
+                    <input type="text" name="city_name_new" placeholder="np. Katowice" class="input input-bordered input-sm w-full mt-1">
+                    {% else %}
+                    <input type="text" name="city_name_new" value="{{ preview.city_name }}" placeholder="np. Katowice" class="input input-bordered input-sm w-full" required>
+                    <p class="text-xs text-gray-400 mt-1">Miasto nie istnieje w bazie — zostanie utworzone automatycznie.</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex gap-2 mt-2">
+                    <a href="{% url 'leads:lead_import_from_maps' %}" class="btn btn-ghost btn-sm flex-1">← Wróć</a>
+                    <button type="submit" class="btn btn-primary btn-sm flex-1">✅ Dodaj leada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
+{% endblock %}
