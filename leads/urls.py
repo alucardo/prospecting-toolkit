@@ -32,4 +32,6 @@ urlpatterns = [
     path('settings/', views.settings, name='settings'),
     path('leads/<int:pk>/google/fetch/', views.google_business_fetch, name='google_business_fetch'),
     path('leads/<int:pk>/google/analyze/', views.google_business_analyze, name='google_business_analyze'),
+    path('leads/<int:pk>/keywords/add/', views.lead_keyword_add, name='lead_keyword_add'),
+    path('leads/<int:lead_pk>/keywords/<int:keyword_pk>/delete/', views.lead_keyword_delete, name='lead_keyword_delete'),
 ]

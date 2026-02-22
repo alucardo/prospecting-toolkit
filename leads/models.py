@@ -231,6 +231,18 @@ class LeadStatusHistory(models.Model):
         return f"{self.lead.name} → {self.status} ({self.changed_at})"
 
 
+class LeadKeyword(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='keywords_list')
+    phrase = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.phrase} ({self.lead.name})"
+
+
 class LeadNote(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notes')
     content = models.TextField()

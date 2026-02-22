@@ -29,7 +29,7 @@ def google_business_analyze(request, pk):
             messages.error(request, 'Brak pobranych danych. Najpierw pobierz dane z Google.')
             return redirect('leads:lead_detail', pk=pk)
         raw = request.POST.get('keywords', '').strip()
-        keywords = [k.strip() for k in raw.split(',') if k.strip()] if raw else lead.keywords or []
+        keywords = [k.strip() for k in raw.split(',') if k.strip()] if raw else list(lead.keywords_list.values_list('phrase', flat=True))
         run_google_business_analysis.delay(analysis.pk, keywords=keywords)
         messages.info(request, 'Analiza AI zostala uruchomiona. Odswiez strone za chwile.')
     return redirect('leads:lead_detail', pk=pk)

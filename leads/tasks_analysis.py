@@ -452,6 +452,8 @@ def fetch_google_business_data(lead_id, analysis_id=None):
             app_settings.dataforseo_password,
             keyword_override=keyword_override,
         )
+        # Pobierz frazy z nowego modelu LeadKeyword
+        keywords_from_model = list(lead.keywords_list.values_list('phrase', flat=True))
 
         items = result.get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
 

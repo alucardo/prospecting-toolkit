@@ -53,12 +53,28 @@
                         <a href="{{ lead.google_maps_url }}" target="_blank" class="link link-primary">&#128205; Google Maps</a>
                     </div>
                     {% endif %}
-                    {% if lead.keywords %}
-                    <div>
-                        <span class="text-gray-500">Frazy:</span>
-                        <span class="text-success text-xs">{{ lead.keywords|join:", " }}</span>
+                    <!-- Frazy kluczowe -->
+                    <div class="mt-2">
+                        <span class="text-gray-500 text-sm">Frazy kluczowe:</span>
+                        <div class="flex flex-col gap-1 mt-1">
+                            {% for kw in lead.keywords_list.all %}
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="badge badge-success badge-sm">{{ kw.phrase }}</span>
+                                <form method="post" action="{% url 'leads:lead_keyword_delete' lead.pk kw.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-ghost btn-xs text-error leading-none">✕</button>
+                                </form>
+                            </div>
+                            {% empty %}
+                            <span class="text-gray-400 text-xs italic">brak fraz</span>
+                            {% endfor %}
+                        </div>
+                        <form method="post" action="{% url 'leads:lead_keyword_add' lead.pk %}" class="flex gap-1 mt-2">
+                            {% csrf_token %}
+                            <input type="text" name="phrase" placeholder="np. restauracja Katowice" class="input input-bordered input-xs flex-1 text-xs">
+                            <button type="submit" class="btn btn-primary btn-xs">+ Dodaj</button>
+                        </form>
                     </div>
-                    {% endif %}
                     {% if lead.analysis_url %}
                     <div>
                         <span class="text-gray-500">Analiza:</span>
@@ -312,7 +328,7 @@
                         name="keywords"
                         class="textarea textarea-bordered textarea-sm text-sm w-72"
                         rows="2"
-                        placeholder="Frazy kluczowe, np: restauracja Krakow, kuchnia wloska">{% if lead.keywords %}{{ lead.keywords|join:", " }}{% endif %}</textarea>
+                        placeholder="Frazy kluczowe, np: restauracja Krakow, kuchnia wloska">{% for kw in lead.keywords_list.all %}{{ kw.phrase }}{% if not forloop.last %}, {% endif %}{% endfor %}</textarea>
                     <button type="submit" class="btn btn-secondary btn-sm">&#129302; Uruchom analize AI</button>
                 </div>
             </form>
@@ -395,11 +411,13 @@
                 </div>
                 <div>
                     <span class="text-gray-500">Frazy kluczowe:</span>
-                    {% if lead.keywords %}
-                    <span class="text-success font-medium">{{ lead.keywords|join:", " }}</span>
+                    {% with kws=lead.keywords_list.all %}
+                    {% if kws %}
+                    <span class="text-success font-medium">{% for kw in kws %}{{ kw.phrase }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
                     {% else %}
-                    <span class="text-warning italic">nie ustawione &mdash; <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">dodaj</a></span>
+                    <span class="text-warning italic">nie ustawione</span>
                     {% endif %}
+                    {% endwith %}
                 </div>
             </div>
 
@@ -469,9 +487,7 @@
                         <span class="badge {% if analysis.has_hours %}badge-success{% else %}badge-error{% endif %} badge-sm mt-0.5 shrink-0">Godziny</span>
                         {% if analysis.hours_data %}
                         <span class="text-gray-600 text-xs leading-5">
-                            {% for day, times in analysis.hours_data.items %}
-                                {{ day }}: {% if times.open %}{{ times.open.hour }}:{% if times.open.minute < 10 %}0{% endif %}{{ times.open.minute }}&ndash;{{ times.close.hour }}:{% if times.close.minute < 10 %}0{% endif %}{{ times.close.minute }}{% else %}{{ times }}{% endif %}{% if not forloop.last %}, {% endif %}
-                            {% endfor %}
+                            {% for day, times in analysis.hours_data.items %}{{ day }}: {{ times }}{% if not forloop.last %}, {% endif %}{% endfor %}
                         </span>
                         {% else %}
                         <span class="text-gray-400 italic">brak</span>
