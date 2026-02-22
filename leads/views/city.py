@@ -12,7 +12,7 @@ def city_index(request):
         leads_potential=Count('leads', filter=Q(leads__status__in=['new', 'no_answer', 'call_later', 'interested'])),
         leads_refused=Count('leads', filter=Q(leads__status='not_interested')),
         leads_clients=Count('leads', filter=Q(leads__status='client')),
-    )
+    ).order_by('name')
     context = {
         'cities': cities,
     }
@@ -89,6 +89,46 @@ def city_edit(request, pk):
         'city': city,
     }
     return render(request, 'leads/city/edit.html', context)
+
+
+@login_required
+def city_geocode(request):
+    """Uzupelnia wspolrzedne dla miast ktore ich nie maja przez Nominatim."""
+    import requests as req
+    from django.contrib import messages
+
+    cities_without = City.objects.filter(latitude__isnull=True)
+    updated = 0
+    failed = []
+
+    for city in cities_without:
+        try:
+            resp = req.get(
+                'https://nominatim.openstreetmap.org/search',
+                params={'q': f"{city.name}, Poland", 'format': 'json', 'limit': 1},
+                headers={'User-Agent': 'ProspectingToolkit/1.0'},
+                timeout=5,
+            )
+            resp.raise_for_status()
+            results = resp.json()
+            if results:
+                city.latitude = float(results[0]['lat'])
+                city.longitude = float(results[0]['lon'])
+                city.save()
+                updated += 1
+            else:
+                failed.append(city.name)
+        except Exception:
+            failed.append(city.name)
+
+    if updated:
+        messages.success(request, f'Uzupelniono wspolrzedne dla {updated} miast.')
+    if failed:
+        messages.warning(request, f'Nie udalo sie uzupelnic: {", ".join(failed)}')
+    if not updated and not failed:
+        messages.info(request, 'Wszystkie miasta maja juz wspolrzedne.')
+
+    return redirect('leads:city_index')
 
 
 @login_required

@@ -4,8 +4,22 @@
 
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold">Miasta</h1>
-    <a href="{% url 'leads:city_create' %}" class="btn btn-primary">+ Dodaj miasto</a>
+    <div class="flex gap-2">
+        <form method="post" action="{% url 'leads:city_geocode' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline">&#128205; Uzupe&#322;nij wsp&#243;&#322;rz&#281;dne</button>
+        </form>
+        <a href="{% url 'leads:city_create' %}" class="btn btn-primary">+ Dodaj miasto</a>
+    </div>
 </div>
+
+{% if messages %}
+    {% for msg in messages %}
+    <div class="alert {% if msg.tags == 'error' %}alert-error{% elif msg.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %} mb-4">
+        {{ msg }}
+    </div>
+    {% endfor %}
+{% endif %}
 
 {% if cities %}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -20,6 +34,13 @@
                         <span class="text-blue-500">{{ city.leads_potential }} potencjalnych</span>
                         <span class="text-error">{{ city.leads_refused }} odmów</span>
                         <span class="text-success">{{ city.leads_clients }} klientów</span>
+                    </div>
+                    <div class="mt-1">
+                        {% if city.has_coordinates %}
+                        <span class="text-xs text-success">&#10003; {{ city.latitude|floatformat:4 }}, {{ city.longitude|floatformat:4 }}</span>
+                        {% else %}
+                        <span class="text-xs text-gray-400">&#9888; brak współrzędnych</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>

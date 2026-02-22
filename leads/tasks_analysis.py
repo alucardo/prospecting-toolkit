@@ -558,29 +558,49 @@ def check_keyword_rankings(lead_id, keyword_ids=None):
         except ValueError:
             pass
 
+    credentials = base64.b64encode(
+        f"{app_settings.dataforseo_login}:{app_settings.dataforseo_password}".encode()
+    ).decode()
+
     for kw in keywords:
         try:
-            result = get_dataforseo_business_data(
-                lead.name, lead.city.name,
-                app_settings.dataforseo_login,
-                app_settings.dataforseo_password,
-                keyword_override=kw.phrase,  # szukamy po frazie, nie CID
+            # Uzyj SERP Maps endpoint - zwraca ranked liste biznesow
+            payload = {
+                "keyword": kw.phrase,
+                "language_name": "Polish",
+            }
+            if lead.city.location_coordinate:
+                payload["location_coordinate"] = lead.city.location_coordinate
+            else:
+                payload["location_name"] = "Poland"
+
+            response = requests.post(
+                "https://api.dataforseo.com/v3/serp/google/maps/live/advanced",
+                headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
+                json=[payload],
+                timeout=30,
             )
-            items = result.get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
+            response.raise_for_status()
+            items = response.json().get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
 
             position = None
             for item in items:
-                # Dopasuj po CID jesli mamy, inaczej po nazwie
-                if cid_number and item.get('cid') == cid_number:
-                    position = item.get('rank_absolute')
-                    break
-                elif not cid_number and lead.name.lower() in (item.get('title') or '').lower():
+                item_cid = item.get('cid')
+                # Porownuj CID jako string i int
+                cid_match = cid_number and (
+                    item_cid == cid_number or
+                    str(item_cid) == str(cid_number)
+                )
+                # Dopasowanie po nazwie jako fallback
+                name_match = not cid_number and lead.name.lower() in (item.get('title') or '').lower()
+
+                if cid_match or name_match:
                     position = item.get('rank_absolute')
                     break
 
             KeywordRankCheck.objects.create(keyword=kw, position=position)
 
-        except Exception:
+        except Exception as e:
             KeywordRankCheck.objects.create(keyword=kw, position=None)
 
 

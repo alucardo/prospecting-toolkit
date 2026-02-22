@@ -10,6 +10,7 @@ urlpatterns = [
     path('cities/<int:pk>/', views.city_detail, name='city_detail'),
     path('cities/<int:pk>/edit/', views.city_edit, name='city_edit'),
     path('cities/<int:pk>/delete/', views.city_delete, name='city_delete'),
+    path('cities/geocode/', views.city_geocode, name='city_geocode'),
     path('imports/new/', views.import_upload, name='import_upload'),
     path('imports/<int:pk>/map/', views.import_map, name='import_map'),
     path('leads/', views.lead_index, name='lead_index'),
