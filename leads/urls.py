@@ -34,4 +34,6 @@ urlpatterns = [
     path('leads/<int:pk>/google/analyze/', views.google_business_analyze, name='google_business_analyze'),
     path('leads/<int:pk>/keywords/add/', views.lead_keyword_add, name='lead_keyword_add'),
     path('leads/<int:lead_pk>/keywords/<int:keyword_pk>/delete/', views.lead_keyword_delete, name='lead_keyword_delete'),
+    path('leads/<int:pk>/keywords/check/', views.lead_keyword_check_rankings, name='lead_keyword_check_rankings'),
+    path('leads/<int:lead_pk>/keywords/<int:keyword_pk>/check/', views.lead_keyword_check_single, name='lead_keyword_check_single'),
 ]

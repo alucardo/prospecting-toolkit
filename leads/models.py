@@ -231,6 +231,19 @@ class LeadStatusHistory(models.Model):
         return f"{self.lead.name} → {self.status} ({self.changed_at})"
 
 
+class KeywordRankCheck(models.Model):
+    keyword = models.ForeignKey('LeadKeyword', on_delete=models.CASCADE, related_name='rank_checks')
+    position = models.IntegerField(null=True, blank=True)  # None = nie znaleziono w top 20
+    checked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-checked_at']
+
+    def __str__(self):
+        pos = self.position or 'brak'
+        return f"{self.keyword.phrase}: {pos} ({self.checked_at:%d.%m.%Y})"
+
+
 class LeadKeyword(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='keywords_list')
     phrase = models.CharField(max_length=200)

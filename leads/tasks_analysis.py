@@ -419,6 +419,55 @@ def _save_business_data(lead, biz, status):
 
 
 @shared_task
+def check_keyword_rankings(lead_id, keyword_ids=None):
+    """Sprawdza pozycje wizytowki. Jesli keyword_ids podane - tylko te frazy, inaczej wszystkie."""
+    from .models import Lead, LeadKeyword, KeywordRankCheck, AppSettings
+
+    lead = Lead.objects.get(pk=lead_id)
+    app_settings = AppSettings.get()
+    keywords = lead.keywords_list.filter(pk__in=keyword_ids) if keyword_ids else lead.keywords_list.all()
+
+    if not keywords:
+        return
+    if not app_settings.dataforseo_login or not app_settings.dataforseo_password:
+        return
+
+    # Pobierz CID wizytowki zeby dopasowac wynik
+    cid_str = extract_keyword_from_maps_url(lead.google_maps_url)
+    cid_number = None
+    if cid_str and cid_str.startswith('cid:'):
+        try:
+            cid_number = int(cid_str[4:])
+        except ValueError:
+            pass
+
+    for kw in keywords:
+        try:
+            result = get_dataforseo_business_data(
+                lead.name, lead.city.name,
+                app_settings.dataforseo_login,
+                app_settings.dataforseo_password,
+                keyword_override=kw.phrase,  # szukamy po frazie, nie CID
+            )
+            items = result.get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
+
+            position = None
+            for item in items:
+                # Dopasuj po CID jesli mamy, inaczej po nazwie
+                if cid_number and item.get('cid') == cid_number:
+                    position = item.get('rank_absolute')
+                    break
+                elif not cid_number and lead.name.lower() in (item.get('title') or '').lower():
+                    position = item.get('rank_absolute')
+                    break
+
+            KeywordRankCheck.objects.create(keyword=kw, position=position)
+
+        except Exception:
+            KeywordRankCheck.objects.create(keyword=kw, position=None)
+
+
+@shared_task
 def fetch_google_business_data(lead_id, analysis_id=None):
     """Krok 1: Pobiera dane z DataForSEO i zapisuje. Bez AI."""
     from .models import Lead, GoogleBusinessAnalysis, AppSettings
