@@ -108,9 +108,9 @@
                         <div class="flex gap-1 mb-2">
                             <form method="post" action="{% url 'leads:lead_keyword_check_rankings' lead.pk %}" class="flex-1" data-rank-check data-confirm="Sprawdzić pozycje wszystkich fraz? Każda fraza to osobne zapytanie do DataForSEO.">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline btn-xs w-full">&#128269; Sprawdź wszystkie pozycje</button>
+                                <button type="submit" class="btn btn-outline btn-sm w-full">&#128269; Sprawdź wszystkie pozycje</button>
                             </form>
-                            <a href="{% url 'leads:keyword_suggestions' lead.pk %}" class="btn btn-outline btn-xs flex-1">&#10024; Sugestie AI</a>
+                            <a href="{% url 'leads:keyword_suggestions' lead.pk %}" class="btn btn-outline btn-sm flex-1">&#10024; Sugestie AI</a>
                         </div>
                         {% else %}
                         <p class="text-gray-400 text-xs italic mb-2">brak fraz</p>
@@ -253,7 +253,11 @@
                 <form method="post" action="{% url 'leads:lead_note_create' lead.pk %}">
                     {% csrf_token %}
                     {{ note_form }}
-                    <button type="submit" class="btn btn-primary btn-sm mt-2">+ Dodaj notatkę</button>
+                    <div class="flex items-center gap-2 mt-2">
+                        <button type="button" id="noteRecordBtn" class="btn btn-outline btn-xs gap-1">🎙️ Nagraj</button>
+                        <span id="noteRecordStatus" class="text-xs text-gray-400"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-2 w-full">+ Dodaj notatkę</button>
                 </form>
             </div>
         </div>
@@ -286,51 +290,6 @@
             {% endif %}
         </div>
     </div>
-</div>
-
-<!-- HISTORIA STATUSÓW -->
-<div class="mt-6">
-    <div class="flex justify-between items-center mb-3">
-        <h2 class="text-lg font-bold">Historia statusów ({{ status_history_count }})</h2>
-        {% if status_history_count > 5 %}
-            {% if full_history %}
-                <a href="?" class="btn btn-ghost btn-sm">Pokaż mniej</a>
-            {% else %}
-                <a href="?full_history=1" class="btn btn-ghost btn-sm">Pokaż wszystkie</a>
-            {% endif %}
-        {% endif %}
-    </div>
-
-    {% if status_history %}
-    <div class="flex flex-col gap-1">
-        {% for entry in status_history %}
-        <div class="flex justify-between items-center text-sm px-4 py-2 bg-base-200 rounded-lg">
-            <span class="badge
-                {% if entry.status == 'interested' %}badge-success
-                {% elif entry.status == 'not_interested' %}badge-error
-                {% elif entry.status == 'call_later' %}badge-warning
-                {% elif entry.status == 'talked' %}badge-info
-                {% elif entry.status == 'client' %}badge-primary
-                {% elif entry.status == 'rejected' %}badge-error
-                {% else %}badge-neutral{% endif %}">
-                {{ entry.get_status_display }}
-            </span>
-            <div class="flex items-center gap-3 text-gray-400 text-xs">
-                {% if entry.user %}<span>{{ entry.user.username }}</span>{% endif %}
-                <span>{{ entry.changed_at|date:"d.m.Y H:i" }}</span>
-                <form method="post" action="{% url 'leads:lead_status_history_delete' lead.pk entry.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-ghost btn-xs text-error">🗑</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="hero min-h-16 bg-base-200 rounded-box">
-        <p class="text-gray-500">Brak historii statusów</p>
-    </div>
-    {% endif %}
 </div>
 
 <!-- ANALIZA WIZYTOWKI GOOGLE -->
@@ -606,6 +565,51 @@
     {% endwith %}
 </div>
 
+<!-- HISTORIA STATUSÓW -->
+<div class="mt-6">
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-bold">Historia statusów ({{ status_history_count }})</h2>
+        {% if status_history_count > 5 %}
+            {% if full_history %}
+                <a href="?" class="btn btn-ghost btn-sm">Pokaż mniej</a>
+            {% else %}
+                <a href="?full_history=1" class="btn btn-ghost btn-sm">Pokaż wszystkie</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    {% if status_history %}
+    <div class="flex flex-col gap-1">
+        {% for entry in status_history %}
+        <div class="flex justify-between items-center text-sm px-4 py-2 bg-base-200 rounded-lg">
+            <span class="badge
+                {% if entry.status == 'interested' %}badge-success
+                {% elif entry.status == 'not_interested' %}badge-error
+                {% elif entry.status == 'call_later' %}badge-warning
+                {% elif entry.status == 'talked' %}badge-info
+                {% elif entry.status == 'client' %}badge-primary
+                {% elif entry.status == 'rejected' %}badge-error
+                {% else %}badge-neutral{% endif %}">
+                {{ entry.get_status_display }}
+            </span>
+            <div class="flex items-center gap-3 text-gray-400 text-xs">
+                {% if entry.user %}<span>{{ entry.user.username }}</span>{% endif %}
+                <span>{{ entry.changed_at|date:"d.m.Y H:i" }}</span>
+                <form method="post" action="{% url 'leads:lead_status_history_delete' lead.pk entry.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost btn-xs text-error">🗑</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="hero min-h-16 bg-base-200 rounded-box">
+        <p class="text-gray-500">Brak historii statusów</p>
+    </div>
+    {% endif %}
+</div>
+
 <style>
 .badge-success { color: white !important; }
 </style>
@@ -637,6 +641,76 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+</script>
+
+<script>
+(function () {
+    const btn = document.getElementById('noteRecordBtn');
+    const status = document.getElementById('noteRecordStatus');
+    if (!btn) return;
+    const noteField = document.querySelector('form[action*="note"] textarea');
+    const transcribeUrl = '{% url "leads:whisper_transcribe" %}';
+    const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+
+    let mediaRecorder = null;
+    let chunks = [];
+    let isRecording = false;
+
+    btn.addEventListener('click', async function () {
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                chunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                mediaRecorder.onstop = async function () {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    const formData = new FormData();
+                    formData.append('audio', blob, 'recording.webm');
+                    formData.append('csrfmiddlewaretoken', csrfToken);
+                    btn.disabled = true;
+                    status.textContent = '⏳ Transkrybuję...';
+                    try {
+                        const resp = await fetch(transcribeUrl, { method: 'POST', body: formData });
+                        const data = await resp.json();
+                        if (data.text) {
+                            const existing = noteField.value.trim();
+                            noteField.value = existing ? existing + '\n' + data.text : data.text;
+                            status.textContent = '✓ Gotowe';
+                        } else {
+                            status.textContent = '❌ ' + (data.error || 'Błąd transkrypcji');
+                        }
+                    } catch (e) {
+                        status.textContent = '❌ Błąd połączenia';
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = '🎙️ Nagraj';
+                        btn.classList.remove('btn-error');
+                        btn.classList.add('btn-outline');
+                        isRecording = false;
+                    }
+                };
+                mediaRecorder.start();
+                isRecording = true;
+                btn.textContent = '⏹️ Zatrzymaj';
+                btn.classList.add('btn-error');
+                btn.classList.remove('btn-outline');
+                let seconds = 0;
+                const timer = setInterval(() => {
+                    if (!isRecording) { clearInterval(timer); return; }
+                    seconds++;
+                    status.textContent = '🔴 ' + seconds + 's';
+                }, 1000);
+            } catch (e) {
+                status.textContent = '❌ Brak dostępu do mikrofonu';
+            }
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+        }
+    });
+})();
 </script>
 
 {% endblock %}

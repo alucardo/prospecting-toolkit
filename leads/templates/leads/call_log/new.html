@@ -11,14 +11,25 @@
 
         <div class="card bg-base-200">
             <div class="card-body flex flex-col gap-3">
-                <form method="post">
+                <form method="post" id="callLogForm">
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="form-control">
                         <label class="label">
                             <span class="label-text">{{ field.label }}</span>
                         </label>
+                        {% if field.html_name == 'note' %}
                         {{ field }}
+                        <!-- Przyciski nagrywania pod polem notatki -->
+                        <div class="flex items-center gap-2 mt-2">
+                            <button type="button" id="recordBtn" class="btn btn-outline btn-sm gap-2">
+                                🎙️ Nagraj notatkę głosową
+                            </button>
+                            <span id="recordStatus" class="text-xs text-gray-400"></span>
+                        </div>
+                        {% else %}
+                        {{ field }}
+                        {% endif %}
                         {% if field.errors %}
                         <div class="text-error text-sm mt-1">{{ field.errors }}</div>
                         {% endif %}
@@ -29,5 +40,85 @@
             </div>
         </div>
     </div>
+
+<script>
+(function () {
+    const btn = document.getElementById('recordBtn');
+    const status = document.getElementById('recordStatus');
+    const noteField = document.querySelector('[name="note"]');
+    const transcribeUrl = '{% url "leads:whisper_transcribe" %}';
+    const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+
+    let mediaRecorder = null;
+    let chunks = [];
+    let isRecording = false;
+
+    btn.addEventListener('click', async function () {
+        if (!isRecording) {
+            // START nagrywania
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                chunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
+                mediaRecorder.onstop = async function () {
+                    // Zatrzymaj mikrofon
+                    stream.getTracks().forEach(t => t.stop());
+
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    const formData = new FormData();
+                    formData.append('audio', blob, 'recording.webm');
+                    formData.append('csrfmiddlewaretoken', csrfToken);
+
+                    btn.disabled = true;
+                    status.textContent = '⏳ Transkrybuję...';
+
+                    try {
+                        const resp = await fetch(transcribeUrl, { method: 'POST', body: formData });
+                        const data = await resp.json();
+                        if (data.text) {
+                            // Dołącz do istniejącej notatki
+                            const existing = noteField.value.trim();
+                            noteField.value = existing ? existing + '\n' + data.text : data.text;
+                            status.textContent = '✓ Gotowe';
+                        } else {
+                            status.textContent = '❌ ' + (data.error || 'Błąd transkrypcji');
+                        }
+                    } catch (e) {
+                        status.textContent = '❌ Błąd połączenia';
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = '🎙️ Nagraj notatkę głosową';
+                        isRecording = false;
+                    }
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btn.innerHTML = '⏹️ Zatrzymaj nagrywanie';
+                btn.classList.add('btn-error');
+                btn.classList.remove('btn-outline');
+
+                // Licznik czasu
+                let seconds = 0;
+                const timer = setInterval(() => {
+                    if (!isRecording) { clearInterval(timer); return; }
+                    seconds++;
+                    status.textContent = `🔴 ${seconds}s`;
+                }, 1000);
+
+            } catch (e) {
+                status.textContent = '❌ Brak dostępu do mikrofonu';
+            }
+        } else {
+            // STOP nagrywania
+            mediaRecorder.stop();
+            isRecording = false;
+        }
+    });
+})();
+</script>
 
 {% endblock %}
