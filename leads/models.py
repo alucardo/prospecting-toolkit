@@ -231,6 +231,43 @@ class LeadStatusHistory(models.Model):
         return f"{self.lead.name} → {self.status} ({self.changed_at})"
 
 
+class KeywordSuggestionBatch(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_READY = 'ready'
+    STATUS_ERROR = 'error'
+    STATUS_CHOICES = [
+        ('pending', 'Generowanie...'),
+        ('ready', 'Gotowe'),
+        ('error', 'Blad'),
+    ]
+
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='suggestion_batches')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Sugestie dla {self.lead.name} ({self.created_at:%d.%m.%Y %H:%M})"
+
+
+class KeywordSuggestion(models.Model):
+    batch = models.ForeignKey(KeywordSuggestionBatch, on_delete=models.CASCADE, related_name='suggestions')
+    phrase = models.CharField(max_length=200)
+    volume = models.IntegerField(null=True, blank=True)  # miesieczne wyszukiwania
+    ai_rank = models.IntegerField(default=0)             # 1-10, im nizej tym lepiej
+    ai_reason = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['ai_rank']
+
+    def __str__(self):
+        return f"{self.phrase} ({self.volume or '?'}/mies.)"
+
+
 class KeywordRankCheck(models.Model):
     keyword = models.ForeignKey('LeadKeyword', on_delete=models.CASCADE, related_name='rank_checks')
     position = models.IntegerField(null=True, blank=True)  # None = nie znaleziono w top 20

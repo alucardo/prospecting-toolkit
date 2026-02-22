@@ -10,3 +10,4 @@ from .settings import settings
 from .google_business import google_business_fetch, google_business_analyze
 from .lead_keyword import lead_keyword_add, lead_keyword_delete
 from .lead_keyword_ranking import lead_keyword_check_rankings, lead_keyword_check_single
+from .keyword_suggestions import keyword_suggestions

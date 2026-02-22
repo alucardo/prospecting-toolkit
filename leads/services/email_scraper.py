@@ -2,7 +2,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-FACEBOOK_DOMAINS = ['facebook.com', 'fb.com', 'fb.me']
+from leads.constants import is_blocked_for_scraping
 
 EMAIL_REGEX = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
 
@@ -18,7 +18,7 @@ LEGAL_PAGE_SLUGS = [
 
 
 def is_facebook(url):
-    return any(domain in url for domain in FACEBOOK_DOMAINS)
+    return is_blocked_for_scraping(url)
 
 
 def find_emails_in_html(html):

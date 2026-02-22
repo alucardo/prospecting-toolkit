@@ -105,12 +105,16 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                        <form method="post" action="{% url 'leads:lead_keyword_check_rankings' lead.pk %}" class="mb-2" data-rank-check>
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline btn-xs w-full">&#128269; Sprawdz pozycje wszystkich fraz</button>
-                        </form>
+                        <div class="flex gap-1 mb-2">
+                            <form method="post" action="{% url 'leads:lead_keyword_check_rankings' lead.pk %}" class="flex-1" data-rank-check data-confirm="Sprawdzić pozycje wszystkich fraz? Każda fraza to osobne zapytanie do DataForSEO.">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline btn-xs w-full">&#128269; Sprawdź wszystkie pozycje</button>
+                            </form>
+                            <a href="{% url 'leads:keyword_suggestions' lead.pk %}" class="btn btn-outline btn-xs flex-1">&#10024; Sugestie AI</a>
+                        </div>
                         {% else %}
                         <p class="text-gray-400 text-xs italic mb-2">brak fraz</p>
+                        <a href="{% url 'leads:keyword_suggestions' lead.pk %}" class="btn btn-outline btn-xs w-full mb-2">&#10024; Sugestie AI</a>
                         {% endif %}
                         <form method="post" action="{% url 'leads:lead_keyword_add' lead.pk %}" class="flex gap-1">
                             {% csrf_token %}
@@ -610,14 +614,20 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Zabezpieczenie przed wielokrotnym klikaniem przyciskow sprawdzania pozycji
     document.querySelectorAll('form[data-rank-check]').forEach(function (form) {
-        form.addEventListener('submit', function () {
+        form.addEventListener('submit', function (e) {
+            // Jesli formularz ma pytanie potwierdzajace - sprawdz najpierw
+            var confirmMsg = form.getAttribute('data-confirm');
+            if (confirmMsg && !confirm(confirmMsg)) {
+                e.preventDefault();
+                return;
+            }
+            // Zablokuj przycisk dopiero po potwierdzeniu
             var btn = form.querySelector('button[type="submit"]');
             if (btn) {
                 btn.disabled = true;
                 btn.classList.add('opacity-50', 'cursor-not-allowed');
                 var original = btn.innerHTML;
                 btn.innerHTML = '<span class="loading loading-spinner loading-xs"></span>';
-                // Przywroc po 30s na wypadek bledu
                 setTimeout(function () {
                     btn.disabled = false;
                     btn.classList.remove('opacity-50', 'cursor-not-allowed');

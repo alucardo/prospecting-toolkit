@@ -419,6 +419,123 @@ def _save_business_data(lead, biz, status):
 
 
 @shared_task
+def generate_keyword_suggestions(lead_id, batch_id):
+    """Generuje sugestie fraz: DataForSEO → scrape WWW → GPT top 10."""
+    from .models import Lead, KeywordSuggestionBatch, KeywordSuggestion, AppSettings
+    import json
+
+    lead = Lead.objects.get(pk=lead_id)
+    batch = KeywordSuggestionBatch.objects.get(pk=batch_id)
+    app_settings = AppSettings.get()
+
+    try:
+        # 1. Pobierz sugestie fraz z DataForSEO
+        seed_phrase = f"{lead.name} {lead.city.name}"
+        credentials = base64.b64encode(
+            f"{app_settings.dataforseo_login}:{app_settings.dataforseo_password}".encode()
+        ).decode()
+
+        dfs_response = requests.post(
+            "https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_suggestions/live",
+            headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
+            json=[{"keyword": seed_phrase, "language_name": "Polish", "location_name": "Poland", "limit": 50}],
+            timeout=30,
+        )
+        dfs_response.raise_for_status()
+        dfs_data = dfs_response.json()
+        raw_keywords = []
+        items = dfs_data.get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
+        for item in items:
+            kw = item.get('keyword', '')
+            vol = (item.get('keyword_info') or {}).get('search_volume') or 0
+            if kw:
+                raw_keywords.append({'phrase': kw, 'volume': vol})
+
+        # 2. Scrape strony WWW jesli istnieje (pomijamy social media)
+        from .constants import is_blocked_for_scraping
+        website_text = ''
+        if lead.website and not is_blocked_for_scraping(lead.website):
+            try:
+                resp = requests.get(lead.website, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+                resp.raise_for_status()
+                # Wyciagnij czysty tekst
+                import re
+                text = re.sub(r'<script[^>]*>.*?</script>', '', resp.text, flags=re.DOTALL)
+                text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL)
+                text = re.sub(r'<[^>]+>', ' ', text)
+                text = re.sub(r'\s+', ' ', text).strip()
+                website_text = text[:3000]  # max 3000 znakow dla AI
+            except Exception:
+                website_text = ''
+
+        # 3. GPT wybiera top 10
+        keywords_for_ai = json.dumps(
+            [{'fraza': k['phrase'], 'wyszukiwania': k['volume']} for k in raw_keywords[:50]],
+            ensure_ascii=False
+        )
+        website_section = f"\n\nTRESC STRONY WWW ({lead.website}):\n{website_text}" if website_text else ''
+
+        # Frazy juz dodane - AI ma je pominac
+        existing_phrases = list(lead.keywords_list.values_list('phrase', flat=True))
+        existing_section = f"\n\nFRAZY JUZ DODANE (nie proponuj ich ponownie):\n" + '\n'.join(f'- {p}' for p in existing_phrases) if existing_phrases else ''
+
+        prompt = f"""Jestes ekspertem SEO lokalnego. Twoje zadanie to wybrac 10 najlepszych fraz kluczowych dla wizytowki Google Maps lokalu.
+
+LOKAL: {lead.name}
+MIASTO: {lead.city.name}
+KATEGORIA: {lead.business_analyses.filter(status='analyzed').values_list('primary_category', flat=True).first() or 'nieznana'}
+OPIS WIZYTOWKI: {lead.business_analyses.filter(status='analyzed').values_list('description_text', flat=True).first() or 'brak'}{website_section}{existing_section}
+
+DOSTEPNE FRAZY Z DANYMI WYSZUKIWAN:
+{keywords_for_ai}
+
+Wybierz dokladnie 10 fraz ktore:
+1. Sa najlepiej dopasowane do tego konkretnego biznesu
+2. Maja realne szanse na pojawienie sie w wynikach Google Maps
+3. Lacza intencje zakupowa z lokalizacja
+
+Odpowiedz TYLKO jako JSON, bez zadnego tekstu przed ani po:
+[
+  {{"fraza": "...", "wyszukiwania": 0, "uzasadnienie": "max 80 znakow"}},
+  ...
+]"""
+
+        ai_response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {app_settings.openai_api_key}", "Content-Type": "application/json"},
+            json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}], "max_tokens": 1024},
+            timeout=60,
+        )
+        ai_response.raise_for_status()
+        ai_text = ai_response.json()['choices'][0]['message']['content'].strip()
+
+        # Wyczysc markdown jesli AI dodal ```json
+        ai_text = re.sub(r'^```json\s*', '', ai_text, flags=re.MULTILINE)
+        ai_text = re.sub(r'^```\s*', '', ai_text, flags=re.MULTILINE)
+        suggestions = json.loads(ai_text)
+
+        # Zapisz sugestie
+        for rank, s in enumerate(suggestions[:10], start=1):
+            # Znajdz volume z DataForSEO (AI moze go zmienic)
+            matched_volume = next((k['volume'] for k in raw_keywords if k['phrase'] == s.get('fraza')), s.get('wyszukiwania'))
+            KeywordSuggestion.objects.create(
+                batch=batch,
+                phrase=s.get('fraza', ''),
+                volume=matched_volume,
+                ai_rank=rank,
+                ai_reason=s.get('uzasadnienie', '')[:300],
+            )
+
+        batch.status = 'ready'
+        batch.save()
+
+    except Exception as e:
+        batch.status = 'error'
+        batch.error_message = str(e)
+        batch.save()
+
+
+@shared_task
 def check_keyword_rankings(lead_id, keyword_ids=None):
     """Sprawdza pozycje wizytowki. Jesli keyword_ids podane - tylko te frazy, inaczej wszystkie."""
     from .models import Lead, LeadKeyword, KeywordRankCheck, AppSettings
