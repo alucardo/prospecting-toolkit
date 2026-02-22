@@ -18,8 +18,8 @@ def call_log_create(request, pk):
             call_log.user = request.user
             # Automatycznie ustaw next_contact_date za 4 miesiace
             if call_log.status == 'not_interested' and not call_log.next_contact_date:
-                from datetime import timedelta
-                call_log.next_contact_date = date.today() + timedelta(days=120)
+                from datetime import datetime, timedelta
+                call_log.next_contact_date = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=120)
             call_log.save()
             return redirect('leads:lead_detail', pk=lead.pk)
 

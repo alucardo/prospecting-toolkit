@@ -28,9 +28,9 @@ class CallLogForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Notatka z rozmowy...',
             }),
-            'next_contact_date': forms.DateInput(attrs={
+            'next_contact_date': forms.DateTimeInput(attrs={
                 'class': 'input input-bordered w-full',
-                'type': 'date',
+                'type': 'datetime-local',
             }),
         }
 

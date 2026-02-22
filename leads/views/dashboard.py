@@ -23,10 +23,11 @@ def dashboard(request):
     effective_week = CallLog.objects.filter(effective, called_at__date__gte=week_start, user=request.user).count()
     effective_month = CallLog.objects.filter(effective, called_at__date__gte=month_start, user=request.user).count()
 
-    # Przypomnienia
+    # Przypomnienia - next_contact_date jest DateTimeField wiec porownujemy z datetime
+    tomorrow_end = timezone.make_aware(timezone.datetime.combine(tomorrow, timezone.datetime.max.time()))
     reminders = CallLog.objects.filter(
         is_reminder_active=True,
-        next_contact_date__lte=tomorrow,
+        next_contact_date__lte=tomorrow_end,
         user=request.user,
     ).select_related('lead', 'lead__city').order_by('next_contact_date')
 

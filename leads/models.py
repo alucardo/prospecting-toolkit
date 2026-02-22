@@ -134,7 +134,7 @@ class CallLog(models.Model):
     type = models.CharField(max_length=50, choices=TYPE_CHOICES, default=TYPE_CALL)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     note = models.TextField(blank=True)
-    next_contact_date = models.DateField(null=True, blank=True)
+    next_contact_date = models.DateTimeField(null=True, blank=True)
     is_reminder_active = models.BooleanField(default=False)
     called_at = models.DateTimeField(auto_now_add=True)
 
