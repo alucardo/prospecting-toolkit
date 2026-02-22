@@ -30,5 +30,6 @@ urlpatterns = [
     path('leads/<int:pk>/notes/<int:note_pk>/edit/', views.lead_note_edit, name='lead_note_edit'),
     path('leads/<int:pk>/notes/<int:note_pk>/delete/', views.lead_note_delete, name='lead_note_delete'),
     path('settings/', views.settings, name='settings'),
-    path('leads/<int:pk>/analyze/', views.google_business_analyze, name='google_business_analyze'),
+    path('leads/<int:pk>/google/fetch/', views.google_business_fetch, name='google_business_fetch'),
+    path('leads/<int:pk>/google/analyze/', views.google_business_analyze, name='google_business_analyze'),
 ]

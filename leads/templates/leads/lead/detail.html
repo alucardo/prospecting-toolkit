@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% if lead.business_analyses.first.status == 'pending' %}
+<meta http-equiv="refresh" content="3">
+{% endif %}
 
 <div class="flex items-center gap-4 mb-6">
     <a href="{% url 'leads:lead_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
@@ -42,6 +45,18 @@
                     <div>
                         <span class="text-gray-500">WWW:</span>
                         <a href="{{ lead.website }}" target="_blank" class="link link-primary break-all">{{ lead.website }}</a>
+                    </div>
+                    {% endif %}
+                    {% if lead.google_maps_url %}
+                    <div>
+                        <span class="text-gray-500">Wizytowka:</span>
+                        <a href="{{ lead.google_maps_url }}" target="_blank" class="link link-primary">&#128205; Google Maps</a>
+                    </div>
+                    {% endif %}
+                    {% if lead.keywords %}
+                    <div>
+                        <span class="text-gray-500">Frazy:</span>
+                        <span class="text-success text-xs">{{ lead.keywords|join:", " }}</span>
                     </div>
                     {% endif %}
                     {% if lead.analysis_url %}
@@ -255,80 +270,274 @@
     {% endif %}
 </div>
 
-<!-- ANALIZA WIZYTÓWKI GOOGLE -->
+<!-- ANALIZA WIZYTOWKI GOOGLE -->
 <div class="mt-6">
     <div class="flex justify-between items-center mb-3">
-        <h2 class="text-lg font-bold">🔍 Analiza wizytówki Google</h2>
-        <form method="post" action="{% url 'leads:google_business_analyze' lead.pk %}">
+        <h2 class="text-lg font-bold">&#128269; Analiza wizytowki Google</h2>
+
+        {% with analysis=lead.business_analyses.first %}
+
+        {% if analysis.status == 'pending' %}
+        <!-- STAN: pobieranie w toku - spinner -->
+        <div class="flex items-center gap-2 text-sm">
+            <span class="loading loading-spinner loading-sm text-primary"></span>
+            <span>Pobieranie danych z Google...</span>
+        </div>
+
+        {% elif not analysis or analysis.status == 'error' %}
+        <!-- STAN: brak danych lub blad - przycisk pobierania -->
+        <div class="flex flex-col items-end gap-1">
+            {% if not lead.google_maps_url %}
+            <p class="text-xs text-warning">&#9888; Brak linku do wizytowki — dane beda pobrane po nazwie firmy. <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">Dodaj link</a></p>
+            {% else %}
+            <p class="text-xs text-success">&#10003; Link do wizytowki ustawiony</p>
+            {% endif %}
+            <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-sm">&#128229; Pobierz dane z Google</button>
+            </form>
+        </div>
+
+        {% elif analysis.status == 'fetched' %}
+        <!-- STAN: pobrano dane, czeka na AI -->
+        <div class="flex gap-2 items-start">
+            <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline btn-sm">&#128260; Odswiez dane</button>
+            </form>
+            <form method="post" action="{% url 'leads:google_business_analyze' lead.pk %}">
+                {% csrf_token %}
+                <div class="flex flex-col gap-2 items-end">
+                    <textarea
+                        name="keywords"
+                        class="textarea textarea-bordered textarea-sm text-sm w-72"
+                        rows="2"
+                        placeholder="Frazy kluczowe, np: restauracja Krakow, kuchnia wloska">{% if lead.keywords %}{{ lead.keywords|join:", " }}{% endif %}</textarea>
+                    <button type="submit" class="btn btn-secondary btn-sm">&#129302; Uruchom analize AI</button>
+                </div>
+            </form>
+        </div>
+
+        {% elif analysis.status == 'analyzed' %}
+        <!-- STAN: pelna analiza gotowa - opcja odswiez -->
+        <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-primary btn-sm">Analizuj wizytówkę</button>
+            <button type="submit" class="btn btn-outline btn-sm">&#128260; Odswiez dane z Google</button>
         </form>
+
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Instrukcja jak zdobyc link -->
+    <div class="alert alert-info py-2 px-4 mb-3 text-sm">
+        <span>&#8505;&#65039; <strong>Jak zdobyc link do wizytowki?</strong> Otworz Google Maps → znajdz wizytowke klienta → <strong>skopiuj URL z paska adresu przegladarki</strong> (ten dlugi, NIE z okna &quot;Udostepnij&quot;) → wklej w <a href="{% url 'leads:lead_edit' lead.pk %}" class="link font-semibold">edycji leada</a> w pole &quot;Link do wizytowki Google Maps&quot;</span>
     </div>
 
     {% with analysis=lead.business_analyses.first %}
-    {% if analysis %}
+    {% if analysis and analysis.status != 'error' and analysis.status != 'pending' %}
     <div class="card bg-base-200">
         <div class="card-body">
+
+            <!-- Naglowek: statystyki + data -->
             <div class="flex justify-between items-start mb-4">
-                <div class="flex gap-4 flex-wrap">
+                <div class="flex gap-5 flex-wrap items-end">
                     {% if analysis.rating %}
-                    <div class="stat p-0">
-                        <div class="stat-title text-xs">Ocena</div>
-                        <div class="stat-value text-2xl {% if analysis.rating >= 4.5 %}text-success{% elif analysis.rating >= 4.0 %}text-warning{% else %}text-error{% endif %}">{{ analysis.rating }}</div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-0.5">Ocena</div>
+                        <div class="text-2xl font-bold {% if analysis.rating >= 4.5 %}text-success{% elif analysis.rating >= 4.0 %}text-warning{% else %}text-error{% endif %}">{{ analysis.rating }}</div>
                     </div>
                     {% endif %}
                     {% if analysis.reviews_count is not None %}
-                    <div class="stat p-0">
-                        <div class="stat-title text-xs">Opinii</div>
-                        <div class="stat-value text-2xl">{{ analysis.reviews_count }}</div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-0.5">Opinii</div>
+                        <div class="text-2xl font-bold">{{ analysis.reviews_count }}</div>
                     </div>
                     {% endif %}
                     {% if analysis.photos_count is not None %}
-                    <div class="stat p-0">
-                        <div class="stat-title text-xs">Zdjęć</div>
-                        <div class="stat-value text-2xl">{{ analysis.photos_count }}</div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-0.5">Zdjec</div>
+                        <div class="text-2xl font-bold">{{ analysis.photos_count }}</div>
+                    </div>
+                    {% endif %}
+                    {% if analysis.posts_count is not None %}
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-0.5">Postow</div>
+                        <div class="text-2xl font-bold {% if analysis.has_posts %}text-success{% else %}text-error{% endif %}">{{ analysis.posts_count }}</div>
+                    </div>
+                    {% endif %}
+                    {% if analysis.menu_items_count is not None %}
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-0.5">Pozycji menu</div>
+                        <div class="text-2xl font-bold {% if analysis.has_menu_items %}text-success{% else %}text-error{% endif %}">{{ analysis.menu_items_count }}</div>
                     </div>
                     {% endif %}
                 </div>
-                <span class="text-xs text-gray-400">{{ analysis.created_at|date:"d.m.Y H:i" }}</span>
+                <div class="flex items-center gap-2">
+                    {% if analysis.status == 'fetched' %}
+                    <span class="badge badge-warning badge-sm">Czeka na AI</span>
+                    {% elif analysis.status == 'analyzed' %}
+                    <span class="badge badge-success badge-sm">Analiza gotowa</span>
+                    {% endif %}
+                    <span class="text-xs text-gray-400">{{ analysis.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
             </div>
 
+            <!-- Link do wizytowki + frazy kluczowe -->
+            <div class="flex flex-wrap gap-4 mb-4 text-sm">
+                <div>
+                    <span class="text-gray-500">Wizytowka:</span>
+                    {% if lead.google_maps_url %}
+                    <a href="{{ lead.google_maps_url }}" target="_blank" class="link link-primary">&#128205; Otworz w Google Maps</a>
+                    {% else %}
+                    <span class="text-gray-400 italic">brak linku &mdash; <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">dodaj</a></span>
+                    {% endif %}
+                </div>
+                <div>
+                    <span class="text-gray-500">Frazy kluczowe:</span>
+                    {% if lead.keywords %}
+                    <span class="text-success font-medium">{{ lead.keywords|join:", " }}</span>
+                    {% else %}
+                    <span class="text-warning italic">nie ustawione &mdash; <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">dodaj</a></span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Kompletnosc profilu z wartosciami -->
+            <div class="mb-4">
+                <p class="text-xs text-gray-500 mb-3 font-semibold">KOMPLETNOSC PROFILU</p>
+                <div class="flex flex-col gap-2 text-sm">
+
+                    <!-- Nazwa -->
+                    <div class="flex items-start gap-2">
+                        <span class="badge badge-success badge-sm mt-0.5 shrink-0">Nazwa</span>
+                        <span class="font-medium">{{ analysis.business_name }}</span>
+                    </div>
+
+                    <!-- Opis -->
+                    <div class="flex items-start gap-2">
+                        <span class="badge {% if analysis.has_description %}badge-success{% else %}badge-error{% endif %} badge-sm mt-0.5 shrink-0">Opis {% if analysis.description_length %}({{ analysis.description_length }} zn.){% endif %}</span>
+                        {% if analysis.description_text %}
+                        <span class="text-gray-600">{{ analysis.description_text|truncatechars:150 }}</span>
+                        {% else %}
+                        <span class="text-gray-400 italic">brak opisu</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Kategoria glowna -->
+                    <div class="flex items-start gap-2">
+                        <span class="badge {% if analysis.primary_category %}badge-success{% else %}badge-error{% endif %} badge-sm mt-0.5 shrink-0">Kat. glowna</span>
+                        {% if analysis.primary_category %}
+                        <span class="text-gray-600">{{ analysis.primary_category }}</span>
+                        {% else %}
+                        <span class="text-gray-400 italic">brak</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Kategorie poboczne -->
+                    <div class="flex items-start gap-2">
+                        <span class="badge {% if analysis.secondary_categories_count >= 2 %}badge-success{% elif analysis.secondary_categories_count == 1 %}badge-warning{% else %}badge-error{% endif %} badge-sm mt-0.5 shrink-0">Kat. poboczne ({{ analysis.secondary_categories_count|default:0 }})</span>
+                        {% if analysis.categories|length > 1 %}
+                        <span class="text-gray-600">{{ analysis.categories|slice:"1:"|join:", " }}</span>
+                        {% else %}
+                        <span class="text-gray-400 italic">brak — zalecane 2-4</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Strona WWW -->
+                    <div class="flex items-start gap-2">
+                        <span class="badge {% if analysis.has_website %}badge-success{% else %}badge-error{% endif %} badge-sm mt-0.5 shrink-0">Strona WWW</span>
+                        {% if analysis.website_url %}
+                        <a href="{{ analysis.website_url }}" target="_blank" class="link link-primary break-all">{{ analysis.website_url|truncatechars:60 }}</a>
+                        {% else %}
+                        <span class="text-gray-400 italic">brak</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Telefon -->
+                    <div class="flex items-start gap-2">
+                        <span class="badge {% if analysis.has_phone %}badge-success{% else %}badge-warning{% endif %} badge-sm mt-0.5 shrink-0">Telefon</span>
+                        {% if analysis.raw_data.phone %}
+                        <span class="text-gray-600">{{ analysis.raw_data.phone }}</span>
+                        {% else %}
+                        <span class="text-gray-400 italic">brak</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Godziny -->
+                    <div class="flex items-start gap-2">
+                        <span class="badge {% if analysis.has_hours %}badge-success{% else %}badge-error{% endif %} badge-sm mt-0.5 shrink-0">Godziny</span>
+                        {% if analysis.hours_data %}
+                        <span class="text-gray-600 text-xs leading-5">
+                            {% for day, times in analysis.hours_data.items %}
+                                {{ day }}: {% if times.open %}{{ times.open.hour }}:{% if times.open.minute < 10 %}0{% endif %}{{ times.open.minute }}&ndash;{{ times.close.hour }}:{% if times.close.minute < 10 %}0{% endif %}{{ times.close.minute }}{% else %}{{ times }}{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </span>
+                        {% else %}
+                        <span class="text-gray-400 italic">brak</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Odpowiedzi wlasciciela -->
+                    {% if analysis.owner_responses_ratio is not None %}
+                    <div class="flex items-start gap-2">
+                        <span class="badge badge-sm mt-0.5 shrink-0 {% if analysis.owner_responses_ratio >= 0.7 %}badge-success{% elif analysis.owner_responses_ratio >= 0.3 %}badge-warning{% else %}badge-error{% endif %}">Odpowiedzi</span>
+                        <span class="{% if analysis.owner_responses_ratio >= 0.7 %}text-success{% elif analysis.owner_responses_ratio >= 0.3 %}text-warning{% else %}text-error{% endif %} font-semibold">{{ analysis.owner_responses_ratio|floatformat:0 }}% opinii z odpowiedzia wlasciciela</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Pozostale - badges w rzedzie -->
+                    <div class="flex gap-2 flex-wrap mt-1">
+                        <span class="badge {% if analysis.has_main_image %}badge-success{% else %}badge-warning{% endif %} badge-sm">Zdjecie glowne</span>
+                        <span class="badge {% if analysis.has_posts %}badge-success{% else %}badge-warning{% endif %} badge-sm">Posty{% if analysis.last_post_date %}: {{ analysis.last_post_date|date:"d.m.Y" }}{% endif %}</span>
+                        <span class="badge {% if analysis.has_menu_items %}badge-success{% else %}badge-warning{% endif %} badge-sm">Menu{% if analysis.menu_items_count %}: {{ analysis.menu_items_count }} poz.{% endif %}</span>
+                        <span class="badge {% if analysis.has_social_links %}badge-success{% else %}badge-warning{% endif %} badge-sm">Social media</span>
+                        <span class="badge {% if analysis.attributes %}badge-success{% else %}badge-warning{% endif %} badge-sm">Atrybuty</span>
+                        <span class="badge {% if analysis.secondary_categories_count >= 2 %}badge-success{% else %}badge-warning{% endif %} badge-sm">Kat. poboczne ({{ analysis.secondary_categories_count|default:0 }})</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Problemy -->
             {% if analysis.issues %}
             <div class="mb-4">
-                <h3 class="font-semibold mb-2">Problemy:</h3>
+                <p class="text-xs text-gray-500 mb-2 font-semibold">WYKRYTE PROBLEMY</p>
                 <div class="flex flex-col gap-1">
                     {% for issue in analysis.issues %}
-                    <div class="flex items-center gap-2 text-sm">
+                    <div class="flex items-start gap-2 text-sm">
                         {% if issue.type == 'error' %}
-                            <span class="badge badge-error badge-sm">!</span>
+                            <span class="badge badge-error badge-sm mt-0.5 shrink-0">!</span>
                         {% else %}
-                            <span class="badge badge-warning badge-sm">⚠</span>
+                            <span class="badge badge-warning badge-sm mt-0.5 shrink-0">&#9888;</span>
                         {% endif %}
-                        {{ issue.text }}
+                        <span>
+                            {% if issue.section %}<span class="font-medium">[{{ issue.section }}]</span> {% endif %}
+                            {{ issue.text }}
+                        </span>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
 
-            <div class="flex gap-2 mb-4 flex-wrap">
-                <span class="badge {% if analysis.has_description %}badge-success{% else %}badge-error{% endif %}">Opis</span>
-                <span class="badge {% if analysis.has_website %}badge-success{% else %}badge-error{% endif %}">Strona WWW</span>
-                <span class="badge {% if analysis.has_phone %}badge-success{% else %}badge-error{% endif %}">Telefon</span>
-                <span class="badge {% if analysis.has_hours %}badge-success{% else %}badge-error{% endif %}">Godziny</span>
-            </div>
-
+            <!-- Analiza AI -->
             {% if analysis.ai_summary %}
             <div>
-                <h3 class="font-semibold mb-2">Analiza AI:</h3>
+                <p class="text-xs text-gray-500 mb-2 font-semibold">ANALIZA AI</p>
                 <div class="text-sm whitespace-pre-wrap bg-base-100 rounded-lg p-4">{{ analysis.ai_summary }}</div>
             </div>
             {% endif %}
+
         </div>
+    </div>
+    {% elif analysis and analysis.status == 'error' %}
+    <div class="hero min-h-24 bg-base-200 rounded-box">
+        <p class="text-error text-sm">&#10060; Blad: {{ analysis.issues.0.text }}</p>
     </div>
     {% else %}
     <div class="hero min-h-24 bg-base-200 rounded-box">
-        <p class="text-gray-500">Brak analizy — kliknij "Analizuj wizytówkę"</p>
+        <p class="text-gray-500">Brak danych &mdash; kliknij &quot;Pobierz dane z Google&quot;</p>
     </div>
     {% endif %}
     {% endwith %}

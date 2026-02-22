@@ -7,4 +7,4 @@ from .lead_note import lead_note_create, lead_note_edit, lead_note_delete
 from .lead_status_history import lead_status_history_delete
 from .lead_contact import lead_contact_create, lead_contact_edit, lead_contact_delete
 from .settings import settings
-from .google_business import google_business_analyze
+from .google_business import google_business_fetch, google_business_analyze

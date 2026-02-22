@@ -71,6 +71,8 @@ class Lead(models.Model):
     website = models.CharField(max_length=500, blank=True)
 
     analysis_url = models.URLField(max_length=500, blank=True)
+    google_maps_url = models.URLField(max_length=1000, blank=True)
+    keywords = models.JSONField(default=list, blank=True)
     cold_email_sent = models.BooleanField(default=False)
     email_scraped = models.BooleanField(default=False)
 
@@ -128,16 +130,71 @@ class CallLog(models.Model):
 
 
 class GoogleBusinessAnalysis(models.Model):
+    STATUS_FETCHED = 'fetched'
+    STATUS_ANALYZED = 'analyzed'
+    STATUS_ERROR = 'error'
+    STATUS_CHOICES = [
+        ('pending', 'Pobieranie...'),
+        ('fetched', 'Pobrano dane'),
+        ('analyzed', 'Analiza gotowa'),
+        ('error', 'Blad'),
+    ]
+
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='business_analyses')
     raw_data = models.JSONField(null=True, blank=True)
+    keywords_used = models.JSONField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='fetched')
+
+    # Sekcja: Podstawowe dane
     rating = models.FloatField(null=True, blank=True)
     reviews_count = models.IntegerField(null=True, blank=True)
+
+    # Sekcja: Nazwa wizytowki
+    business_name = models.CharField(max_length=500, blank=True)  # nazwa jaka jest w wizytowce
+
+    # Sekcja: Kategorie
+    categories = models.JSONField(null=True, blank=True)           # wszystkie kategorie [glowna + poboczne]
+    primary_category = models.CharField(max_length=255, blank=True)
+    secondary_categories_count = models.IntegerField(null=True, blank=True)
+
+    # Sekcja: Opis
     has_description = models.BooleanField(default=False)
-    has_website = models.BooleanField(default=False)
+    description_text = models.TextField(blank=True)               # tresc opisu (AI ocenia frazy kluczowe)
+    description_length = models.IntegerField(null=True, blank=True)  # znaki (zalecane max 750)
+
+    # Sekcja: Dane kontaktowe
     has_phone = models.BooleanField(default=False)
+    has_website = models.BooleanField(default=False)
+    website_url = models.CharField(max_length=500, blank=True)    # URL - AI moze ocenic czy to lokalna strona
+
+    # Sekcja: Godziny otwarcia
     has_hours = models.BooleanField(default=False)
+    hours_data = models.JSONField(null=True, blank=True)          # godziny dla kazdego dnia tygodnia
+
+    # Sekcja: Zdjecia
+    has_main_image = models.BooleanField(default=False)
     photos_count = models.IntegerField(null=True, blank=True)
-    categories = models.JSONField(null=True, blank=True)
+
+    # Sekcja: Opinie - zarzadzanie
+    owner_responses_ratio = models.FloatField(null=True, blank=True)  # % opinii z odpowiedzia wlasciciela
+
+    # Sekcja: Posty w wizytowce
+    has_posts = models.BooleanField(default=False)
+    posts_count = models.IntegerField(null=True, blank=True)
+    last_post_date = models.DateField(null=True, blank=True)
+
+    # Sekcja: Produkty / Uslugi (Menu)
+    has_menu_items = models.BooleanField(default=False)
+    menu_items_count = models.IntegerField(null=True, blank=True)
+
+    # Sekcja: Serwisy spolecznosciowe
+    has_social_links = models.BooleanField(default=False)
+    social_links = models.JSONField(null=True, blank=True)
+
+    # Sekcja: Atrybuty wizytowki
+    attributes = models.JSONField(null=True, blank=True)          # np. ogrodek, wifi, rezerwacja, wegetarianskie
+
+    # Wynik analizy
     ai_summary = models.TextField(blank=True)
     issues = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

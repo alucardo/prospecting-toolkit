@@ -1,14 +1,35 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from leads.models import Lead
-from leads.tasks_analysis import analyze_google_business
+from leads.models import Lead, GoogleBusinessAnalysis
+from leads.tasks_analysis import fetch_google_business_data, run_google_business_analysis
+
+
+@login_required
+def google_business_fetch(request, pk):
+    """Krok 1: Pobierz dane z DataForSEO."""
+    lead = get_object_or_404(Lead, pk=pk)
+    if request.method == 'POST':
+        # Natychmiast tworzy rekord - uzytkownik od razu widzi spinner
+        placeholder = GoogleBusinessAnalysis.objects.create(
+            lead=lead,
+            status='pending',
+        )
+        fetch_google_business_data.delay(lead.pk, analysis_id=placeholder.pk)
+    return redirect('leads:lead_detail', pk=pk)
 
 
 @login_required
 def google_business_analyze(request, pk):
+    """Krok 2: Uruchom analize AI na pobranych danych."""
     lead = get_object_or_404(Lead, pk=pk)
     if request.method == 'POST':
-        analyze_google_business.delay(lead.pk)
-        messages.info(request, 'Analiza wizytówki została uruchomiona. Odśwież stronę za chwilę.')
+        analysis = lead.business_analyses.filter(status='fetched').first()
+        if not analysis:
+            messages.error(request, 'Brak pobranych danych. Najpierw pobierz dane z Google.')
+            return redirect('leads:lead_detail', pk=pk)
+        raw = request.POST.get('keywords', '').strip()
+        keywords = [k.strip() for k in raw.split(',') if k.strip()] if raw else lead.keywords or []
+        run_google_business_analysis.delay(analysis.pk, keywords=keywords)
+        messages.info(request, 'Analiza AI zostala uruchomiona. Odswiez strone za chwile.')
     return redirect('leads:lead_detail', pk=pk)

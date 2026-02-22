@@ -59,9 +59,19 @@ class ImportFileForm(forms.ModelForm):
         }
 
 class LeadForm(forms.ModelForm):
+
+    keywords_text = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'input input-bordered w-full',
+            'placeholder': 'np. restauracja Krakow, kuchnia wloska, obiad Swoszowice',
+        }),
+        label='Frazy kluczowe (oddzielone przecinkami)',
+    )
+
     class Meta:
         model = Lead
-        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'analysis_url', 'source', 'status', 'cold_email_sent', 'email_scraped']
+        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'analysis_url', 'google_maps_url', 'source', 'status', 'cold_email_sent', 'email_scraped']
         widgets = {
             'city': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
@@ -85,6 +95,10 @@ class LeadForm(forms.ModelForm):
                 'class': 'input input-bordered w-full',
                 'placeholder': 'https://...',
             }),
+            'google_maps_url': forms.URLInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'https://maps.app.goo.gl/... lub https://www.google.com/maps/...',
+            }),
             'source': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
             }),
@@ -98,6 +112,19 @@ class LeadForm(forms.ModelForm):
                 'class': 'checkbox',
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.keywords:
+            self.fields['keywords_text'].initial = ', '.join(self.instance.keywords)
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        raw = self.cleaned_data.get('keywords_text', '')
+        instance.keywords = [k.strip() for k in raw.split(',') if k.strip()]
+        if commit:
+            instance.save()
+        return instance
 
 class LeadContactForm(forms.ModelForm):
     class Meta:
