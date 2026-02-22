@@ -4,93 +4,90 @@
 
 <h1 class="text-2xl font-bold mb-6">Ustawienia</h1>
 
-<div class="flex flex-col gap-6 max-w-lg">
+<form method="post">
+{% csrf_token %}
+<div class="flex flex-col gap-4 max-w-2xl">
 
     <!-- Apify -->
     <div class="card bg-base-200">
         <div class="card-body">
-            <h2 class="card-title text-lg">💳 Apify — saldo</h2>
-            <div class="mt-2">
-                <div class="flex justify-between mb-1">
-                    <span class="text-sm text-gray-500">Wykorzystano</span>
-                    <span class="font-medium">${{ balance.spent }}</span>
+            <h2 class="card-title text-base">🗂️ Apify</h2>
+            <div class="flex gap-8 text-sm mt-1">
+                <div class="flex justify-between gap-4">
+                    <span class="text-gray-500">Pozostało</span>
+                    <span class="font-semibold text-success">${{ balance.remaining }}</span>
                 </div>
-                <div class="flex justify-between mb-3">
-                    <span class="text-sm text-gray-500">Pozostało</span>
-                    <span class="font-medium text-success">${{ balance.remaining }}</span>
+                <div class="flex justify-between gap-4">
+                    <span class="text-gray-500">Użyto</span>
+                    <span class="font-semibold">${{ balance.spent }}</span>
                 </div>
-                <progress class="progress progress-primary w-full"
-                    value="{{ balance.spent }}"
-                    max="{{ balance.limit }}">
-                </progress>
-                <p class="text-xs text-gray-400 mt-2">
-                    Cykl: {{ balance.cycle_start|slice:":10" }} — {{ balance.cycle_end|slice:":10" }}
-                </p>
+                <span class="text-gray-400 text-xs self-center">{{ balance.cycle_start|slice:":10" }} — {{ balance.cycle_end|slice:":10" }}</span>
+            </div>
+            <progress class="progress progress-primary w-full mt-1" value="{{ balance.spent }}" max="{{ balance.limit }}"></progress>
+        </div>
+    </div>
+
+    <!-- OpenAI -->
+    <div class="card bg-base-200">
+        <div class="card-body gap-3">
+            <div class="flex items-center justify-between">
+                <h2 class="card-title text-base">🤖 OpenAI</h2>
+                {% if not app_settings.openai_api_key %}
+                    <span class="text-xs text-gray-400">Brak klucza</span>
+                {% elif openai_balance.error %}
+                    <span class="text-xs text-error">❌ Nieprawidłowy klucz</span>
+                {% elif openai_balance.active %}
+                    <div class="flex items-center gap-2">
+                        <span class="badge badge-success badge-sm">✓ Aktywny</span>
+                        <a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" class="text-xs link text-gray-400">sprawdź saldo →</a>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="form-control">
+                <label class="label py-0"><span class="label-text text-sm">Klucz API</span></label>
+                <input type="password" name="openai_api_key" value="{{ app_settings.openai_api_key }}" placeholder="sk-..." class="input input-bordered input-sm w-full font-mono"/>
+                <label class="label py-0"><span class="label-text-alt text-gray-400">Z <a href="https://platform.openai.com/api-keys" target="_blank" class="link">platform.openai.com</a> — używane do GPT-4o-mini i Whisper</span></label>
             </div>
         </div>
     </div>
 
-    <!-- Klucze API -->
+    <!-- DataForSEO -->
     <div class="card bg-base-200">
-        <div class="card-body">
-            <h2 class="card-title text-lg">🔑 Klucze API</h2>
-            <p class="text-sm text-gray-400 mb-4">Wymagane do analizy wizytówek Google.</p>
-
-            <form method="post">
-                {% csrf_token %}
-
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text font-medium">OpenAI API Key</span>
-                    </label>
-                    <input
-                        type="password"
-                        name="openai_api_key"
-                        value="{{ app_settings.openai_api_key }}"
-                        placeholder="sk-..."
-                        class="input input-bordered w-full font-mono text-sm"
-                    />
-                    <label class="label">
-                        <span class="label-text-alt text-gray-400">Klucz z <a href="https://platform.openai.com/api-keys" target="_blank" class="link">platform.openai.com</a> — model gpt-4o-mini</span>
-                    </label>
-                </div>
-
-                <div class="divider text-xs text-gray-400">DataForSEO</div>
-
-                <div class="form-control mb-4">
-                    <label class="label">
-                        <span class="label-text font-medium">Login (email)</span>
-                    </label>
-                    <input
-                        type="text"
-                        name="dataforseo_login"
-                        value="{{ app_settings.dataforseo_login }}"
-                        placeholder="email@example.com"
-                        class="input input-bordered w-full"
-                    />
-                </div>
-
-                <div class="form-control mb-6">
-                    <label class="label">
-                        <span class="label-text font-medium">Hasło</span>
-                    </label>
-                    <input
-                        type="password"
-                        name="dataforseo_password"
-                        value="{{ app_settings.dataforseo_password }}"
-                        placeholder="••••••••"
-                        class="input input-bordered w-full"
-                    />
-                    <label class="label">
-                        <span class="label-text-alt text-gray-400">Dane z <a href="https://app.dataforseo.com/api-dashboard" target="_blank" class="link">app.dataforseo.com</a></span>
-                    </label>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-full">Zapisz ustawienia</button>
-            </form>
+        <div class="card-body gap-3">
+            <div class="flex items-center justify-between">
+                <h2 class="card-title text-base">📊 DataForSEO</h2>
+                {% if not app_settings.dataforseo_login %}
+                    <span class="text-xs text-gray-400">Brak danych logowania</span>
+                {% elif dataforseo_balance %}
+                    <div class="flex gap-6 text-sm">
+                        <div class="flex gap-2">
+                            <span class="text-gray-500">Saldo</span>
+                            <span class="font-semibold text-success">${{ dataforseo_balance.balance }}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="text-gray-500">Dziś</span>
+                            <span class="font-semibold">${{ dataforseo_balance.spent }}</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <span class="text-xs text-error">❌ Błąd logowania</span>
+                {% endif %}
+            </div>
+            <div class="form-control">
+                <label class="label py-0"><span class="label-text text-sm">Login (email)</span></label>
+                <input type="text" name="dataforseo_login" value="{{ app_settings.dataforseo_login }}" placeholder="email@example.com" class="input input-bordered input-sm w-full"/>
+            </div>
+            <div class="form-control">
+                <label class="label py-0"><span class="label-text text-sm">Hasło</span></label>
+                <input type="password" name="dataforseo_password" value="{{ app_settings.dataforseo_password }}" placeholder="••••••••" class="input input-bordered input-sm w-full"/>
+                <label class="label py-0"><span class="label-text-alt text-gray-400">Z <a href="https://app.dataforseo.com/api-dashboard" target="_blank" class="link">app.dataforseo.com</a></span></label>
+            </div>
         </div>
     </div>
 
+    <button type="submit" class="btn btn-primary w-full">Zapisz ustawienia</button>
+
 </div>
+</form>
 
 {% endblock %}
