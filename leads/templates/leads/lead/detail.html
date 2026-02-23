@@ -47,12 +47,16 @@
                         <a href="{{ lead.website }}" target="_blank" class="link link-primary break-all">{{ lead.website }}</a>
                     </div>
                     {% endif %}
-                    {% if lead.google_maps_url %}
                     <div>
                         <span class="text-gray-500">Wizytowka:</span>
+                        {% if lead.google_maps_url %}
                         <a href="{{ lead.google_maps_url }}" target="_blank" class="link link-primary">&#128205; Google Maps</a>
+                        {% else %}
+                        {% with query=lead.name|add:" "|add:lead.address %}
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ query|urlencode }}" target="_blank" class="link link-primary text-gray-400">&#128205; Szukaj w Google Maps</a>
+                        {% endwith %}
+                        {% endif %}
                     </div>
-                    {% endif %}
                     <!-- Frazy kluczowe -->
                     <div class="mt-3">
                         {% if lead.keywords_list.all %}

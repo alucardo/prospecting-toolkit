@@ -17,7 +17,13 @@
             <a href="{% url 'leads:city_index' %}" class="btn btn-ghost btn-sm">Miasta</a>
             <a href="{% url 'leads:settings' %}" class="btn btn-ghost btn-sm">⚙️ Ustawienia</a>
         </div>
-        <div class="ml-auto">
+        <div class="ml-auto flex items-center gap-3">
+            <form method="get" action="{% url 'leads:phone_search' %}" class="flex gap-2">
+                <input type="text" name="q" placeholder="🔍 Szukaj po telefonie..." class="input input-bordered input-sm w-56" />
+                <button type="submit" class="btn btn-sm btn-ghost">Szukaj</button>
+            </form>
+        </div>
+        <div>
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-ghost btn-sm">Wyloguj</button>

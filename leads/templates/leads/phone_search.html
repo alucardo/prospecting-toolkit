@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="text-2xl font-bold mb-6">Wyniki wyszukiwania: „{{ q }}"</h1>
+
+{% if error %}
+    <div class="alert alert-warning max-w-lg">{{ error }}</div>
+
+{% elif not leads %}
+    <div class="alert alert-info max-w-lg">
+        Nie znaleziono żadnego leada z numerem <strong>{{ q }}</strong>.
+    </div>
+
+{% else %}
+    <p class="text-gray-500 mb-4">Znaleziono {{ leads.count }} leadów:</p>
+    <div class="flex flex-col gap-3 max-w-xl">
+        {% for lead in leads %}
+        <a href="{% url 'leads:lead_detail' lead.pk %}" class="card bg-base-200 hover:bg-base-300 transition-colors">
+            <div class="card-body py-4 flex-row items-center justify-between">
+                <div>
+                    <p class="font-semibold">{{ lead.name }}</p>
+                    <p class="text-sm text-gray-500">{{ lead.phone }} · {{ lead.city }}</p>
+                </div>
+                <span class="badge badge-ghost">{{ lead.get_status_display }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% endblock %}

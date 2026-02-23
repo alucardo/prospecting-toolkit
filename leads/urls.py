@@ -40,4 +40,5 @@ urlpatterns = [
     path('leads/<int:pk>/keywords/suggest/', views.keyword_suggestions, name='keyword_suggestions'),
     path('leads/import-from-maps/', views.lead_import_from_maps, name='lead_import_from_maps'),
     path('whisper/transcribe/', views.whisper_transcribe, name='whisper_transcribe'),
+    path('leads/search/phone/', views.phone_search, name='phone_search'),
 ]
