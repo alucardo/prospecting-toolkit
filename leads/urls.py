@@ -41,4 +41,5 @@ urlpatterns = [
     path('leads/import-from-maps/', views.lead_import_from_maps, name='lead_import_from_maps'),
     path('whisper/transcribe/', views.whisper_transcribe, name='whisper_transcribe'),
     path('leads/search/phone/', views.phone_search, name='phone_search'),
+    path('leads/<int:pk>/analysis/<int:analysis_pk>/posts-status/', views.analysis_posts_status, name='analysis_posts_status'),
 ]

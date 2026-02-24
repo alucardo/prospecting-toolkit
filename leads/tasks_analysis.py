@@ -2,33 +2,11 @@ import requests
 import base64
 from celery import shared_task
 from datetime import datetime
+from leads.services.maps_cid_extractor import extract_cid_from_maps_url
+from leads.services.dataforseo_posts import fetch_posts, parse_posts
 
-
-def extract_keyword_from_maps_url(url):
-    """
-    Wyciaga parametr CID z linku Google Maps.
-    Obsluguje:
-    - https://maps.google.com/?cid=1234567890
-    - https://www.google.com/maps?cid=1234567890
-    - https://www.google.com/maps/place/Nazwa/@lat,lng/data=...!1s0x...:0x...
-    Zwraca 'cid:NUMBER' lub None jesli nie znaleziono.
-    """
-    import re
-    if not url:
-        return None
-    # Format bezposredni: ?cid=1234567890
-    match = re.search(r'[?&]cid=(\d+)', url)
-    if match:
-        return f"cid:{match.group(1)}"
-    # Format hex w data: !1s0x...:0x...
-    match = re.search(r'!1s0x[0-9a-f]+:(0x[0-9a-f]+)', url)
-    if match:
-        try:
-            cid = int(match.group(1), 16)
-            return f"cid:{cid}"
-        except Exception:
-            pass
-    return None
+# Alias dla wstecznej kompatybilnosci
+extract_keyword_from_maps_url = extract_cid_from_maps_url
 
 
 def get_dataforseo_business_data(business_name, city, login, password, keyword_override=None):
@@ -49,7 +27,7 @@ def get_dataforseo_business_data(business_name, city, login, password, keyword_o
             "Content-Type": "application/json",
         },
         json=payload,
-        timeout=30,
+        timeout=60,
     )
     response.raise_for_status()
     return response.json()
@@ -264,20 +242,17 @@ def detect_issues(data):
     elif ratio < 0.5:
         issues.append({'type': 'warning', 'section': 'Opinie', 'text': f'Wlasciciel odpowiada tylko na {int(ratio*100)}% opinii — zalecane odpowiadac na wszystkie'})
 
-    # Posty
-    if not data.get('has_posts'):
-        issues.append({'type': 'warning', 'section': 'Posty', 'text': 'Brak postow w wizytowce — posty sygnalizuja aktywnosc i wspieraja widocznosc'})
-    else:
-        last_post = data.get('last_post_date')
-        if last_post:
-            from datetime import date
-            days_ago = (date.today() - last_post).days
-            if days_ago > 60:
-                issues.append({'type': 'warning', 'section': 'Posty', 'text': f'Ostatni post byl {days_ago} dni temu — zalecane dodawac co 1-2 tygodnie'})
-
-    # Menu / Produkty
-    if not data.get('has_menu_items'):
-        issues.append({'type': 'warning', 'section': 'Menu/Produkty', 'text': 'Brak sekcji Produkty/Uslugi — uzupelnij menu z opisami zawierajacymi frazy kluczowe'})
+    # Posty - sprawdzamy tylko jesli mamy pewnosc (CID byl dostepny)
+    if data.get('posts_verified'):
+        if not data.get('has_posts'):
+            issues.append({'type': 'warning', 'section': 'Posty', 'text': 'Brak postow w wizytowce — posty sygnalizuja aktywnosc i wspieraja widocznosc'})
+        else:
+            last_post = data.get('last_post_date')
+            if last_post:
+                from datetime import date
+                days_ago = (date.today() - last_post).days
+                if days_ago > 60:
+                    issues.append({'type': 'warning', 'section': 'Posty', 'text': f'Ostatni post byl {days_ago} dni temu — zalecane dodawac co 1-2 tygodnie'})
 
     # Social media
     if not data.get('has_social_links'):
@@ -342,7 +317,6 @@ Ocena: {data.get('rating') or 'brak'} / 5.0
 Liczba opinii: {data.get('reviews_count', 0)}
 Odpowiedzi wlasciciela na opinie: {f"{int(data['owner_responses_ratio']*100)}%" if data.get('owner_responses_ratio') is not None else 'brak danych'}
 Posty w wizytowce: {'tak, ostatni: ' + str(data.get('last_post_date')) if data.get('has_posts') else 'BRAK'}
-Menu/Produkty w wizytowce: {'tak, ' + str(data.get('menu_items_count', 0)) + ' pozycji' if data.get('has_menu_items') else 'BRAK'}
 Social media podlinkowane: {'tak' if data.get('has_social_links') else 'BRAK'}
 Atrybuty (ogrodek, wifi itp.): {'uzupelnione' if data.get('attributes') else 'BRAK'}
 
@@ -439,7 +413,7 @@ def generate_keyword_suggestions(lead_id, batch_id):
             "https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_suggestions/live",
             headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
             json=[{"keyword": seed_phrase, "language_name": "Polish", "location_name": "Poland", "limit": 50}],
-            timeout=30,
+            timeout=60,
         )
         dfs_response.raise_for_status()
         dfs_data = dfs_response.json()
@@ -578,7 +552,7 @@ def check_keyword_rankings(lead_id, keyword_ids=None):
                 "https://api.dataforseo.com/v3/serp/google/maps/live/advanced",
                 headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
                 json=[payload],
-                timeout=30,
+                timeout=60,
             )
             response.raise_for_status()
             items = response.json().get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
@@ -649,6 +623,11 @@ def fetch_google_business_data(lead_id, analysis_id=None):
 
         biz = items[0]
         data = extract_business_data(biz)
+
+        # Posty pobieramy w tle osobnym taskiem
+        data['posts_verified'] = False
+        posts_status = 'pending'
+
         issues = detect_issues(data)
 
         fields = dict(
@@ -676,7 +655,9 @@ def fetch_google_business_data(lead_id, analysis_id=None):
             owner_responses_ratio=data['owner_responses_ratio'],
             has_posts=data['has_posts'],
             posts_count=data['posts_count'],
+            posts_count_plus=data.get('posts_count_plus', False),
             last_post_date=data['last_post_date'],
+            posts_status=posts_status,
             has_menu_items=data['has_menu_items'],
             menu_items_count=data['menu_items_count'],
             has_social_links=data['has_social_links'],
@@ -685,12 +666,14 @@ def fetch_google_business_data(lead_id, analysis_id=None):
         )
 
         if analysis_id:
-            # Aktualizuj istniejacy rekord placeholder
-            for attr, value in fields.items():
-                setattr(GoogleBusinessAnalysis.objects.get(pk=analysis_id), attr, value)
             GoogleBusinessAnalysis.objects.filter(pk=analysis_id).update(**fields)
+            saved_id = analysis_id
         else:
-            GoogleBusinessAnalysis.objects.create(lead=lead, **fields)
+            obj = GoogleBusinessAnalysis.objects.create(lead=lead, **fields)
+            saved_id = obj.pk
+
+        # Odpal background task do pobrania postow (uzywamy nazwy firmy jako keyword)
+        fetch_business_posts.delay(saved_id, lead.name)
 
     except Exception as e:
         fail(str(e))
@@ -712,6 +695,8 @@ def run_google_business_analysis(analysis_id, keywords=None):
 
     try:
         data = extract_business_data(analysis.raw_data)
+        # Nie nadpisuj posts_verified — posty pobiera osobny task
+        data['posts_verified'] = False
         issues, ai_summary = analyze_with_openai(
             analysis.lead.name, analysis.lead.city.name,
             data, app_settings.openai_api_key,
@@ -726,3 +711,30 @@ def run_google_business_analysis(analysis_id, keywords=None):
         analysis.status = 'error'
         analysis.ai_summary = f'Blad AI: {str(e)}'
         analysis.save()
+
+
+@shared_task
+def fetch_business_posts(analysis_id, keyword):
+    """Background task: pobiera posty wizytowki i aktualizuje analize."""
+    from .models import GoogleBusinessAnalysis, AppSettings
+    from leads.services.dataforseo_posts import fetch_posts, parse_posts
+
+    app_settings = AppSettings.get()
+    if not app_settings.dataforseo_login or not app_settings.dataforseo_password:
+        GoogleBusinessAnalysis.objects.filter(pk=analysis_id).update(posts_status='error')
+        return
+
+    raw_posts = fetch_posts(keyword, app_settings.dataforseo_login, app_settings.dataforseo_password)
+
+    if raw_posts is None:  # timeout lub blad
+        GoogleBusinessAnalysis.objects.filter(pk=analysis_id).update(posts_status='error')
+        return
+
+    posts_data = parse_posts(raw_posts)
+    GoogleBusinessAnalysis.objects.filter(pk=analysis_id).update(
+        posts_status='fetched',
+        has_posts=posts_data['has_posts'],
+        posts_count=posts_data['posts_count'],
+        posts_count_plus=posts_data['posts_count_plus'],
+        last_post_date=posts_data['last_post_date'],
+    )

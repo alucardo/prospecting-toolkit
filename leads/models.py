@@ -192,9 +192,21 @@ class GoogleBusinessAnalysis(models.Model):
     owner_responses_ratio = models.FloatField(null=True, blank=True)  # % opinii z odpowiedzia wlasciciela
 
     # Sekcja: Posty w wizytowce
+    POSTS_STATUS_PENDING = 'pending'
+    POSTS_STATUS_FETCHED = 'fetched'
+    POSTS_STATUS_ERROR = 'error'
+    POSTS_STATUS_UNAVAILABLE = 'unavailable'
+    POSTS_STATUS_CHOICES = [
+        ('pending', 'Pobieranie...'),
+        ('fetched', 'Pobrano'),
+        ('error', 'Blad'),
+        ('unavailable', 'Brak CID'),
+    ]
     has_posts = models.BooleanField(default=False)
     posts_count = models.IntegerField(null=True, blank=True)
+    posts_count_plus = models.BooleanField(default=False)
     last_post_date = models.DateField(null=True, blank=True)
+    posts_status = models.CharField(max_length=20, choices=POSTS_STATUS_CHOICES, default='unavailable')
 
     # Sekcja: Produkty / Uslugi (Menu)
     has_menu_items = models.BooleanField(default=False)

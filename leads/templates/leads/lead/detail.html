@@ -389,15 +389,10 @@
                     {% if analysis.posts_count is not None %}
                     <div class="text-center">
                         <div class="text-xs text-gray-500 mb-0.5">Postow</div>
-                        <div class="text-2xl font-bold {% if analysis.has_posts %}text-success{% else %}text-error{% endif %}">{{ analysis.posts_count }}</div>
+                        <div class="text-2xl font-bold {% if analysis.has_posts %}text-success{% else %}text-error{% endif %}">{% if analysis.posts_count_plus %}10+{% else %}{{ analysis.posts_count }}{% endif %}</div>
                     </div>
                     {% endif %}
-                    {% if analysis.menu_items_count is not None %}
-                    <div class="text-center">
-                        <div class="text-xs text-gray-500 mb-0.5">Pozycji menu</div>
-                        <div class="text-2xl font-bold {% if analysis.has_menu_items %}text-success{% else %}text-error{% endif %}">{{ analysis.menu_items_count }}</div>
-                    </div>
-                    {% endif %}
+
                 </div>
                 <div class="flex items-center gap-2">
                     {% if analysis.status == 'fetched' %}
@@ -515,8 +510,25 @@
                     <!-- Pozostale - badges w rzedzie -->
                     <div class="flex gap-2 flex-wrap mt-1">
                         <span class="badge {% if analysis.has_main_image %}badge-success{% else %}badge-warning{% endif %} badge-sm">Zdjecie glowne</span>
-                        <span class="badge {% if analysis.has_posts %}badge-success{% else %}badge-warning{% endif %} badge-sm">Posty{% if analysis.last_post_date %}: {{ analysis.last_post_date|date:"d.m.Y" }}{% endif %}</span>
-                        <span class="badge {% if analysis.has_menu_items %}badge-success{% else %}badge-warning{% endif %} badge-sm">Menu{% if analysis.menu_items_count %}: {{ analysis.menu_items_count }} poz.{% endif %}</span>
+                        <span id="posts-badge-{{ analysis.pk }}"
+                             class="badge badge-sm
+                             {% if analysis.posts_status == 'pending' %}badge-ghost
+                             {% elif analysis.posts_status == 'error' %}badge-warning
+                             {% elif analysis.posts_status == 'unavailable' %}badge-ghost
+                             {% elif analysis.has_posts %}badge-success
+                             {% else %}badge-warning{% endif %}">
+                            {% if analysis.posts_status == 'pending' %}
+                                <span class="loading loading-spinner loading-xs mr-1"></span> Posty: pobieranie...
+                            {% elif analysis.posts_status == 'error' %}
+                                Posty: błąd pobierania
+                            {% elif analysis.posts_status == 'unavailable' %}
+                                Posty: brak CID
+                            {% elif analysis.has_posts %}
+                                Posty: {% if analysis.posts_count_plus %}10+{% else %}{{ analysis.posts_count }}{% endif %}{% if analysis.last_post_date %}, ostatni: {{ analysis.last_post_date|date:"d.m.Y" }}{% endif %}
+                            {% else %}
+                                Brak postów
+                            {% endif %}
+                        </span>
                         <span class="badge {% if analysis.has_social_links %}badge-success{% else %}badge-warning{% endif %} badge-sm">Social media</span>
                         <span class="badge {% if analysis.attributes %}badge-success{% else %}badge-warning{% endif %} badge-sm">Atrybuty</span>
                         <span class="badge {% if analysis.secondary_categories_count >= 2 %}badge-success{% else %}badge-warning{% endif %} badge-sm">Kat. poboczne ({{ analysis.secondary_categories_count|default:0 }})</span>
@@ -716,5 +728,48 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 })();
 </script>
+
+{% with analysis=lead.business_analyses.first %}
+{% if analysis and analysis.posts_status == 'pending' %}
+<script>
+(function () {
+    const badgeId = 'posts-badge-{{ analysis.pk }}';
+    const statusUrl = '{% url "leads:analysis_posts_status" lead.pk analysis.pk %}';
+
+    function pollPosts() {
+        fetch(statusUrl)
+            .then(r => r.json())
+            .then(data => {
+                if (data.posts_status === 'pending') {
+                    setTimeout(pollPosts, 4000);
+                    return;
+                }
+                const badge = document.getElementById(badgeId);
+                if (!badge) return;
+                badge.className = 'badge badge-sm ' + (
+                    data.posts_status === 'error' ? 'badge-warning' :
+                    data.posts_status === 'unavailable' ? 'badge-ghost' :
+                    data.has_posts ? 'badge-success' : 'badge-warning'
+                );
+                if (data.posts_status === 'error') {
+                    badge.innerHTML = 'Posty: błąd pobierania';
+                } else if (data.posts_status === 'unavailable') {
+                    badge.innerHTML = 'Posty: brak CID';
+                } else if (data.has_posts) {
+                    const count = data.posts_count_plus ? '10+' : data.posts_count;
+                    const date = data.last_post_date ? ', ostatni: ' + data.last_post_date : '';
+                    badge.innerHTML = 'Posty: ' + count + date;
+                } else {
+                    badge.innerHTML = 'Brak postów';
+                }
+            })
+            .catch(() => setTimeout(pollPosts, 8000));
+    }
+
+    setTimeout(pollPosts, 4000);
+})();
+</script>
+{% endif %}
+{% endwith %}
 
 {% endblock %}
