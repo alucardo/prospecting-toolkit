@@ -529,7 +529,7 @@
                                 Brak postów
                             {% endif %}
                         </span>
-                        <span class="badge {% if analysis.has_social_links %}badge-success{% else %}badge-warning{% endif %} badge-sm">Social media</span>
+                        <span class="badge badge-ghost badge-sm" title="Niedostępne — DataForSEO nie udostępnia tych danych">Social media: brak danych ⓘ</span>
                         <span class="badge {% if analysis.attributes %}badge-success{% else %}badge-warning{% endif %} badge-sm">Atrybuty</span>
                         <span class="badge {% if analysis.secondary_categories_count >= 2 %}badge-success{% else %}badge-warning{% endif %} badge-sm">Kat. poboczne ({{ analysis.secondary_categories_count|default:0 }})</span>
                     </div>

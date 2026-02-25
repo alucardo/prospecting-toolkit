@@ -254,10 +254,6 @@ def detect_issues(data):
                 if days_ago > 60:
                     issues.append({'type': 'warning', 'section': 'Posty', 'text': f'Ostatni post byl {days_ago} dni temu — zalecane dodawac co 1-2 tygodnie'})
 
-    # Social media
-    if not data.get('has_social_links'):
-        issues.append({'type': 'warning', 'section': 'Social media', 'text': 'Brak linkow do social media w wizytowce'})
-
     # Atrybuty
     if not data.get('attributes'):
         issues.append({'type': 'warning', 'section': 'Atrybuty', 'text': 'Brak atrybutow wizytowki (np. ogrodek, mozliwosc rezerwacji, dania wegetarianskie)'})
@@ -317,7 +313,6 @@ Ocena: {data.get('rating') or 'brak'} / 5.0
 Liczba opinii: {data.get('reviews_count', 0)}
 Odpowiedzi wlasciciela na opinie: {f"{int(data['owner_responses_ratio']*100)}%" if data.get('owner_responses_ratio') is not None else 'brak danych'}
 Posty w wizytowce: {'tak, ostatni: ' + str(data.get('last_post_date')) if data.get('has_posts') else 'BRAK'}
-Social media podlinkowane: {'tak' if data.get('has_social_links') else 'BRAK'}
 Atrybuty (ogrodek, wifi itp.): {'uzupelnione' if data.get('attributes') else 'BRAK'}
 
 === WYKRYTE PROBLEMY ===
