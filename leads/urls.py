@@ -42,4 +42,6 @@ urlpatterns = [
     path('whisper/transcribe/', views.whisper_transcribe, name='whisper_transcribe'),
     path('leads/search/phone/', views.phone_search, name='phone_search'),
     path('leads/<int:pk>/analysis/<int:analysis_pk>/posts-status/', views.analysis_posts_status, name='analysis_posts_status'),
+    path('leads/<int:pk>/reports/google-analysis/', views.reports.google_analysis_pdf, name='report_google_analysis'),
+    path('leads/<int:pk>/reports/google-analysis/preview/', views.reports.google_analysis_preview, name='report_google_analysis_preview'),
 ]

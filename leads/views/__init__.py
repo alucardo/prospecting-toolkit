@@ -15,3 +15,4 @@ from .lead_import_from_maps import lead_import_from_maps
 from .whisper import whisper_transcribe
 from .phone_search import phone_search
 from .analysis_posts_status import analysis_posts_status
+from .reports import google_analysis_pdf, google_analysis_preview
