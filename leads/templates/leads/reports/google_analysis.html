@@ -1,61 +1,194 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      font-size: 11pt;
-      color: #1a1a1a;
-      padding: 20px;
-    }
-    h1 {
-      color: #4f46e5;
-      font-size: 20pt;
-      margin-bottom: 4px;
-    }
-    .subtitle {
-      color: #666;
-      font-size: 10pt;
-      margin-bottom: 32px;
-    }
-    .section {
-      background: #f9f9f9;
-      border-left: 4px solid #4f46e5;
-      padding: 16px;
-      margin-bottom: 20px;
-      border-radius: 4px;
-    }
-    .section h2 {
-      font-size: 13pt;
-      margin-bottom: 8px;
-      color: #333;
-    }
-    .placeholder {
-      color: #aaa;
-      font-style: italic;
-    }
-  </style>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+  }
+
+  /* ===== OKŁADKA ===== */
+  .cover {
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+  }
+  .cover-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .cover-client-name {
+    position: absolute;
+    bottom: 168px;
+    right: 73px;
+    color: white;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+
+  /* ===== STRONA WEWNĘTRZNA ===== */
+  .page {
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+    page-break-after: always;
+  }
+  .page-bg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+
+  /* nagłówek */
+  .page-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8mm 20mm 0 20mm;
+  }
+  .page-header-line {
+    position: relative;
+    z-index: 1;
+    border-bottom: 1px solid #ddd;
+    margin: 6mm 20mm 0 20mm;
+  }
+  .page-header img {
+    height: 32px;
+  }
+  .page-header span {
+    font-size: 9pt;
+    color: #666;
+  }
+
+  /* treść */
+  .page-content {
+    position: relative;
+    z-index: 1;
+    padding: 8mm 20mm;
+  }
+  .page-content h2 {
+    font-size: 18pt;
+    font-weight: 900;
+    color: #1a1a1a;
+    margin-bottom: 14px;
+  }
+  .page-content p {
+    font-size: 11pt;
+    color: #1a1a1a;
+    text-align: justify;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  /* stopka */
+  .page-footer {
+    position: absolute;
+    bottom: 10mm; left: 0; right: 0;
+    z-index: 1;
+    font-size: 8pt;
+    color: #555;
+    padding: 0 20mm;
+  }
+  .page-footer-top {
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .page-footer-top span {
+    color: #b8922a;
+    font-size: 8pt;
+  }
+  .page-footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 8px;
+  }
+  .page-footer-bottom .author-label { color: #555; }
+  .page-footer-bottom .author-name { font-weight: 700; color: #1a1a1a; }
+  .page-footer-bottom .company-info { text-align: right; color: #555; line-height: 1.5; }
+</style>
 </head>
 <body>
 
-  <h1>Analiza wizytówki Google</h1>
-  <p class="subtitle">Raport wygenerowany automatycznie</p>
+<!-- OKŁADKA -->
+<div class="cover">
+  <img class="cover-image" src="data:image/jpeg;base64,{{ cover_image_b64 }}">
+  <div class="cover-client-name">{{ lead.name }}</div>
+</div>
 
-  <div class="section">
-    <h2>Podstawowe informacje</h2>
-    <p class="placeholder">Tu pojawią się dane leadu...</p>
+<!-- STRONA WEWNĘTRZNA — na razie pusta, testujemy strukturę -->
+<div class="page">
+  <img class="page-bg" src="data:image/jpeg;base64,{{ page_bg_b64 }}">
+
+  <div class="page-header">
+    <img src="data:image/jpeg;base64,{{ logo_b64 }}">
+    <span>www.bsmarti.pl</span>
+  </div>
+  <div class="page-header-line"></div>
+
+  <div class="page-content">
+    <h2>Wprowadzenie</h2>
+    <p>
+      Celem niniejszego audytu jest ocena, w jakim stopniu wizytówka Google
+      <strong>{{ lead.name }}</strong> wspiera widoczność w lokalnych wynikach
+      wyszukiwania oraz jak wpływa na decyzje klientów szukających miejsca
+      „tu i teraz". Analiza została przygotowana w oparciu o porównanie
+      z lokalną konkurencją, sprawdzenie aktualnej widoczności wizytówki
+      na kluczowe zapytania i lokalizacje, a także ocenę stron internetowych
+      i innych elementów, do których trafiają potencjalni goście.
+    </p>
+    <p>
+      Na podstawie zebranych danych opracowano zestaw rekomendacji oraz plan
+      działań, opisany w dalszej części dokumentu. Poszczególne zalecenia
+      zostały zaplanowane w określonej kolejności, aby stopniowo zwiększać
+      skuteczność wizytówki i maksymalizować jej wpływ na liczbę odwiedzin
+      lokalu. <u>Samodzielne wprowadzanie zmian poza ustaloną strategią może
+      obniżyć efektywność działań</u>, dlatego rekomenduje się realizację
+      zaleceń zgodnie z przyjętym planem.
+    </p>
   </div>
 
-  <div class="section">
-    <h2>Ocena wizytówki</h2>
-    <p class="placeholder">Tu pojawią się wyniki analizy...</p>
+  <div class="page-footer">
+    <div class="page-footer-top">
+      <span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="#b8922a" style="vertical-align:middle; margin-right:3px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        www.bsmarti.pl
+      </span>
+      <span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="#b8922a" style="vertical-align:middle; margin-right:3px;"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        {{ mail }}
+      </span>
+      <span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="#b8922a" style="vertical-align:middle; margin-right:3px;"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        {{ phone }}
+      </span>
+    </div>
+    <div class="page-footer-bottom">
+      <div>
+        <div class="author-label">Audyt przygotował:</div>
+        <div class="author-name">{{ person }}</div>
+      </div>
+      <div class="company-info">
+        NIP: 625 234 35 24<br>
+        REGON: 241985147<br>
+        PolInf Przemysław Olesiński
+      </div>
+    </div>
   </div>
-
-  <div class="section">
-    <h2>Rekomendacje</h2>
-    <p class="placeholder">Tu pojawią się rekomendacje AI...</p>
-  </div>
+</div>
 
 </body>
 </html>
