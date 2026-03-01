@@ -11,10 +11,17 @@ python manage.py runserver
 celery -A config worker --loglevel=info
 ```
 
-## Local server:
+## Server run:
 ```sh
 systemctl daemon-reload
 systemctl enable prospecting-toolkit
 systemctl start prospecting-toolkit
 systemctl status prospecting-toolkit
+```
+
+```sh
+systemctl daemon-reload
+systemctl enable prospecting-celery
+systemctl start prospecting-celery
+systemctl status prospecting-celery
 ```
