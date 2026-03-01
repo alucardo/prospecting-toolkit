@@ -537,6 +537,7 @@ def check_keyword_rankings(lead_id, keyword_ids=None):
             payload = {
                 "keyword": kw.phrase,
                 "language_name": "Polish",
+                "depth": 20,
             }
             if lead.city.location_coordinate:
                 payload["location_coordinate"] = lead.city.location_coordinate

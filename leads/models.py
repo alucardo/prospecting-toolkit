@@ -18,7 +18,7 @@ class City(models.Model):
     def location_coordinate(self):
         """Format dla DataForSEO: lat,lng,zoom"""
         if self.has_coordinates:
-            return f"{self.latitude},{self.longitude},14"
+            return f"{self.latitude},{self.longitude},11"
         return None
 
 

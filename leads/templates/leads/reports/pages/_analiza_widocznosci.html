@@ -1,0 +1,30 @@
+<div class="page">
+    {% include "leads/reports/_header.html" %}
+
+    <div class="page-content">
+        <h2>Analiza widoczności</h2>
+
+        <h3>Frazy kluczowe</h3>
+        <p>Frazy kluczowe, na które analizowana wizytówka będzie budować swoją widoczność w
+            Google Maps, zostały dobrane na podstawie analizy zapytań użytkowników, lokalnej
+            konkurencji oraz informacji o profilu i ofercie lokalu. Celem doboru fraz jest zwiększenie
+            widoczności wizytówki w momentach, gdy potencjalni klienci aktywnie poszukują miejsca
+            do odwiedzenia w danej lokalizacji.</p>
+        <p>W analizie uwzględniono m.in. następujące typy zapytań:</p>
+        <ul>
+            {% for keyword in lead.keywords_list.all %}
+            <li>{{ keyword.phrase }}</li>
+            {% endfor %}
+        </ul>
+        <p>Dobór fraz koncentruje się na zapytaniach o wysokim potencjale sprzedażowym, które
+            realnie wpływają na ruch w lokalu, a nie wyłącznie na ogólną widoczność.</p>
+
+        <h3>Estymacja</h3>
+        <p>Na podstawie przeprowadzonej analizy zakładamy stopniową poprawę pozycji wizytówki na
+            kluczowe frazy lokalne w obrębie miejscowości oraz najbliższej okolicy. Wzrost widoczności
+            powinien przełożyć się na większą liczbę wyświetleń wizytówki, zapytań o trasę oraz
+            odwiedzin lokalu.</p>
+    </div>
+
+    {% include "leads/reports/_footer.html" %}
+</div>

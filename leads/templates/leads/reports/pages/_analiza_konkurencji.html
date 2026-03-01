@@ -1,0 +1,57 @@
+<div class="page">
+  {% include "leads/reports/_header.html" %}
+
+  <div class="page-content">
+    <h2>Analiza konkurencji</h2>
+    <p>
+      W ramach audytu przeanalizowano lokalną konkurencję widoczną w wynikach
+      Google Maps dla <strong>{{ lead.name }}</strong>. Badanie obejmowało wizytówki,
+      które pojawiają się w czołowych wynikach dla najważniejszych zapytań
+      związanych z ofertą lokalu oraz jego lokalizacją.
+    </p>
+    <p>Na potrzeby analizy uwzględniono następujące frazy kluczowe:</p>
+
+    {% if lead.keywords_list.all %}
+      <table class="keywords-table">
+        <thead>
+          <tr>
+            <th>Fraza kluczowa</th>
+            <th>Obecna pozycja</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for keyword in lead.keywords_list.all %}
+            {% with last_check=keyword.rank_checks.first %}
+              {% if last_check %}
+              <tr>
+                <td>{{ keyword.phrase }}</td>
+                <td>
+                  {% if last_check.position is None %}
+                    <span class="position-bad">poza TOP 20</span>
+                  {% elif last_check.position > 20 %}
+                    <span class="position-bad">{{ last_check.position }} (poza TOP 20)</span>
+                  {% elif last_check.position > 10 %}
+                    <span class="position-bad">{{ last_check.position }}</span>
+                  {% else %}
+                    <span class="position-good">{{ last_check.position }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p><em>Brak przypisanych fraz kluczowych.</em></p>
+    {% endif %}
+
+    <p style="margin-top: 32px;">Najsilniejszą konkurencję stanowią wizytówki lokali, które regularnie pojawiają się w TOP
+    wynikach mapy Google i skutecznie wykorzystują elementy wpływające na decyzje klientów,
+    takie jak zdjęcia, opinie oraz kompletność profilu.</p>
+    <p>Na kolejnych stronach przedstawiono przykładowe wizytówki konkurencji wraz z ich
+    widocznością i sposobem prezentacji oferty.</p>
+  </div>
+
+  {% include "leads/reports/_footer.html" %}
+</div>
