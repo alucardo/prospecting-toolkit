@@ -23,13 +23,16 @@ def google_business_fetch(request, pk):
 def google_business_analyze(request, pk):
     """Krok 2: Uruchom analize AI na pobranych danych."""
     lead = get_object_or_404(Lead, pk=pk)
+    next_url = request.POST.get('next') or request.GET.get('next')
     if request.method == 'POST':
-        analysis = lead.business_analyses.filter(status='fetched').first()
-        if not analysis:
+        analysis = lead.business_analyses.first()  # najnowsza, dowolny status
+        if analysis and analysis.raw_data:
+            raw = request.POST.get('keywords', '').strip()
+            keywords = [k.strip() for k in raw.split(',') if k.strip()] if raw else list(lead.keywords_list.values_list('phrase', flat=True))
+            run_google_business_analysis.delay(analysis.pk, keywords=keywords)
+            messages.info(request, 'Analiza AI zostala uruchomiona. Odswiez strone za chwile.')
+        else:
             messages.error(request, 'Brak pobranych danych. Najpierw pobierz dane z Google.')
-            return redirect('leads:lead_detail', pk=pk)
-        raw = request.POST.get('keywords', '').strip()
-        keywords = [k.strip() for k in raw.split(',') if k.strip()] if raw else list(lead.keywords_list.values_list('phrase', flat=True))
-        run_google_business_analysis.delay(analysis.pk, keywords=keywords)
-        messages.info(request, 'Analiza AI zostala uruchomiona. Odswiez strone za chwile.')
+    if next_url:
+        return redirect(next_url)
     return redirect('leads:lead_detail', pk=pk)

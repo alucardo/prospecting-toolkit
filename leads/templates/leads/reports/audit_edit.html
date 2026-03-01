@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:lead_detail' lead.pk %}" class="btn btn-ghost btn-sm">← Wróć</a>
+    <h1 class="text-2xl font-bold">Dane audytu — {{ lead.name }}</h1>
+</div>
+
+<!-- Formularz AI - poza głównym formularzem zapisu -->
+<form id="form-ai" method="post" action="{% url 'leads:google_business_analyze' lead.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="keywords" value="{% for kw in lead.keywords_list.all %}{{ kw.phrase }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+    <input type="hidden" name="next" value="{% url 'leads:audit_edit' lead.pk %}">
+</form>
+
+<form method="post" class="flex flex-col gap-6 max-w-3xl">
+    {% csrf_token %}
+
+    <!-- Rekomendacje AI (edytowalne) -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <div class="flex justify-between items-center">
+                <h2 class="card-title text-base">🤖 Rekomendacje AI</h2>
+                <button type="submit" form="form-ai" class="btn btn-secondary btn-sm">&#129302; Generuj rekomendacje</button>
+            </div>
+            <p class="text-xs text-gray-500 mb-3">Możesz ręcznie poprawić propozycje wygenerowane przez AI.</p>
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-info{% endif %} py-2 px-4 text-sm mb-3">
+                {{ message }} Odśwież stronę za chwilę by zobaczyć wyniki.
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="form-control mb-3">
+                <label class="label"><span class="label-text">Rekomendowana nazwa wizytówki</span></label>
+                <input type="text" name="name_recommendation"
+                    value="{{ analysis.name_recommendation }}"
+                    class="input input-bordered"
+                    placeholder="np. Nazwa Kraków | Restauracja azjatycka">
+                <span class="label-text-alt text-gray-400 mt-1">Max 75 znaków</span>
+            </div>
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Rekomendowany opis wizytówki</span></label>
+                <textarea name="description_recommendation"
+                    class="textarea textarea-bordered h-40"
+                    placeholder="Opis wizytówki 400-750 znaków...">{{ analysis.description_recommendation }}</textarea>
+                <span class="label-text-alt text-gray-400 mt-1">Zalecane 400–750 znaków</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dane ręczne -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h2 class="card-title text-base">✏️ Dane uzupełniane ręcznie</h2>
+
+            <!-- Menu -->
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text">Menu w wizytówce</span></label>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="has_menu" value="true" class="radio radio-sm"
+                            {% if analysis.has_menu == True %}checked{% endif %}>
+                        <span class="text-sm">Tak</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="has_menu" value="false" class="radio radio-sm"
+                            {% if analysis.has_menu == False %}checked{% endif %}>
+                        <span class="text-sm">Nie</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="has_menu" value="" class="radio radio-sm"
+                            {% if analysis.has_menu is None %}checked{% endif %}>
+                        <span class="text-sm text-gray-400">Nie sprawdzono</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Social media -->
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text">Social media</span></label>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="has_social_media" value="true" class="radio radio-sm"
+                            {% if analysis.has_social_media == True %}checked{% endif %}>
+                        <span class="text-sm">Tak</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="has_social_media" value="false" class="radio radio-sm"
+                            {% if analysis.has_social_media == False %}checked{% endif %}>
+                        <span class="text-sm">Nie</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="has_social_media" value="" class="radio radio-sm"
+                            {% if analysis.has_social_media is None %}checked{% endif %}>
+                        <span class="text-sm text-gray-400">Nie sprawdzono</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Zalecenia dot. witryny -->
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text">Zalecenia dotyczące witryny</span></label>
+                <textarea name="website_recommendations"
+                    class="textarea textarea-bordered h-28"
+                    placeholder="Wpisz zalecenia dot. strony internetowej klienta...">{{ analysis.website_recommendations }}</textarea>
+            </div>
+
+            <!-- Dodatkowe punkty podsumowania -->
+            <div class="form-control">
+                <label class="label"><span class="label-text">Dodatkowe punkty podsumowania</span></label>
+                <textarea name="custom_summary_items"
+                    class="textarea textarea-bordered h-28"
+                    placeholder="Każda linia = osobny punkt">{% for item in analysis.custom_summary_items %}{{ item }}
+{% endfor %}</textarea>
+                <span class="label-text-alt text-gray-400 mt-1">Każda linia tekstu stanie się osobnym punktem na liście</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">💾 Zapisz</button>
+        <a href="{% url 'leads:lead_detail' lead.pk %}" class="btn btn-ghost">Anuluj</a>
+    </div>
+</form>
+{% endblock %}

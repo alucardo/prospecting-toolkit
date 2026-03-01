@@ -326,30 +326,27 @@
 
         {% elif analysis.status == 'fetched' %}
         <!-- STAN: pobrano dane, czeka na AI -->
-        <div class="flex gap-2 items-start">
+        <div class="flex gap-2 flex-wrap items-center">
+            <a href="{% url 'leads:report_google_analysis_preview' lead.pk %}" target="_blank" class="btn btn-outline btn-sm">&#128065; Podgląd raportu</a>
+            <a href="{% url 'leads:report_google_analysis' lead.pk %}" class="btn btn-primary btn-sm">&#128438; Pobierz PDF</a>
+            <a href="{% url 'leads:audit_edit' lead.pk %}" class="btn btn-ghost btn-sm">&#9998; Edytuj dane audytu</a>
             <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline btn-sm">&#128260; Odswiez dane</button>
-            </form>
-            <form method="post" action="{% url 'leads:google_business_analyze' lead.pk %}">
-                {% csrf_token %}
-                <div class="flex flex-col gap-2 items-end">
-                    <textarea
-                        name="keywords"
-                        class="textarea textarea-bordered textarea-sm text-sm w-72"
-                        rows="2"
-                        placeholder="Frazy kluczowe, np: restauracja Krakow, kuchnia wloska">{% for kw in lead.keywords_list.all %}{{ kw.phrase }}{% if not forloop.last %}, {% endif %}{% endfor %}</textarea>
-                    <button type="submit" class="btn btn-secondary btn-sm">&#129302; Uruchom analize AI</button>
-                </div>
+                <button type="submit" class="btn btn-ghost btn-sm">&#128260; Odśwież dane</button>
             </form>
         </div>
 
         {% elif analysis.status == 'analyzed' %}
-        <!-- STAN: pelna analiza gotowa - opcja odswiez -->
-        <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline btn-sm">&#128260; Odswiez dane z Google</button>
-        </form>
+        <!-- STAN: pelna analiza gotowa - opcja odswiez + raport -->
+        <div class="flex gap-2 flex-wrap items-center">
+            <a href="{% url 'leads:report_google_analysis_preview' lead.pk %}" target="_blank" class="btn btn-outline btn-sm">&#128065; Podgląd raportu</a>
+            <a href="{% url 'leads:report_google_analysis' lead.pk %}" class="btn btn-primary btn-sm">&#128438; Pobierz PDF</a>
+            <a href="{% url 'leads:audit_edit' lead.pk %}" class="btn btn-ghost btn-sm">&#9998; Edytuj dane audytu</a>
+            <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost btn-sm">&#128260; Odśwież dane</button>
+            </form>
+        </div>
 
         {% endif %}
         {% endwith %}
@@ -559,11 +556,66 @@
             </div>
             {% endif %}
 
-            <!-- Analiza AI -->
-            {% if analysis.ai_summary %}
+            <!-- Rekomendacje AI -->
+            {% if analysis.name_recommendation or analysis.description_recommendation %}
+            <div class="mb-4">
+                <p class="text-xs text-gray-500 mb-2 font-semibold">REKOMENDACJE AI</p>
+                {% if analysis.name_recommendation %}
+                <div class="mb-2">
+                    <span class="text-xs text-gray-400">Rekomendowana nazwa:</span>
+                    <p class="text-sm font-medium">{{ analysis.name_recommendation }}</p>
+                </div>
+                {% endif %}
+                {% if analysis.description_recommendation %}
+                <div>
+                    <span class="text-xs text-gray-400">Rekomendowany opis:</span>
+                    <p class="text-sm whitespace-pre-wrap bg-base-100 rounded-lg p-3 mt-1">{{ analysis.description_recommendation }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Dane audytu (reczne) -->
+            {% if analysis.has_menu is not None or analysis.has_social_media is not None or analysis.website_recommendations or analysis.custom_summary_items %}
             <div>
-                <p class="text-xs text-gray-500 mb-2 font-semibold">ANALIZA AI</p>
-                <div class="text-sm whitespace-pre-wrap bg-base-100 rounded-lg p-4">{{ analysis.ai_summary }}</div>
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-xs text-gray-500 font-semibold">DANE AUDYTU</p>
+                    <a href="{% url 'leads:audit_edit' lead.pk %}" class="btn btn-ghost btn-xs">&#9998; Edytuj</a>
+                </div>
+                <div class="flex flex-col gap-1 text-sm">
+                    {% if analysis.has_menu is not None %}
+                    <div class="flex items-center gap-2">
+                        <span class="badge {% if analysis.has_menu %}badge-success{% else %}badge-error{% endif %} badge-sm">Menu</span>
+                        <span class="text-gray-600">{% if analysis.has_menu %}Posiada menu{% else %}Brak menu{% endif %}</span>
+                    </div>
+                    {% endif %}
+                    {% if analysis.has_social_media is not None %}
+                    <div class="flex items-center gap-2">
+                        <span class="badge {% if analysis.has_social_media %}badge-success{% else %}badge-error{% endif %} badge-sm">Social media</span>
+                        <span class="text-gray-600">{% if analysis.has_social_media %}Ma social media{% else %}Brak social media{% endif %}</span>
+                    </div>
+                    {% endif %}
+                    {% if analysis.website_recommendations %}
+                    <div class="mt-1">
+                        <span class="text-xs text-gray-400">Zalecenia dot. witryny:</span>
+                        <p class="text-sm whitespace-pre-wrap bg-base-100 rounded p-2 mt-1">{{ analysis.website_recommendations }}</p>
+                    </div>
+                    {% endif %}
+                    {% if analysis.custom_summary_items %}
+                    <div class="mt-1">
+                        <span class="text-xs text-gray-400">Dodatkowe punkty podsumowania:</span>
+                        <ul class="list-disc list-inside mt-1 text-sm text-gray-600">
+                            {% for item in analysis.custom_summary_items %}
+                            <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="flex justify-end">
+                <a href="{% url 'leads:audit_edit' lead.pk %}" class="btn btn-ghost btn-xs">&#9998; Uzupełnij dane audytu</a>
             </div>
             {% endif %}
 

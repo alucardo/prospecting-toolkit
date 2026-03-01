@@ -319,15 +319,12 @@ Atrybuty (ogrodek, wifi itp.): {'uzupelnione' if data.get('attributes') else 'BR
 {issues_text}
 
 === ZADANIE ===
-Napisz krotka analize (max 250 slow) w jezyku polskim w 3 czesciach:
+Zaproponuj optymalne wartosci dla dwoch pol wizytowki. Odpowiedz TYLKO jako JSON, bez zadnego tekstu przed ani po:
 
-1. OCENA OGOLNA (1-2 zdania): Ogolny stan wizytowki i jak dobrze jest dopasowana do podanych fraz kluczowych.
-
-2. TOP 3 PROBLEMY DO NAPRAWIENIA: Wymien 3 najwazniejsze rzeczy ktore wlasciciel powinien zmienic. Tam gdzie to mozliwe, odnosnik do konkretnej frazy kluczowej (np. "nazwa nie zawiera slowa restauracja z frazy X").
-
-3. PROPOZYCJA WSPOLPRACY (2-3 zdania): Napisz jak handlowiec moze zaproponowac pomoc. Badz konkretny — co agencja zrobi i jaki efekt to przyniesie (wiecej klientow, wyzsze pozycje w Google Maps dla fraz: {keywords_str}).
-
-Pisz profesjonalnie ale przystepnie. Unikaj slow takich jak "kluczowy" lub "istotny". Badz konkretny i rzeczowy."""
+{{
+  "name_recommendation": "Zaproponuj nazwe wizytowki (max 75 znakow) ktora zawiera slowa kluczowe z podanych fraz, lokalizacje i typ lokalu. Przyklad: Luktung Krakow | Restauracja Azjatycka",
+  "description_recommendation": "Zaproponuj opis wizytowki (400-750 znakow) ktory naturalnie zawiera podane frazy kluczowe, opisuje oferte lokalu i zacheca klientow do odwiedzin."
+}}"""
 
     response = requests.post(
         "https://api.openai.com/v1/chat/completions",
@@ -343,9 +340,14 @@ Pisz profesjonalnie ale przystepnie. Unikaj slow takich jak "kluczowy" lub "isto
         timeout=60,
     )
     response.raise_for_status()
-    ai_summary = response.json()['choices'][0]['message']['content']
+    import json as _json
+    import re as _re
+    raw = response.json()['choices'][0]['message']['content'].strip()
+    raw = _re.sub(r'^```json\s*', '', raw, flags=_re.MULTILINE)
+    raw = _re.sub(r'^```\s*', '', raw, flags=_re.MULTILINE)
+    result = _json.loads(raw)
 
-    return issues, ai_summary
+    return issues, result.get('name_recommendation', ''), result.get('description_recommendation', '')
 
 
 def _save_business_data(lead, biz, status):
@@ -358,7 +360,6 @@ def _save_business_data(lead, biz, status):
         status=status,
         keywords_used=[],
         issues=issues,
-        ai_summary='',
         rating=data['rating'],
         reviews_count=data['reviews_count'],
         business_name=data['business_name'],
@@ -592,7 +593,7 @@ def fetch_google_business_data(lead_id, analysis_id=None):
             )
         else:
             GoogleBusinessAnalysis.objects.create(
-                lead=lead, status='error', ai_summary='',
+                lead=lead, status='error',
                 issues=[{'type': 'error', 'section': 'System', 'text': text}],
             )
 
@@ -631,7 +632,6 @@ def fetch_google_business_data(lead_id, analysis_id=None):
             status='fetched',
             keywords_used=[],
             issues=issues,
-            ai_summary='',
             rating=data['rating'],
             reviews_count=data['reviews_count'],
             business_name=data['business_name'],
@@ -685,7 +685,6 @@ def run_google_business_analysis(analysis_id, keywords=None):
 
     if not app_settings.openai_api_key:
         analysis.status = 'error'
-        analysis.ai_summary = 'Blad: Brak klucza OpenAI API w ustawieniach'
         analysis.save()
         return
 
@@ -693,19 +692,19 @@ def run_google_business_analysis(analysis_id, keywords=None):
         data = extract_business_data(analysis.raw_data)
         # Nie nadpisuj posts_verified — posty pobiera osobny task
         data['posts_verified'] = False
-        issues, ai_summary = analyze_with_openai(
+        issues, name_rec, desc_rec = analyze_with_openai(
             analysis.lead.name, analysis.lead.city.name,
             data, app_settings.openai_api_key,
             keywords=keywords or [],
         )
         analysis.issues = issues
-        analysis.ai_summary = ai_summary
+        analysis.name_recommendation = name_rec
+        analysis.description_recommendation = desc_rec
         analysis.keywords_used = keywords or []
         analysis.status = 'analyzed'
         analysis.save()
     except Exception as e:
         analysis.status = 'error'
-        analysis.ai_summary = f'Blad AI: {str(e)}'
         analysis.save()
 
 

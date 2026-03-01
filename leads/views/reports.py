@@ -3,7 +3,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 
 from leads.models import Lead, GoogleBusinessAnalysis
@@ -53,3 +53,37 @@ def google_analysis_pdf(request, pk):
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="audyt-{pk}.pdf"'
     return response
+
+
+def audit_edit(request, pk):
+    """Edycja ręcznych pól audytu."""
+    lead = get_object_or_404(Lead, pk=pk)
+    analysis = lead.business_analyses.first()  # najnowsza
+
+    if not analysis:
+        return redirect('leads:lead_detail', pk=pk)
+
+    if request.method == 'POST':
+        # has_menu: '' = nie sprawdzono, 'true' = tak, 'false' = nie
+        has_menu_raw = request.POST.get('has_menu', '')
+        has_social_raw = request.POST.get('has_social_media', '')
+
+        analysis.has_menu = True if has_menu_raw == 'true' else (False if has_menu_raw == 'false' else None)
+        analysis.has_social_media = True if has_social_raw == 'true' else (False if has_social_raw == 'false' else None)
+        analysis.website_recommendations = request.POST.get('website_recommendations', '').strip()
+
+        # custom_summary_items: każda linia to osobny punkt
+        items_raw = request.POST.get('custom_summary_items', '').strip()
+        analysis.custom_summary_items = [line.strip() for line in items_raw.splitlines() if line.strip()]
+
+        # Rekomendacje AI można ręcznie poprawić
+        analysis.name_recommendation = request.POST.get('name_recommendation', '').strip()
+        analysis.description_recommendation = request.POST.get('description_recommendation', '').strip()
+
+        analysis.save()
+        return redirect('leads:audit_edit', pk=pk)
+
+    return render(request, 'leads/reports/audit_edit.html', {
+        'lead': lead,
+        'analysis': analysis,
+    })

@@ -220,8 +220,18 @@ class GoogleBusinessAnalysis(models.Model):
     attributes = models.JSONField(null=True, blank=True)          # np. ogrodek, wifi, rezerwacja, wegetarianskie
 
     # Wynik analizy
-    ai_summary = models.TextField(blank=True)
     issues = models.JSONField(null=True, blank=True)
+
+    # Rekomendacje AI
+    name_recommendation = models.CharField(max_length=500, blank=True)  # rekomendowana nazwa wizytowki
+    description_recommendation = models.TextField(blank=True)           # rekomendowany opis
+
+    # Pola uzupelniane recznie
+    has_menu = models.BooleanField(null=True, blank=True)               # None = nie sprawdzono
+    has_social_media = models.BooleanField(null=True, blank=True)       # None = nie sprawdzono
+    website_recommendations = models.TextField(blank=True)              # zalecenia dot. strony WWW
+    custom_summary_items = models.JSONField(default=list, blank=True)   # dodatkowe podpunkty do podsumowania
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
