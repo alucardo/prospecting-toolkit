@@ -1,0 +1,54 @@
+<div class="page">
+    {% include "leads/reports/_header.html" %}
+
+    <div class="page-content">
+        <h2>Numer telefonu</h2>
+        <p>
+            Numer telefonu widoczny w wizytówce Google powinien być aktualny i spójny z danymi
+            kontaktowymi publikowanymi na stronie internetowej lokalu oraz w mediach
+            społecznościowych. W gastronomii telefon często służy do rezerwacji, zamówień lub
+            szybkiego kontaktu, dlatego jego poprawność ma bezpośredni wpływ na liczbę obsłużonych
+            klientów.
+        </p>
+        <p><strong>Aktualny numer telefonu:
+            {% if analysis.has_phone %}
+                {{ analysis.raw_data.phone|default:"Brak"  }}
+            {% else %}
+                BRAK - konieczne dodanie numeru telefonu oraz chat SMS
+            {% endif %}
+        </strong></p>
+        <p class="small-break"></p>
+        <h2>Strona internetowa</h2>
+        <p>Wizytówka Google powinna zawierać aktywny link do strony internetowej lokalu, na której
+            klienci mogą zapoznać się z ofertą, menu oraz dodatkowymi informacjami praktycznymi.
+            Spójność pomiędzy wizytówką a stroną WWW wzmacnia wiarygodność lokalu w oczach
+            użytkowników oraz algorytmu Google.</p>
+        <p><strong>Aktualna strona internetowa:
+            {% if analysis.has_website %}
+                {{ analysis.website_url  }}
+            {% else %}
+                BRAK - warto dodac lub stworzyć stronę internetową
+            {% endif %}
+        </strong></p>
+        <p class="small-break"></p>
+        <h2>Godziny otwarcia</h2>
+        <p>Godziny otwarcia mają kluczowe znaczenie dla lokali gastronomicznych, ponieważ są
+            jednym z pierwszych elementów sprawdzanych przez klientów przed wizytą. Powinny one
+            odzwierciedlać faktyczny czas pracy lokalu oraz być zgodne z informacjami publikowanymi
+            na stronie internetowej i w mediach społecznościowych, w tym w dniach świątecznych.</p>
+        {% if hours_ordered %}
+            {% for day, hours in hours_ordered %}
+            <div style="display: flex; padding: 4px;">
+                <span style="width: 40px;">{{ day }}</span>
+                <span>{{ hours }}</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            Brak godzin otwarcia
+        {% endif %}
+        <p style="margin-top: 8px;">Zaleca się regularną weryfikację godzin otwarcia oraz ich aktualizację w przypadku zmian
+            sezonowych lub dni świątecznych.</p>
+    </div>
+
+    {% include "leads/reports/_footer.html" %}
+</div>

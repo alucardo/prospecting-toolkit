@@ -1,0 +1,28 @@
+<div class="page">
+    {% include "leads/reports/_header.html" %}
+
+    <div class="page-content">
+        <h2>Opis</h2>
+        <p>Opis wizytówki Google powinien w jasny i rzeczowy sposób przedstawiać charakter lokalu,
+            jego ofertę oraz lokalizację, jednocześnie wspierając widoczność w wynikach lokalnych.
+            Treść opisu powinna być oparta na faktach, napisana naturalnym językiem i zawierać
+            kluczowe informacje, których szukają potencjalni goście.</p>
+        <p>W przypadku lokali gastronomicznych opis pełni również funkcję sprzedażową — pomaga
+            podjąć decyzję o odwiedzeniu lokalu, zamówieniu jedzenia lub sprawdzeniu menu. Zalecana
+            długość opisu to maksymalnie 750 znaków, przy zachowaniu czytelnej struktury i
+            umiarkowanego wykorzystania słów kluczowych.</p>
+        <p><strong>Obecny opis:</strong></p>
+        <p>
+            {% if analysis.description_text %}
+                {{ analysis.description_text }}
+            {% else %}
+                Brak
+            {% endif %}
+        </p>
+        <p><strong>Sugerowany z frazami kluczowymi:</strong></p>
+        <p>{{ analysis.description_recommendation }}</p>
+
+    </div>
+
+    {% include "leads/reports/_footer.html" %}
+</div>

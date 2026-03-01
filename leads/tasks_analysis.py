@@ -319,11 +319,26 @@ Atrybuty (ogrodek, wifi itp.): {'uzupelnione' if data.get('attributes') else 'BR
 {issues_text}
 
 === ZADANIE ===
-Zaproponuj optymalne wartosci dla dwoch pol wizytowki. Odpowiedz TYLKO jako JSON, bez zadnego tekstu przed ani po:
+Zaproponuj optymalne wartosci dla dwoch pol wizytowki. Odpowiedz TYLKO jako JSON, bez zadnego tekstu przed ani po.
+
+ZASADY DLA NAZWY:
+- Max 75 znakow
+- Musi zawierac DOKLADNIE jedna z podanych fraz kluczowych (lub jej kluczowe slowa) — to najwazniejszy wymog
+- Format: [Nazwa lokalu] [Miasto] | [Typ lokalu z frazy]
+- Przyklad dla fraz "restauracja azjatycka krakow, kuchnia tajska krakow": "Luktung Krakow | Restauracja Azjatycka i Tajska"
+- NIE wymyslaj slow ktorych nie ma w frazach kluczowych
+
+ZASADY DLA OPISU:
+- 400-750 znakow
+- Pierwsze zdanie musi zawierac najwazniejsza fraze kluczowa dosłownie lub bardzo blisko
+- Kazdy akapit powinien zawierac co najmniej jedna fraze lub jej wariant
+- Pisz naturalnie — nie upychaj fraz na sile, ale niech sa wyraznie widoczne
+- Zakoncz zdaniem zachecajacym do odwiedzin lub rezerwacji
+- Unikaj ogolnikow typu "wyjatkowe miejsce", "niepowtarzalna atmosfera"
 
 {{
-  "name_recommendation": "Zaproponuj nazwe wizytowki (max 75 znakow) ktora zawiera slowa kluczowe z podanych fraz, lokalizacje i typ lokalu. Przyklad: Luktung Krakow | Restauracja Azjatycka",
-  "description_recommendation": "Zaproponuj opis wizytowki (400-750 znakow) ktory naturalnie zawiera podane frazy kluczowe, opisuje oferte lokalu i zacheca klientow do odwiedzin."
+  "name_recommendation": "...",
+  "description_recommendation": "..."
 }}"""
 
     response = requests.post(

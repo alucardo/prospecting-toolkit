@@ -15,8 +15,10 @@
             bez stosowania nadmiernego „upychania” słów kluczowych, które mogłoby naruszać
             wytyczne Google.
         </p>
-        <p><strong>Obecna nazwa: Luktung Southeast Asian Sharing Plates</strong></p>
-        <p><strong>Rekomendowana: Luktung Kraków | Restauracja azjatycka</strong></p>
+        <p><strong>Obecna nazwa: {{ analysis.business_name }}</strong></p>
+        {% if analysis.business_name %}
+            <p><strong>Rekomendowana: {{ analysis.name_recommendation }}</strong></p>
+        {% endif %}
         <p class="break"></p>
         <h2>Kategoria główna</h2>
         <p>Kategoria główna wizytówki Google powinna możliwie najdokładniej odzwierciedlać
@@ -24,8 +26,26 @@
             przez konkurencyjne wizytówki osiągające wysoką widoczność w wynikach lokalnych.
             Właściwy dobór kategorii ma bezpośredni wpływ na to, na jakie zapytania wizytówka będzie
             się wyświetlać.</p>
-        <p><strong>Obecna kategoria: </strong></p>
-
+        <p><strong>
+            {% if analysis.primary_category %}
+                Obecna kategoria: {{ analysis.primary_category }}
+            {% else %}
+                Rekomendacja: Dodanie kategorii głównej
+            {% endif %}
+        </strong></p>
+        <p class="break"></p>
+        <h2>Kategorie poboczne</h2>
+        <p>Kategorie dodatkowe pozwalają precyzyjniej określić charakter lokalu i jego ofertę, dzięki
+            czemu wizytówka może wyświetlać się na szerszy zakres dopasowanych zapytań lokalnych.
+            Ich dobór powinien wynikać z faktycznej działalności lokalu oraz preferencji klientów, a nie z
+            samej chęci zwiększenia liczby kategorii.</p>
+        <p><strong>
+            {% if analysis.secondary_categories_count > 0 %}
+                Obecne kategorie: {{ analysis.categories|slice:"1:"|join:", "  }}
+            {% else %}
+                Rekomendacja: Dodanie kategori pobocznych, które pozwolą roszerzyć możliwości wizytówki google.
+            {% endif %}
+        </strong></p>
     </div>
 
     {% include "leads/reports/_footer.html" %}

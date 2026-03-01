@@ -25,13 +25,23 @@ def _get_logo_base64() -> str:
     return base64.b64encode(logo_path.read_bytes()).decode("utf-8")
 
 
+DAY_ORDER = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd']
+
 def _get_context(pk: int) -> dict:
     """Wspólny kontekst dla preview i PDF."""
     lead = get_object_or_404(Lead, pk=pk)
-    analysis = lead.business_analyses.last()
+    analysis = lead.business_analyses.first()
+
+    hours_ordered = []
+    if analysis and analysis.hours_data:
+        for day in DAY_ORDER:
+            if day in analysis.hours_data:
+                hours_ordered.append((day, analysis.hours_data[day]))
+
     return {
         "analysis": analysis,
         "lead": lead,
+        "hours_ordered": hours_ordered,
         "person": "Imie i nazwisko",
         "phone": "555 555 555",
         "mail": "kontakt@bsmarti.com",

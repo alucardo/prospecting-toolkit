@@ -1,0 +1,18 @@
+<div class="page">
+    {% include "leads/reports/_header.html" %}
+
+    <div class="page-content">
+        <h2>Lokalizacja lokalu</h2>
+        <p>
+            Adres przypisany do wizytówki Google powinien wskazywać miejsce, w którym klienci są
+            faktycznie obsługiwani na miejscu. W przypadku lokali gastronomicznych ma to kluczowe
+            znaczenie dla widoczności w wynikach lokalnych oraz poprawnego wyświetlania wizytówki
+            w Google Maps. Do jednej wizytówki powinna być przypisana jedna, jednoznaczna
+            lokalizacja.
+        </p>
+        <p><strong>Obecny adres: {{ analysis.raw_data.address|default:"Brak" }}</strong></p>
+
+    </div>
+
+    {% include "leads/reports/_footer.html" %}
+</div>
