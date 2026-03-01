@@ -16,7 +16,7 @@
             wytyczne Google.
         </p>
         <p><strong>Obecna nazwa: {{ analysis.business_name }}</strong></p>
-        {% if analysis.business_name %}
+        {% if analysis.name_recommendation and analysis.name_recommendation != analysis.business_name %}
             <p><strong>Rekomendowana: {{ analysis.name_recommendation }}</strong></p>
         {% endif %}
         <p class="break"></p>

@@ -1,0 +1,42 @@
+<div class="page">
+    {% include "leads/reports/_header.html" %}
+
+    <div class="page-content">
+        <h2>Posty w wizytówce</h2>
+        <p>
+            Regularne publikowanie postów w wizytówce Google wspiera widoczność lokalu w wynikach
+            lokalnych oraz pozwala komunikować aktualną ofertę, promocje i wydarzenia. W gastronomii
+            posty pełnią funkcję szybkiego kanału informacyjnego. Są widoczne dla osób, które już
+            rozważają wizytę w lokalu.
+        </p>
+        <p>
+            Treść postów powinna być krótka, aktualna i zawierać jasne wezwanie do działania, np.
+            rezerwacja stolika, sprawdzenie menu lub złożenie zamówienia.
+        </p>
+        <p><strong>Zalecenia dotyczące postów:</strong> Rekomenduje się regularne dodawanie nowych wpisów, najlepiej
+            w stałym rytmie.</p>
+        <p>Przykładowe typy postów:</p>
+        <ul>
+            <li>aktualne menu lub danie dnia,</li>
+            <li>promocje czasowe i oferty specjalne,</li>
+            <li>wydarzenia (np. muzyka na żywo, transmisje sportowe),</li>
+            <li>informacje organizacyjne (zmiana godzin, dni specjalne),</li>
+            <li>nowości w ofercie.</li>
+        </ul>
+        <p class="break"></p>
+        <h2>Produkty / Usługi (Menu)</h2>
+        <p>Sekcja produktów lub usług w wizytówce Google pozwala zaprezentować ofertę lokalu w
+            uporządkowany i czytelny sposób. W przypadku gastronomii pełni ona rolę uproszczonego
+            menu, które często jest przeglądane jeszcze przed wejściem na stronę internetową.</p>
+        <p><strong>
+            {% if analysis.has_menu %}
+                Zalecenia: Aktualizowanie zgodnie z obecną kartą dań.
+            {% else %}
+                Zalecenia: Dodanie menu do sekcji menu, co przełoży się na wyszukiwania na podstawie potraw.
+            {% endif %}
+        </strong>
+        </p>
+    </div>
+
+    {% include "leads/reports/_footer.html" %}
+</div>

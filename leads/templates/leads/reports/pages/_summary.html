@@ -1,0 +1,27 @@
+<div class="page">
+  {% include "leads/reports/_header.html" %}
+
+  <div class="page-content">
+    <h2>Podsumowanie zaleceń</h2>
+    <ul>
+      {% if analysis.name_recommendation and analysis.name_recommendation != analysis.business_name %}
+        <li>Zmiana tytułu wizytówki Google</li>
+      {% endif %}
+      {% if analysis.secondary_categories_count < 2 %}
+        <li>Optymalizacja kategorii wizytówki Google</li>
+      {% endif %}
+      {% if not analysis.has_menu %}
+        <li>Dodanie sekcji MENU</li>
+      {% endif %}
+      <li>Zmiana opisu z uwzględnieniem fraz kluczowych</li>
+      <li>Regularne dodawanie zdjęć / wpisów / ofert</li>
+      <li>Regularne publikowanie NAP-ów</li>
+      {% for item in analysis.custom_summary_items %}
+          <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+
+  </div>
+
+  {% include "leads/reports/_footer.html" %}
+</div>

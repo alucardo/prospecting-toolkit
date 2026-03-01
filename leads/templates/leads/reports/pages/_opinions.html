@@ -19,8 +19,11 @@
             <li>są uzupełnione zdjęciami dań lub wnętrza lokalu.</li>
         </ul>
         <p><strong>Zalecenia dotyczące opinii:</strong> Rekomenduje się systematyczne pozyskiwanie nowych opinii oraz
-            aktywne zarządzanie już
-            istniejącymi.</p>
+            aktywne zarządzanie już istniejącymi.
+            {% if not analysis.owner_responses_ratio or analysis.owner_responses_ratio < 0.6 %}
+             <br/>Obecnie brakuje również odpowiedzi na już dodane opinie.
+            {% endif %}
+        </p>
         <p>Rekomendowane działania:</p>
         <ul>
             <li>regularne zachęcanie gości do zostawienia opinii po wizycie w lokalu,</li>

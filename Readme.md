@@ -17,6 +17,7 @@ systemctl daemon-reload
 systemctl enable prospecting-toolkit
 systemctl start prospecting-toolkit
 systemctl status prospecting-toolkit
+systemctl restart prospecting-toolkit
 ```
 
 ```sh

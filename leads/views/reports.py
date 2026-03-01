@@ -24,6 +24,14 @@ def _get_logo_base64() -> str:
     logo_path = Path(settings.BASE_DIR) / "leads/static/leads/images/logo.jpg"
     return base64.b64encode(logo_path.read_bytes()).decode("utf-8")
 
+def _get_photo_small_base64() -> str:
+    photo_small_path = Path(settings.BASE_DIR) / "leads/static/leads/images/photo_small.jpg"
+    return base64.b64encode(photo_small_path.read_bytes()).decode("utf-8")
+
+def _get_photo_big_base64() -> str:
+    photo_big_path = Path(settings.BASE_DIR) / "leads/static/leads/images/photo_big.jpg"
+    return base64.b64encode(photo_big_path.read_bytes()).decode("utf-8")
+
 
 DAY_ORDER = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd']
 
@@ -48,6 +56,8 @@ def _get_context(pk: int) -> dict:
         "cover_image_b64": _get_cover_image_base64(),
         "page_bg_b64": _get_page_bg_base64(),
         "logo_b64": _get_logo_base64(),
+        "photo_small_b64": _get_photo_small_base64(),
+        "photo_big_b64": _get_photo_big_base64(),
     }
 
 

@@ -1,0 +1,72 @@
+<div class="page">
+    {% include "leads/reports/_header.html" %}
+
+    <div class="page-content">
+        <h2>Lokalna witryna</h2>
+        <p>
+            Lokalna witryna internetowa stanowi uzupełnienie wizytówki Google i wzmacnia jej widoczność
+            w wynikach wyszukiwania. Dla lokali gastronomicznych pełni rolę prostego źródła informacji o
+            ofercie, lokalizacji oraz danych kontaktowych, a także wspiera pozycjonowanie dzięki
+            bezpośredniej integracji z wizytówką.
+        </p>
+        <p>
+            Posiadanie dedykowanej lokalnej witryny zwiększa wiarygodność lokalu i ułatwia Google
+            jednoznaczne powiązanie działalności z konkretną lokalizacją.
+        </p>
+        {% if analysis.website_recommendations %}
+        <p><strong>Zalecenie: {{ analysis.website_recommendations }}</strong></p>
+        {% endif %}
+        <p class="break"></p>
+        <h2>Atrybuty wizytówki</h2>
+        <p>Atrybuty wizytówki zawierają dodatkowe informacje istotne z punktu widzenia klientów i
+            pomagają lepiej dopasować wizytówkę do zapytań lokalnych. W gastronomii są one często
+            wykorzystywane jako szybki filtr decyzyjny (np. możliwość rezerwacji, ogródek, dania
+            wegetariańskie).</p>
+        <p><strong>Zalecenie:</strong> Dodanie i uzupełnienie atrybutów zgodnych z faktyczną ofertą i charakterem
+            lokalu.</p>
+        <p class="break"></p>
+        {% if not analysis.has_social_media %}
+            <h2>Serwisy społecznościowe</h2>
+            <p>Połączenie wizytówki Google z aktywnymi profilami w mediach społecznościowych wzmacnia
+                jej wiarygodność oraz spójność obecności lokalu w internecie. W gastronomii kanały
+                społecznościowe pełnią dodatkowo funkcję prezentacyjną. Pokazują aktualne menu, atmosferę
+                lokalu oraz bieżące wydarzenia.</p>
+            <p>Dodanie linków do profili społecznościowych pozwala użytkownikom łatwiej dotrzeć do
+                aktualnych treści oraz zwiększa zaufanie do lokalu.</p>
+        {% else %}
+            <h2>Wzmianki i NAP (Name, Address, Phone)</h2>
+            <p>NAP to zestaw podstawowych danych lokalu: nazwa, adres, numer telefonu, opis działalności
+                oraz link do strony internetowej. Informacje te publikowane są w zewnętrznych serwisach i
+                katalogach internetowych. Spójność danych NAP pomiędzy wizytówką Google, stroną
+                internetową oraz innymi źródłami online jest istotnym czynnikiem wpływającym na lokalną
+                widoczność.</p>
+            <p>Dla lokali gastronomicznych jednolite dane NAP pomagają Google jednoznacznie powiązać
+                działalność z konkretną lokalizacją, co wspiera szybszą indeksację wizytówki oraz stabilniejsze
+                pozycje w wynikach lokalnych.</p>
+        {% endif %}
+    </div>
+
+    {% include "leads/reports/_footer.html" %}
+</div>
+
+
+{% if not analysis.has_social_media %}
+    <div class="page">
+        {% include "leads/reports/_header.html" %}
+
+        <div class="page-content">
+            <h2>Wzmianki i NAP (Name, Address, Phone)</h2>
+            <p>NAP to zestaw podstawowych danych lokalu: nazwa, adres, numer telefonu, opis działalności
+                oraz link do strony internetowej. Informacje te publikowane są w zewnętrznych serwisach i
+                katalogach internetowych. Spójność danych NAP pomiędzy wizytówką Google, stroną
+                internetową oraz innymi źródłami online jest istotnym czynnikiem wpływającym na lokalną
+                widoczność.</p>
+            <p>Dla lokali gastronomicznych jednolite dane NAP pomagają Google jednoznacznie powiązać
+                działalność z konkretną lokalizacją, co wspiera szybszą indeksację wizytówki oraz stabilniejsze
+                pozycje w wynikach lokalnych.</p>
+
+        </div>
+
+        {% include "leads/reports/_footer.html" %}
+    </div>
+{% endif %}

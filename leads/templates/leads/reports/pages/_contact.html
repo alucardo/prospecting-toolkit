@@ -1,0 +1,27 @@
+<div class="page">
+  {% include "leads/reports/_header.html" %}
+
+  <div class="page-content">
+    <h2>Masz pytania?</h2>
+    <p style="margin-top: -8px; font-size: 12pt; font-weight: 400; color: #555;">Jesteśmy do Twojej dyspozycji</p>
+
+    <div style="display: flex; align-items: center; gap: 32px; margin-top: 48px;">
+      <!-- Zdjęcie -->
+      <div style="flex-shrink: 0;">
+        <div style="width: 160px; height: 200px; background: #ddd; display: flex; align-items: center; justify-content: center; color: #999; font-size: 9pt;">
+          [zdjęcie]
+        </div>
+      </div>
+
+      <!-- Dane kontaktowe -->
+      <div>
+        <p style="font-size: 16pt; font-weight: 700; color: #1a1a1a; margin-bottom: 4px;">{{ person }}</p>
+        <p style="font-size: 10pt; color: #b8922a; margin-bottom: 20px;">Specjalista Google Business Profile</p>
+        <p style="font-size: 11pt; color: #1a1a1a; margin-bottom: 8px;">Tel: {{ phone }}</p>
+        <p style="font-size: 11pt; color: #1a1a1a;">Mail: {{ mail }}</p>
+      </div>
+    </div>
+  </div>
+
+  {% include "leads/reports/_footer.html" %}
+</div>
