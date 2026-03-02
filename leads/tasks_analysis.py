@@ -408,6 +408,7 @@ def generate_keyword_suggestions(lead_id, batch_id):
     """Generuje sugestie fraz: DataForSEO → scrape WWW → GPT top 10."""
     from .models import Lead, KeywordSuggestionBatch, KeywordSuggestion, AppSettings
     import json
+    import re as _re
 
     lead = Lead.objects.get(pk=lead_id)
     batch = KeywordSuggestionBatch.objects.get(pk=batch_id)
@@ -444,11 +445,10 @@ def generate_keyword_suggestions(lead_id, batch_id):
                 resp = requests.get(lead.website, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
                 resp.raise_for_status()
                 # Wyciagnij czysty tekst
-                import re
-                text = re.sub(r'<script[^>]*>.*?</script>', '', resp.text, flags=re.DOTALL)
-                text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL)
-                text = re.sub(r'<[^>]+>', ' ', text)
-                text = re.sub(r'\s+', ' ', text).strip()
+                text = _re.sub(r'<script[^>]*>.*?</script>', '', resp.text, flags=_re.DOTALL)
+                text = _re.sub(r'<style[^>]*>.*?</style>', '', text, flags=_re.DOTALL)
+                text = _re.sub(r'<[^>]+>', ' ', text)
+                text = _re.sub(r'\s+', ' ', text).strip()
                 website_text = text[:3000]  # max 3000 znakow dla AI
             except Exception:
                 website_text = ''
@@ -495,8 +495,8 @@ Odpowiedz TYLKO jako JSON, bez zadnego tekstu przed ani po:
         ai_text = ai_response.json()['choices'][0]['message']['content'].strip()
 
         # Wyczysc markdown jesli AI dodal ```json
-        ai_text = re.sub(r'^```json\s*', '', ai_text, flags=re.MULTILINE)
-        ai_text = re.sub(r'^```\s*', '', ai_text, flags=re.MULTILINE)
+        ai_text = _re.sub(r'^```json\s*', '', ai_text, flags=_re.MULTILINE)
+        ai_text = _re.sub(r'^```\s*', '', ai_text, flags=_re.MULTILINE)
         suggestions = json.loads(ai_text)
 
         # Zapisz sugestie
