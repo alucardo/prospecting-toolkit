@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prospecting Toolkit</title>
+    <title>BSmarti Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
 
     <div class="navbar bg-base-200 px-6">
-        <span class="text-xl font-bold">🎯 Prospecting Toolkit</span>
+        <a href="/" class="text-xl font-bold">🎯 BSmarti Pro</a>
         <div class="ml-6 flex gap-2">
             <a href="{% url 'leads:dashboard' %}" class="btn btn-ghost btn-sm">Dashboard</a>
             <a href="{% url 'leads:lead_index' %}" class="btn btn-ghost btn-sm">Leady</a>
             <a href="{% url 'leads:city_index' %}" class="btn btn-ghost btn-sm">Miasta</a>
-            <a href="{% url 'leads:settings' %}" class="btn btn-ghost btn-sm">⚙️ Ustawienia</a>
         </div>
         <div class="ml-auto flex items-center gap-3">
             <form method="get" action="{% url 'leads:phone_search' %}" class="flex gap-2">
@@ -23,11 +22,19 @@
                 <button type="submit" class="btn btn-sm btn-ghost">Szukaj</button>
             </form>
         </div>
-        <div>
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-ghost btn-sm">Wyloguj</button>
-            </form>
+        <div class="dropdown dropdown-end">
+            <label tabindex="0" class="btn btn-ghost btn-sm">Konto ▾</label>
+            <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box shadow w-44 mt-1 z-50">
+                <li><a href="{% url 'leads:user_contact_edit' %}">👤 Profil</a></li>
+                <li><a href="{% url 'leads:settings' %}">⚙️ Ustawienia</a></li>
+                <li><hr class="my-1"></li>
+                <li>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full text-left">🚪 Wyloguj</button>
+                    </form>
+                </li>
+            </ul>
         </div>
     </div>
 

@@ -45,4 +45,5 @@ urlpatterns = [
     path('leads/<int:pk>/reports/google-analysis/', views.reports.google_analysis_pdf, name='report_google_analysis'),
     path('leads/<int:pk>/reports/google-analysis/preview/', views.reports.google_analysis_preview, name='report_google_analysis_preview'),
     path('leads/<int:pk>/audit/edit/', views.reports.audit_edit, name='audit_edit'),
+    path('profile/', views.user_contact.user_contact_edit, name='user_contact_edit'),
 ]

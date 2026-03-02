@@ -348,6 +348,18 @@ class ImportFile(models.Model):
         return f"{self.original_filename} ({self.city})"
 
 
+class UserContact(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='contact')
+    full_name = models.CharField(max_length=255, blank=True)
+    position = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=100, blank=True)
+    email = models.CharField(max_length=255, blank=True)
+    photo = models.ImageField(upload_to='user_photos/', null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.full_name} ({self.user.username})"
+
+
 class AppSettings(models.Model):
     """Singleton — zawsze tylko jeden rekord."""
     openai_api_key = models.CharField(max_length=255, blank=True)

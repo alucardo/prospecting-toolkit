@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 
-from leads.models import Lead, GoogleBusinessAnalysis
+from leads.models import Lead, UserContact
 from leads.services.pdf_service import html_to_pdf
 
 
@@ -35,16 +35,23 @@ def _get_photo_big_base64() -> str:
 
 DAY_ORDER = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd']
 
-def _get_context(pk: int) -> dict:
+def _get_context(request, pk: int) -> dict:
     """Wspólny kontekst dla preview i PDF."""
     lead = get_object_or_404(Lead, pk=pk)
     analysis = lead.business_analyses.first()
+    contact, _ = UserContact.objects.get_or_create(user=request.user)
 
     hours_ordered = []
     if analysis and analysis.hours_data:
         for day in DAY_ORDER:
             if day in analysis.hours_data:
                 hours_ordered.append((day, analysis.hours_data[day]))
+
+    # Zdjecie uzytkownika jako base64 (wymagane dla Playwright)
+    contact_photo_b64 = None
+    if contact.photo:
+        contact_photo_b64 = base64.b64encode(contact.photo.read()).decode('utf-8')
+        contact.photo.seek(0)  # reset po odczycie
 
     return {
         "analysis": analysis,
@@ -53,6 +60,8 @@ def _get_context(pk: int) -> dict:
         "person": "Imie i nazwisko",
         "phone": "555 555 555",
         "mail": "kontakt@bsmarti.com",
+        "contact": contact,
+        "contact_photo_b64": contact_photo_b64,
         "cover_image_b64": _get_cover_image_base64(),
         "page_bg_b64": _get_page_bg_base64(),
         "logo_b64": _get_logo_base64(),
@@ -62,16 +71,17 @@ def _get_context(pk: int) -> dict:
 
 
 def google_analysis_preview(request, pk):
-    return render(request, "leads/reports/google_analysis.html", _get_context(pk))
+    return render(request, "leads/reports/google_analysis.html", _get_context(request, pk))
 
 
 def google_analysis_pdf(request, pk):
-    context = _get_context(pk)
+    context = _get_context(request, pk)
     html = render_to_string("leads/reports/google_analysis.html", context)
     pdf_bytes = html_to_pdf(html)
+    lead_name = context['lead'].name
 
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="audyt-{pk}.pdf"'
+    response["Content-Disposition"] = f'attachment; filename="Audyt {lead_name}.pdf"'
     return response
 
 
