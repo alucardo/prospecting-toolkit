@@ -431,7 +431,7 @@ def generate_keyword_suggestions(lead_id, batch_id):
         dfs_data = dfs_response.json()
         raw_keywords = []
         result = (dfs_data.get('tasks') or [{}])[0].get('result') or []
-        items = result[0].get('items', []) if result else []
+        items = (result[0].get('items') or []) if result else []
         for item in items:
             kw = item.get('keyword', '')
             vol = (item.get('keyword_info') or {}).get('search_volume') or 0
