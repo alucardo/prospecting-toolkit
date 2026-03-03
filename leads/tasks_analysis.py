@@ -516,8 +516,9 @@ Odpowiedz TYLKO jako JSON, bez zadnego tekstu przed ani po:
         batch.save()
 
     except Exception as e:
+        import traceback
         batch.status = 'error'
-        batch.error_message = str(e)
+        batch.error_message = traceback.format_exc()
         batch.save()
 
 

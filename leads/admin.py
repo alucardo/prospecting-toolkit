@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import City, SearchQuery, Lead, CallLog
+from .models import City, SearchQuery, Lead, CallLog, KeywordSuggestionBatch
 
 
 @admin.register(City)
@@ -25,3 +25,8 @@ class LeadAdmin(admin.ModelAdmin):
 class CallLogAdmin(admin.ModelAdmin):
     list_display = ['lead', 'status', 'next_contact_date', 'called_at']
     list_filter = ['status']
+
+@admin.register(KeywordSuggestionBatch)
+class KeywordSuggestionBatchAdmin(admin.ModelAdmin):
+    list_display = ['lead', 'status', 'created_at']
+    readonly_fields = ['error_message']
