@@ -52,6 +52,8 @@ class Lead(models.Model):
     STATUS_INTERESTED = 'interested'
     STATUS_REJECTED = 'rejected'
     STATUS_CLIENT = 'client'
+    STATUS_CLOSE = 'close'
+    STATUS_COMPLETE_PROFILE = 'complete_profile'
 
     STATUS_CHOICES = [
         (STATUS_NEW, 'Nowy'),
@@ -62,6 +64,8 @@ class Lead(models.Model):
         (STATUS_INTERESTED, 'Zainteresowany'),
         (STATUS_CLIENT, 'Klient'),
         (STATUS_REJECTED, 'Odrzucony'),
+        (STATUS_CLOSE, 'Zamknięte'),
+        (STATUS_COMPLETE_PROFILE, 'Kompletny profil'),
     ]
 
     SOURCE_GOOGLE_MAPS = 'google_maps'
