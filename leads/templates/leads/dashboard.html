@@ -11,15 +11,15 @@
             <h2 class="card-title text-lg mb-4">Liczba kontaktów</h2>
             <div class="grid grid-cols-3 gap-4 text-center">
                 <div>
-                    <div class="text-3xl font-bold">{{ calls_today }}</div>
+                    <div class="text-3xl font-bold">{{ calls_today }} <span class="text-sm font-normal text-gray-400">/ {{ calls_today_total }}</span></div>
                     <div class="text-sm text-gray-500 mt-1">Dziś</div>
                 </div>
                 <div>
-                    <div class="text-3xl font-bold">{{ calls_week }}</div>
+                    <div class="text-3xl font-bold">{{ calls_week }} <span class="text-sm font-normal text-gray-400">/ {{ calls_week_total }}</span></div>
                     <div class="text-sm text-gray-500 mt-1">Ten tydzień</div>
                 </div>
                 <div>
-                    <div class="text-3xl font-bold">{{ calls_month }}</div>
+                    <div class="text-3xl font-bold">{{ calls_month }} <span class="text-sm font-normal text-gray-400">/ {{ calls_month_total }}</span></div>
                     <div class="text-sm text-gray-500 mt-1">Ten miesiąc</div>
                 </div>
             </div>
@@ -31,15 +31,15 @@
             <h2 class="card-title text-lg mb-4">Skuteczne kontakty</h2>
             <div class="grid grid-cols-3 gap-4 text-center">
                 <div>
-                    <div class="text-3xl font-bold text-success">{{ effective_today }}</div>
+                    <div class="text-3xl font-bold text-success">{{ effective_today }} <span class="text-sm font-normal text-gray-400">/ {{ effective_today_total }}</span></div>
                     <div class="text-sm text-gray-500 mt-1">Dziś</div>
                 </div>
                 <div>
-                    <div class="text-3xl font-bold text-success">{{ effective_week }}</div>
+                    <div class="text-3xl font-bold text-success">{{ effective_week }} <span class="text-sm font-normal text-gray-400">/ {{ effective_week_total }}</span></div>
                     <div class="text-sm text-gray-500 mt-1">Ten tydzień</div>
                 </div>
                 <div>
-                    <div class="text-3xl font-bold text-success">{{ effective_month }}</div>
+                    <div class="text-3xl font-bold text-success">{{ effective_month }} <span class="text-sm font-normal text-gray-400">/ {{ effective_month_total }}</span></div>
                     <div class="text-sm text-gray-500 mt-1">Ten miesiąc</div>
                 </div>
             </div>
