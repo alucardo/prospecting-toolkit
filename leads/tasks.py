@@ -20,10 +20,32 @@ def scrape_leads_emails_bulk(lead_ids):
         scrape_lead_email.delay(lead_id)
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def fetch_apify_results(self, search_query_id):
+    import time
+    from apify_client import ApifyClient
+    from django.conf import settings
+
     try:
         sq = SearchQuery.objects.get(pk=search_query_id)
+
+        # Czekaj az Apify skonczy (max 10 min)
+        client = ApifyClient(settings.APIFY_API_TOKEN)
+        for _ in range(60):
+            run = client.run(sq.apify_run_id).get()
+            status = run.get('status')
+            if status == 'SUCCEEDED':
+                break
+            elif status in ('FAILED', 'ABORTED', 'TIMED-OUT'):
+                sq.status = 'FAILED'
+                sq.save(update_fields=['status'])
+                return
+            time.sleep(10)
+        else:
+            sq.status = 'FAILED'
+            sq.save(update_fields=['status'])
+            return
+
         sq.status = 'fetching'
         sq.save(update_fields=['status'])
 

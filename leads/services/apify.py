@@ -64,7 +64,7 @@ def run_google_maps_scraper(keyword, city, limit):
         "skipClosedPlaces": False,
     }
 
-    run = client.actor("compass/google-maps-extractor").call(run_input=run_input)
+    run = client.actor("compass/google-maps-extractor").start(run_input=run_input)
 
     return run.get("id"), run.get("status")
 
