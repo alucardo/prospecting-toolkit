@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote, LeadContact
+from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote, LeadContact, Pipeline, PipelineStep, LeadPipelineEntry
 
 
 class CallLogForm(forms.ModelForm):
@@ -181,3 +181,54 @@ class SearchQueryForm(forms.ModelForm):
                 'class': 'input input-bordered w-full',
             }),
         }
+
+
+class PipelineForm(forms.ModelForm):
+    class Meta:
+        model = Pipeline
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'np. Restauracje',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'textarea textarea-bordered w-full',
+                'rows': 2,
+                'placeholder': 'Opcjonalny opis...',
+            }),
+        }
+
+
+class PipelineStepForm(forms.ModelForm):
+    class Meta:
+        model = PipelineStep
+        fields = ['name', 'order']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'np. Pierwszy kontakt',
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'input input-bordered w-full',
+            }),
+        }
+
+
+class LeadPipelineEntryForm(forms.ModelForm):
+    class Meta:
+        model = LeadPipelineEntry
+        fields = ['pipeline', 'current_step', 'assigned_to']
+        widgets = {
+            'pipeline': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'current_step': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+            'assigned_to': forms.Select(attrs={'class': 'select select-bordered w-full'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        pipeline = kwargs.pop('pipeline', None)
+        super().__init__(*args, **kwargs)
+        if pipeline:
+            self.fields['current_step'].queryset = PipelineStep.objects.filter(pipeline=pipeline)
+        else:
+            self.fields['current_step'].queryset = PipelineStep.objects.none()

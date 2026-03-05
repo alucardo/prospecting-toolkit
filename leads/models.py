@@ -364,6 +364,54 @@ class UserContact(models.Model):
         return f"{self.full_name} ({self.user.username})"
 
 
+class Pipeline(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class PipelineStep(models.Model):
+    pipeline = models.ForeignKey(Pipeline, on_delete=models.CASCADE, related_name='steps')
+    name = models.CharField(max_length=255)
+    order = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.pipeline.name} → {self.name}"
+
+    class Meta:
+        ordering = ['order']
+
+
+class LeadPipelineEntry(models.Model):
+    lead = models.OneToOneField(Lead, on_delete=models.CASCADE, related_name='pipeline_entry')
+    pipeline = models.ForeignKey(Pipeline, on_delete=models.CASCADE, related_name='entries')
+    current_step = models.ForeignKey(PipelineStep, on_delete=models.PROTECT, related_name='current_entries')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='pipeline_entries')
+    entered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.lead.name} → {self.current_step.name}"
+
+
+class LeadPipelineStepHistory(models.Model):
+    entry = models.ForeignKey(LeadPipelineEntry, on_delete=models.CASCADE, related_name='step_history')
+    step = models.ForeignKey(PipelineStep, on_delete=models.PROTECT, related_name='history')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='pipeline_step_moves')
+    entered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.entry.lead.name} → {self.step.name} ({self.entered_at:%d.%m.%Y})"
+
+    class Meta:
+        ordering = ['entered_at']
+
+
 class AppSettings(models.Model):
     """Singleton — zawsze tylko jeden rekord."""
     openai_api_key = models.CharField(max_length=255, blank=True)

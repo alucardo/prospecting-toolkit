@@ -1,0 +1,206 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.db.models import Count, Q
+from django.utils import timezone
+from django.http import JsonResponse
+from ..models import Pipeline, PipelineStep, LeadPipelineEntry, LeadPipelineStepHistory, Lead
+from ..forms import PipelineForm, PipelineStepForm, LeadPipelineEntryForm
+
+
+@login_required
+def pipeline_index(request):
+    pipelines = Pipeline.objects.annotate(
+        entries_count=Count('entries')
+    )
+    return render(request, 'leads/pipeline/index.html', {'pipelines': pipelines})
+
+
+@login_required
+def pipeline_create(request):
+    form = PipelineForm()
+    if request.method == 'POST':
+        form = PipelineForm(request.POST)
+        if form.is_valid():
+            pipeline = form.save()
+            return redirect('leads:pipeline_detail', pk=pipeline.pk)
+    return render(request, 'leads/pipeline/form.html', {'form': form, 'title': 'Nowy pipeline'})
+
+
+@login_required
+def pipeline_edit(request, pk):
+    pipeline = get_object_or_404(Pipeline, pk=pk)
+    form = PipelineForm(instance=pipeline)
+    if request.method == 'POST':
+        form = PipelineForm(request.POST, instance=pipeline)
+        if form.is_valid():
+            form.save()
+            return redirect('leads:pipeline_detail', pk=pipeline.pk)
+    return render(request, 'leads/pipeline/form.html', {'form': form, 'title': 'Edytuj pipeline', 'pipeline': pipeline})
+
+
+@login_required
+def pipeline_detail(request, pk):
+    pipeline = get_object_or_404(Pipeline, pk=pk)
+    steps = pipeline.steps.all()
+
+    # Filtry okresu
+    period = request.GET.get('period', 'month')
+    now = timezone.now()
+    if period == 'week':
+        date_from = now - timezone.timedelta(weeks=1)
+    elif period == 'month':
+        date_from = now - timezone.timedelta(days=30)
+    elif period == 'quarter':
+        date_from = now - timezone.timedelta(days=90)
+    else:
+        date_from = None
+
+    # Statystyki per krok — ile leadów jest aktualnie na danym kroku
+    stats = []
+    for step in steps:
+        qs_all = LeadPipelineEntry.objects.filter(current_step=step)
+        qs_mine = qs_all.filter(assigned_to=request.user)
+
+        # Historia — ile leadów weszło na ten krok w danym okresie
+        history_qs = LeadPipelineStepHistory.objects.filter(step=step)
+        history_mine = history_qs.filter(assigned_to=request.user)
+        if date_from:
+            history_qs = history_qs.filter(entered_at__gte=date_from)
+            history_mine = history_mine.filter(entered_at__gte=date_from)
+
+        stats.append({
+            'step': step,
+            'current_all': qs_all.count(),
+            'current_mine': qs_mine.count(),
+            'entered_period_all': history_qs.count(),
+            'entered_period_mine': history_mine.count(),
+        })
+
+    return render(request, 'leads/pipeline/detail.html', {
+        'pipeline': pipeline,
+        'steps': steps,
+        'stats': stats,
+        'period': period,
+    })
+
+
+@login_required
+def pipeline_step_create(request, pipeline_pk):
+    pipeline = get_object_or_404(Pipeline, pk=pipeline_pk)
+    # Ustaw domyślny order jako następny
+    next_order = (pipeline.steps.order_by('-order').values_list('order', flat=True).first() or 0) + 1
+    form = PipelineStepForm(initial={'order': next_order})
+    if request.method == 'POST':
+        form = PipelineStepForm(request.POST)
+        if form.is_valid():
+            step = form.save(commit=False)
+            step.pipeline = pipeline
+            step.save()
+            return redirect('leads:pipeline_detail', pk=pipeline.pk)
+    return render(request, 'leads/pipeline/step_form.html', {'form': form, 'pipeline': pipeline, 'title': 'Nowy krok'})
+
+
+@login_required
+def pipeline_step_edit(request, pipeline_pk, step_pk):
+    pipeline = get_object_or_404(Pipeline, pk=pipeline_pk)
+    step = get_object_or_404(PipelineStep, pk=step_pk, pipeline=pipeline)
+    form = PipelineStepForm(instance=step)
+    if request.method == 'POST':
+        form = PipelineStepForm(request.POST, instance=step)
+        if form.is_valid():
+            form.save()
+            return redirect('leads:pipeline_detail', pk=pipeline.pk)
+    return render(request, 'leads/pipeline/step_form.html', {'form': form, 'pipeline': pipeline, 'title': 'Edytuj krok'})
+
+
+@login_required
+def pipeline_step_delete(request, pipeline_pk, step_pk):
+    pipeline = get_object_or_404(Pipeline, pk=pipeline_pk)
+    step = get_object_or_404(PipelineStep, pk=step_pk, pipeline=pipeline)
+    if request.method == 'POST':
+        step.delete()
+    return redirect('leads:pipeline_detail', pk=pipeline.pk)
+
+
+@login_required
+def lead_pipeline_add(request, lead_pk):
+    """Dodaj leada do pipeline'u."""
+    lead = get_object_or_404(Lead, pk=lead_pk)
+
+    # Sprawdź czy lead nie jest już w pipeline
+    if hasattr(lead, 'pipeline_entry'):
+        return redirect('leads:lead_detail', pk=lead.pk)
+
+    pipeline_id = request.POST.get('pipeline') or request.GET.get('pipeline')
+    pipeline = get_object_or_404(Pipeline, pk=pipeline_id) if pipeline_id else None
+
+    form = LeadPipelineEntryForm(pipeline=pipeline)
+    pipelines = Pipeline.objects.all()
+
+    if request.method == 'POST':
+        form = LeadPipelineEntryForm(request.POST, pipeline=pipeline)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.lead = lead
+            entry.save()
+            # Zapisz historię pierwszego kroku
+            LeadPipelineStepHistory.objects.create(
+                entry=entry,
+                step=entry.current_step,
+                assigned_to=entry.assigned_to,
+            )
+            return redirect('leads:lead_detail', pk=lead.pk)
+
+    return render(request, 'leads/pipeline/lead_add.html', {
+        'lead': lead,
+        'form': form,
+        'pipelines': pipelines,
+        'selected_pipeline': pipeline,
+    })
+
+
+@login_required
+def lead_pipeline_move(request, lead_pk):
+    """Przesuń leada do następnego kroku."""
+    lead = get_object_or_404(Lead, pk=lead_pk)
+    entry = get_object_or_404(LeadPipelineEntry, lead=lead)
+
+    if request.method == 'POST':
+        step_pk = request.POST.get('step')
+        step = get_object_or_404(PipelineStep, pk=step_pk, pipeline=entry.pipeline)
+
+        entry.current_step = step
+        entry.save(update_fields=['current_step'])
+
+        LeadPipelineStepHistory.objects.create(
+            entry=entry,
+            step=step,
+            assigned_to=entry.assigned_to,
+        )
+
+    return redirect('leads:lead_detail', pk=lead.pk)
+
+
+@login_required
+def lead_pipeline_edit(request, lead_pk):
+    """Edytuj przypisanie (handlowiec)."""
+    lead = get_object_or_404(Lead, pk=lead_pk)
+    entry = get_object_or_404(LeadPipelineEntry, lead=lead)
+
+    form = LeadPipelineEntryForm(instance=entry, pipeline=entry.pipeline)
+    if request.method == 'POST':
+        form = LeadPipelineEntryForm(request.POST, instance=entry, pipeline=entry.pipeline)
+        if form.is_valid():
+            form.save()
+            return redirect('leads:lead_detail', pk=lead.pk)
+
+    return render(request, 'leads/pipeline/lead_edit.html', {'lead': lead, 'entry': entry, 'form': form})
+
+
+@login_required
+def pipeline_steps_json(request, pipeline_pk):
+    """JSON dla dynamicznego ładowania kroków po wyborze pipeline."""
+    pipeline = get_object_or_404(Pipeline, pk=pipeline_pk)
+    steps = list(pipeline.steps.values('pk', 'name', 'order'))
+    return JsonResponse({'steps': steps})

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Pipelines</h1>
+    <a href="{% url 'leads:pipeline_create' %}" class="btn btn-primary">+ Nowy pipeline</a>
+</div>
+
+{% if pipelines %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for pipeline in pipelines %}
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h2 class="card-title">{{ pipeline.name }}</h2>
+            {% if pipeline.description %}
+            <p class="text-sm text-gray-500">{{ pipeline.description }}</p>
+            {% endif %}
+            <div class="text-sm text-gray-400">{{ pipeline.entries_count }} leadów</div>
+            <div class="card-actions justify-end mt-2">
+                <a href="{% url 'leads:pipeline_detail' pipeline.pk %}" class="btn btn-primary btn-sm">Statystyki</a>
+                <a href="{% url 'leads:pipeline_edit' pipeline.pk %}" class="btn btn-ghost btn-sm">✏️</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <div class="hero-content text-center">
+        <p class="text-gray-500">Brak pipeline'ów — utwórz pierwszy</p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

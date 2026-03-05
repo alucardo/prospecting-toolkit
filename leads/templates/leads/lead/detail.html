@@ -634,6 +634,69 @@
     {% endwith %}
 </div>
 
+<!-- PIPELINE -->
+<div class="mt-6">
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-bold">&#128200; Pipeline sprzedażowy</h2>
+    </div>
+    {% if lead.pipeline_entry %}
+    {% with entry=lead.pipeline_entry %}
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="text-sm text-gray-500 mb-1">{{ entry.pipeline.name }}</div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        {% for step in entry.pipeline.steps.all %}
+                        <span class="badge {% if step.pk == entry.current_step.pk %}badge-primary{% else %}badge-ghost{% endif %} badge-sm">
+                            {{ step.order }}. {{ step.name }}
+                        </span>
+                        {% if not forloop.last %}
+                        <span class="text-gray-400 text-xs">→</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-2">
+                        Handlowiec: {{ entry.assigned_to.get_full_name|default:entry.assigned_to.username }}
+                        &nbsp;&middot;&nbsp; od {{ entry.entered_at|date:"d.m.Y" }}
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <!-- Przesuń do kroku -->
+                    {% with steps=entry.pipeline.steps.all %}
+                    {% if steps.count > 1 %}
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-outline btn-sm">Przesuń ▼</label>
+                        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48 z-10">
+                            {% for step in steps %}
+                            {% if step.pk != entry.current_step.pk %}
+                            <li>
+                                <form method="post" action="{% url 'leads:lead_pipeline_move' lead.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="step" value="{{ step.pk }}">
+                                    <button type="submit" class="w-full text-left">{{ step.order }}. {{ step.name }}</button>
+                                </form>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    <a href="{% url 'leads:lead_pipeline_edit' lead.pk %}" class="btn btn-ghost btn-sm">✏️</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% else %}
+    <div class="flex items-center gap-4 bg-base-200 rounded-box p-4">
+        <p class="text-gray-500 text-sm flex-1">Lead nie jest przypisany do żadnego pipeline'u</p>
+        <a href="{% url 'leads:lead_pipeline_add' lead.pk %}" class="btn btn-primary btn-sm">+ Dodaj do pipeline</a>
+    </div>
+    {% endif %}
+</div>
+
 <!-- HISTORIA STATUSÓW -->
 <div class="mt-6">
     <div class="flex justify-between items-center mb-3">

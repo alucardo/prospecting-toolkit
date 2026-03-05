@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:lead_detail' lead.pk %}" class="btn btn-ghost btn-sm">← Wróć</a>
+    <h1 class="text-2xl font-bold">Dodaj do pipeline — {{ lead.name }}</h1>
+</div>
+
+<div class="max-w-lg">
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <form method="post" id="pipelineForm">
+                {% csrf_token %}
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label class="label"><span class="label-text">Pipeline</span></label>
+                        <select name="pipeline" id="pipelineSelect" class="select select-bordered w-full" required>
+                            <option value="">— Wybierz pipeline —</option>
+                            {% for p in pipelines %}
+                            <option value="{{ p.pk }}" {% if selected_pipeline and selected_pipeline.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label"><span class="label-text">Krok startowy</span></label>
+                        <select name="current_step" id="stepSelect" class="select select-bordered w-full" required>
+                            {% if selected_pipeline %}
+                                {% for step in selected_pipeline.steps.all %}
+                                <option value="{{ step.pk }}">{{ step.order }}. {{ step.name }}</option>
+                                {% endfor %}
+                            {% else %}
+                            <option value="">— Najpierw wybierz pipeline —</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label"><span class="label-text">Przypisz do handlowca</span></label>
+                        {{ form.assigned_to }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Dodaj do pipeline</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('pipelineSelect').addEventListener('change', function () {
+    const pipelineId = this.value;
+    const stepSelect = document.getElementById('stepSelect');
+    stepSelect.innerHTML = '<option value="">Ładowanie...</option>';
+
+    if (!pipelineId) {
+        stepSelect.innerHTML = '<option value="">— Najpierw wybierz pipeline —</option>';
+        return;
+    }
+
+    fetch(`{% url 'leads:pipeline_steps_json' 0 %}`.replace('0', pipelineId))
+        .then(r => r.json())
+        .then(data => {
+            stepSelect.innerHTML = data.steps.map(s =>
+                `<option value="${s.pk}">${s.order}. ${s.name}</option>`
+            ).join('');
+        });
+});
+</script>
+
+{% endblock %}

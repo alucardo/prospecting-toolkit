@@ -46,4 +46,17 @@ urlpatterns = [
     path('leads/<int:pk>/reports/google-analysis/preview/', views.reports.google_analysis_preview, name='report_google_analysis_preview'),
     path('leads/<int:pk>/audit/edit/', views.reports.audit_edit, name='audit_edit'),
     path('profile/', views.user_contact.user_contact_edit, name='user_contact_edit'),
+
+    # Pipelines
+    path('pipelines/', views.pipeline.pipeline_index, name='pipeline_index'),
+    path('pipelines/new/', views.pipeline.pipeline_create, name='pipeline_create'),
+    path('pipelines/<int:pk>/', views.pipeline.pipeline_detail, name='pipeline_detail'),
+    path('pipelines/<int:pk>/edit/', views.pipeline.pipeline_edit, name='pipeline_edit'),
+    path('pipelines/<int:pipeline_pk>/steps/new/', views.pipeline.pipeline_step_create, name='pipeline_step_create'),
+    path('pipelines/<int:pipeline_pk>/steps/<int:step_pk>/edit/', views.pipeline.pipeline_step_edit, name='pipeline_step_edit'),
+    path('pipelines/<int:pipeline_pk>/steps/<int:step_pk>/delete/', views.pipeline.pipeline_step_delete, name='pipeline_step_delete'),
+    path('pipelines/<int:pipeline_pk>/steps.json', views.pipeline.pipeline_steps_json, name='pipeline_steps_json'),
+    path('leads/<int:lead_pk>/pipeline/add/', views.pipeline.lead_pipeline_add, name='lead_pipeline_add'),
+    path('leads/<int:lead_pk>/pipeline/move/', views.pipeline.lead_pipeline_move, name='lead_pipeline_move'),
+    path('leads/<int:lead_pk>/pipeline/edit/', views.pipeline.lead_pipeline_edit, name='lead_pipeline_edit'),
 ]
