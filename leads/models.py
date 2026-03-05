@@ -367,6 +367,7 @@ class UserContact(models.Model):
 class Pipeline(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    show_on_dashboard = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

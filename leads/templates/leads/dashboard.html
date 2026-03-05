@@ -4,6 +4,47 @@
 
 <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
 
+{% if reminders %}
+<div class="card bg-base-200 mb-6">
+    <div class="card-body">
+        <h2 class="card-title text-lg mb-4">Przypomnienia ({{ reminders.count }})</h2>
+        <div class="flex flex-col gap-2">
+            {% for reminder in reminders %}
+            <div class="flex justify-between items-center p-3 rounded-lg
+                {% if reminder.next_contact_date.date < today %}bg-error/10
+                {% elif reminder.next_contact_date.date == today %}bg-warning/10
+                {% else %}bg-base-300{% endif %}">
+                <div>
+                    <a href="{% url 'leads:lead_detail' reminder.lead.pk %}" class="font-medium link link-primary">
+                        {{ reminder.lead.name }}
+                    </a>
+                    <span class="text-sm text-gray-500 ml-2">{{ reminder.lead.city }}</span>
+                    {% if reminder.note %}
+                    <p class="text-sm text-gray-500 mt-1">{{ reminder.note }}</p>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    <span class="badge
+                        {% if reminder.next_contact_date.date < today %}badge-error
+                        {% elif reminder.next_contact_date.date == today %}badge-warning
+                        {% else %}badge-info{% endif %}">
+                        {% if reminder.next_contact_date.date < today %}
+                            Przeterminowane
+                        {% elif reminder.next_contact_date.date == today %}
+                            Dziś
+                        {% else %}
+                            Jutro
+                        {% endif %}
+                    </span>
+                    <p class="text-xs text-gray-400 mt-1">{{ reminder.next_contact_date|date:"d.m.Y H:i" }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
     <div class="card bg-base-200">
@@ -49,50 +90,46 @@
 
 </div>
 
-{% if reminders %}
-<div class="card bg-base-200">
-    <div class="card-body">
-        <h2 class="card-title text-lg mb-4">Przypomnienia ({{ reminders.count }})</h2>
-        <div class="flex flex-col gap-2">
-            {% for reminder in reminders %}
-            <div class="flex justify-between items-center p-3 rounded-lg
-                {% if reminder.next_contact_date.date < today %}bg-error/10
-                {% elif reminder.next_contact_date.date == today %}bg-warning/10
-                {% else %}bg-base-300{% endif %}">
-                <div>
-                    <a href="{% url 'leads:lead_detail' reminder.lead.pk %}" class="font-medium link link-primary">
-                        {{ reminder.lead.name }}
-                    </a>
-                    <span class="text-sm text-gray-500 ml-2">{{ reminder.lead.city }}</span>
-                    {% if reminder.note %}
-                    <p class="text-sm text-gray-500 mt-1">{{ reminder.note }}</p>
-                    {% endif %}
+{% if pipeline_stats %}
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-3">Pipeline'y — ostatnie 30 dni</h2>
+    <div class="flex flex-col gap-4">
+        {% for ps in pipeline_stats %}
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold">{{ ps.pipeline.name }}</h3>
+                    <a href="{% url 'leads:pipeline_detail' ps.pipeline.pk %}" class="btn btn-ghost btn-xs">Szczegóły →</a>
                 </div>
-                <div class="text-right">
-                    <span class="badge
-                        {% if reminder.next_contact_date.date < today %}badge-error
-                        {% elif reminder.next_contact_date.date == today %}badge-warning
-                        {% else %}badge-info{% endif %}">
-                        {% if reminder.next_contact_date.date < today %}
-                            Przeterminowane
-                        {% elif reminder.next_contact_date.date == today %}
-                            Dziś
-                        {% else %}
-                            Jutro
-                        {% endif %}
-                    </span>
-                    <p class="text-xs text-gray-400 mt-1">{{ reminder.next_contact_date|date:"d.m.Y H:i" }}</p>
+                <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr class="text-xs text-gray-400">
+                                <th>Krok</th>
+                                <th class="text-center">Aktualnie<br><span class="text-primary">moje</span> / firma</th>
+                                <th class="text-center">Weszło (30 dni)<br><span class="text-primary">moje</span> / firma</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in ps.steps %}
+                            <tr>
+                                <td class="font-medium text-sm">{{ s.step.order }}. {{ s.step.name }}</td>
+                                <td class="text-center">
+                                    <span class="font-bold text-primary">{{ s.current_mine }}</span>
+                                    <span class="text-gray-400 text-xs"> / {{ s.current_all }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="font-bold {% if s.entered_mine > 0 %}text-success{% else %}text-gray-400{% endif %}">{{ s.entered_mine }}</span>
+                                    <span class="text-gray-400 text-xs"> / {{ s.entered_all }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            {% endfor %}
         </div>
-    </div>
-</div>
-{% else %}
-<div class="card bg-base-200">
-    <div class="card-body">
-        <h2 class="card-title text-lg mb-2">Przypomnienia</h2>
-        <p class="text-gray-500">Brak przypomnień na dziś i jutro</p>
+        {% endfor %}
     </div>
 </div>
 {% endif %}

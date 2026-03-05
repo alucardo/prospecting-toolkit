@@ -186,7 +186,7 @@ class SearchQueryForm(forms.ModelForm):
 class PipelineForm(forms.ModelForm):
     class Meta:
         model = Pipeline
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'show_on_dashboard']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
@@ -196,6 +196,9 @@ class PipelineForm(forms.ModelForm):
                 'class': 'textarea textarea-bordered w-full',
                 'rows': 2,
                 'placeholder': 'Opcjonalny opis...',
+            }),
+            'show_on_dashboard': forms.CheckboxInput(attrs={
+                'class': 'checkbox',
             }),
         }
 
