@@ -56,25 +56,33 @@ def pipeline_detail(request, pk):
     else:
         date_from = None
 
-    # Statystyki per krok — ile leadów jest aktualnie na danym kroku
+    # Statystyki per krok
     stats = []
-    for step in steps:
-        qs_all = LeadPipelineEntry.objects.filter(current_step=step)
-        qs_mine = qs_all.filter(assigned_to=request.user)
+    period_length = (now - date_from) if date_from else None
+    date_prev = (date_from - period_length) if period_length else None
 
-        # Historia — ile leadów weszło na ten krok w danym okresie
-        history_qs = LeadPipelineStepHistory.objects.filter(step=step)
-        history_mine = history_qs.filter(assigned_to=request.user)
+    for step in steps:
+        current_qs = LeadPipelineStepHistory.objects.filter(step=step)
+        current_mine = current_qs.filter(assigned_to=request.user)
         if date_from:
-            history_qs = history_qs.filter(entered_at__gte=date_from)
-            history_mine = history_mine.filter(entered_at__gte=date_from)
+            current_qs = current_qs.filter(entered_at__gte=date_from)
+            current_mine = current_mine.filter(entered_at__gte=date_from)
+
+        prev_qs = LeadPipelineStepHistory.objects.filter(step=step)
+        prev_mine = prev_qs.filter(assigned_to=request.user)
+        if date_from and date_prev:
+            prev_qs = prev_qs.filter(entered_at__gte=date_prev, entered_at__lt=date_from)
+            prev_mine = prev_mine.filter(entered_at__gte=date_prev, entered_at__lt=date_from)
+        else:
+            prev_qs = prev_qs.none()
+            prev_mine = prev_mine.none()
 
         stats.append({
             'step': step,
-            'current_all': qs_all.count(),
-            'current_mine': qs_mine.count(),
-            'entered_period_all': history_qs.count(),
-            'entered_period_mine': history_mine.count(),
+            'current_all': current_qs.count(),
+            'current_mine': current_mine.count(),
+            'prev_all': prev_qs.count(),
+            'prev_mine': prev_mine.count(),
         })
 
     return render(request, 'leads/pipeline/detail.html', {

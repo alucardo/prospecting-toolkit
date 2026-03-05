@@ -106,8 +106,8 @@
                         <thead>
                             <tr class="text-xs text-gray-400">
                                 <th>Krok</th>
-                                <th class="text-center">Aktualnie<br><span class="text-primary">moje</span> / firma</th>
-                                <th class="text-center">Weszło (30 dni)<br><span class="text-primary">moje</span> / firma</th>
+                                <th class="text-center">Poprzednie 30 dni<br><span class="text-primary">moje</span> / firma</th>
+                                <th class="text-center">Obecne 30 dni<br><span class="text-primary">moje</span> / firma</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -115,12 +115,12 @@
                             <tr>
                                 <td class="font-medium text-sm">{{ s.step.order }}. {{ s.step.name }}</td>
                                 <td class="text-center">
-                                    <span class="font-bold text-primary">{{ s.current_mine }}</span>
-                                    <span class="text-gray-400 text-xs"> / {{ s.current_all }}</span>
+                                    <span class="font-bold text-primary">{{ s.prev_mine }}</span>
+                                    <span class="text-gray-400 text-xs"> / {{ s.prev_all }}</span>
                                 </td>
                                 <td class="text-center">
-                                    <span class="font-bold {% if s.entered_mine > 0 %}text-success{% else %}text-gray-400{% endif %}">{{ s.entered_mine }}</span>
-                                    <span class="text-gray-400 text-xs"> / {{ s.entered_all }}</span>
+                                    <span class="font-bold {% if s.current_mine > 0 %}text-success{% else %}text-gray-400{% endif %}">{{ s.current_mine }}</span>
+                                    <span class="text-gray-400 text-xs"> / {{ s.current_all }}</span>
                                 </td>
                             </tr>
                             {% endfor %}

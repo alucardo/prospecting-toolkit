@@ -23,10 +23,8 @@
         <thead>
             <tr>
                 <th>Krok</th>
-                <th class="text-center">Aktualnie (moje)</th>
-                <th class="text-center">Aktualnie (firma)</th>
-                <th class="text-center">Weszło w okresie (moje)</th>
-                <th class="text-center">Weszło w okresie (firma)</th>
+                <th class="text-center">Poprzedni okres<br><small class="text-gray-400 font-normal">moje / firma</small></th>
+                <th class="text-center">Obecny okres<br><small class="text-gray-400 font-normal">moje / firma</small></th>
                 <th></th>
             </tr>
         </thead>
@@ -38,17 +36,13 @@
                     {{ s.step.name }}
                 </td>
                 <td class="text-center">
-                    <span class="text-lg font-bold {% if s.current_mine > 0 %}text-primary{% else %}text-gray-400{% endif %}">
-                        {{ s.current_mine }}
-                    </span>
+                    <span class="font-bold text-primary">{{ s.prev_mine }}</span>
+                    <span class="text-gray-400 text-sm"> / {{ s.prev_all }}</span>
                 </td>
-                <td class="text-center text-gray-500">{{ s.current_all }}</td>
                 <td class="text-center">
-                    <span class="font-semibold {% if s.entered_period_mine > 0 %}text-success{% else %}text-gray-400{% endif %}">
-                        {{ s.entered_period_mine }}
-                    </span>
+                    <span class="font-bold {% if s.current_mine > 0 %}text-success{% else %}text-gray-400{% endif %}">{{ s.current_mine }}</span>
+                    <span class="text-gray-400 text-sm"> / {{ s.current_all }}</span>
                 </td>
-                <td class="text-center text-gray-500">{{ s.entered_period_all }}</td>
                 <td>
                     <div class="flex gap-1">
                         <a href="{% url 'leads:pipeline_step_edit' pipeline.pk s.step.pk %}" class="btn btn-ghost btn-xs">✏️</a>

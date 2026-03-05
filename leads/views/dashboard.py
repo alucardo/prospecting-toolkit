@@ -39,22 +39,23 @@ def dashboard(request):
         user=request.user,
     ).select_related('lead', 'lead__city').order_by('next_contact_date')
 
-    # Statystyki pipeline'ów na dashboardzie (ostatnie 30 dni)
+    # Statystyki pipeline'ów na dashboardzie (ostatnie 30 dni vs poprzednie 30 dni)
     date_30 = now - timezone.timedelta(days=30)
+    date_60 = now - timezone.timedelta(days=60)
     pipeline_stats = []
     for pipeline in Pipeline.objects.filter(show_on_dashboard=True).prefetch_related('steps'):
         steps_stats = []
         for step in pipeline.steps.all():
-            history_all = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_30)
-            history_mine = history_all.filter(assigned_to=request.user)
-            current_all = LeadPipelineEntry.objects.filter(current_step=step).count()
-            current_mine = LeadPipelineEntry.objects.filter(current_step=step, assigned_to=request.user).count()
+            current_all = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_30)
+            current_mine = current_all.filter(assigned_to=request.user)
+            prev_all = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_60, entered_at__lt=date_30)
+            prev_mine = prev_all.filter(assigned_to=request.user)
             steps_stats.append({
                 'step': step,
-                'current_all': current_all,
-                'current_mine': current_mine,
-                'entered_mine': history_mine.count(),
-                'entered_all': history_all.count(),
+                'current_mine': current_mine.count(),
+                'current_all': current_all.count(),
+                'prev_mine': prev_mine.count(),
+                'prev_all': prev_all.count(),
             })
         pipeline_stats.append({
             'pipeline': pipeline,
