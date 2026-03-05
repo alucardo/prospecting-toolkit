@@ -3,7 +3,8 @@ from django.db.models import Count, Q
 from django.contrib.auth.decorators import login_required
 from ..models import City, SearchQuery
 from ..forms import CityForm, SearchQueryForm
-from ..services.apify import run_google_maps_scraper, fetch_and_save_leads
+from ..services.apify import run_google_maps_scraper
+from ..tasks import fetch_apify_results
 
 
 @login_required
@@ -55,10 +56,10 @@ def city_detail(request, pk):
             )
 
             search_query.apify_run_id = run_id
-            search_query.status = status
+            search_query.status = 'pending'
             search_query.save()
 
-            leads_count, leads_skipped = fetch_and_save_leads(search_query)
+            fetch_apify_results.delay(search_query.pk)
 
             return redirect('leads:city_detail', pk=city.pk)
 

@@ -57,10 +57,15 @@
                             <div class="flex items-center gap-2">
                                 <span class="badge
                                     {% if sq.status == 'SUCCEEDED' %}badge-success
-                                    {% elif sq.status == 'RUNNING' %}badge-warning
+                                    {% elif sq.status == 'RUNNING' or sq.status == 'fetching' %}badge-warning
+                                    {% elif sq.status == 'pending' %}badge-info
                                     {% elif sq.status == 'FAILED' %}badge-error
                                     {% else %}badge-neutral{% endif %}">
-                                    {{ sq.status }}
+                                    {% if sq.status == 'pending' %}Oczekuje
+                                    {% elif sq.status == 'fetching' %}Pobieranie leadów...
+                                    {% elif sq.status == 'SUCCEEDED' %}Ukończono
+                                    {% elif sq.status == 'FAILED' %}Błąd
+                                    {% else %}{{ sq.status }}{% endif %}
                                 </span>
                                 <span class="text-xs text-gray-400">{{ sq.created_at|date:"d.m.Y H:i" }}</span>
                             </div>
