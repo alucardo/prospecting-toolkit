@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote, LeadContact, Pipeline, PipelineStep, LeadPipelineEntry
+from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote, LeadContact, Pipeline, PipelineStep, LeadPipelineEntry, Voivodeship
 
 
 class CallLogForm(forms.ModelForm):
@@ -37,13 +37,22 @@ class CallLogForm(forms.ModelForm):
 class CityForm(forms.ModelForm):
     class Meta:
         model = City
-        fields = ['name']
+        fields = ['name', 'voivodeship']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
                 'placeholder': 'np. Katowice',
-            })
+            }),
+            'voivodeship': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
+            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['voivodeship'].queryset = Voivodeship.objects.all()
+        self.fields['voivodeship'].empty_label = '— wybierz województwo —'
+        self.fields['voivodeship'].required = False
 
 class ImportFileForm(forms.ModelForm):
     class Meta:

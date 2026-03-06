@@ -41,7 +41,8 @@
         <thead>
             <tr>
                 <th>Miasto</th>
-                <th class="text-center">Potencjalne</th>
+                <th>Województwo</th>
+                        <th class="text-center">Potencjalne</th>
                 <th class="text-center">Odmowy</th>
                 <th class="text-center">Klienci</th>
                 <th class="text-center">Współrzędne</th>
@@ -56,6 +57,7 @@
                         {{ city.name }}
                     </a>
                 </td>
+                <td class="text-sm text-gray-400">{{ city.voivodeship|default:"—" }}</td>
                 <td class="text-center">
                     <a href="{% url 'leads:lead_index' %}?city={{ city.pk }}" class="font-bold text-blue-500 hover:underline">
                         {{ city.leads_potential }}

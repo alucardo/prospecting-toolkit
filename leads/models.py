@@ -1,8 +1,28 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# Create your models here.
+
+class Voivodeship(models.Model):
+    name = models.CharField(max_length=100, unique=True)  # np. Śląskie
+    dataforseo_name = models.CharField(max_length=150)     # np. Silesian Voivodeship, Poland
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Województwo'
+        verbose_name_plural = 'Województwa'
+
+    def __str__(self):
+        return self.name
+
+
 class City(models.Model):
+    voivodeship = models.ForeignKey(
+        Voivodeship,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='cities',
+        verbose_name='Województwo',
+    )
     name = models.CharField(max_length=255)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
