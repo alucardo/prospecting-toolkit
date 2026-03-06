@@ -93,40 +93,106 @@
 {% if pipeline_stats %}
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-3">Pipeline'y — ostatnie 30 dni</h2>
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-6">
         {% for ps in pipeline_stats %}
         <div class="card bg-base-200">
             <div class="card-body">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-bold">{{ ps.pipeline.name }}</h3>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-base">{{ ps.pipeline.name }}</h3>
                     <a href="{% url 'leads:pipeline_detail' ps.pipeline.pk %}" class="btn btn-ghost btn-xs">Szczegóły →</a>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr class="text-xs text-gray-400">
-                                <th>Krok</th>
-                                <th class="text-center">Poprzednie 30 dni<br><span class="text-primary">moje</span> / firma</th>
-                                <th class="text-center">Obecne 30 dni<br><span class="text-primary">moje</span> / firma</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in ps.steps %}
-                            <tr>
-                                <td class="font-medium text-sm">{{ s.step.order }}. {{ s.step.name }}</td>
-                                <td class="text-center">
-                                    <span class="font-bold text-primary">{{ s.prev_mine }}</span>
-                                    <span class="text-gray-400 text-xs"> / {{ s.prev_all }}</span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="font-bold {% if s.current_mine > 0 %}text-success{% else %}text-gray-400{% endif %}">{{ s.current_mine }}</span>
-                                    <span class="text-gray-400 text-xs"> / {{ s.current_all }}</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+
+                <!-- Etykieta ścieżki Moje -->
+                <div class="text-xs font-semibold text-primary mb-1">Moje</div>
+
+                <!-- Lejek — Moje -->
+                <div class="flex items-stretch gap-1 overflow-x-auto pb-1 mb-4">
+                    {% for s in ps.steps %}
+                    <div class="flex flex-col items-center min-w-28 flex-1">
+                        <div class="w-full rounded-lg p-3 mb-2 text-center
+                            {% if s.trend_mine > 0 %}bg-success/15 border border-success/30
+                            {% elif s.trend_mine < 0 %}bg-error/15 border border-error/30
+                            {% else %}bg-base-300 border border-base-300{% endif %}">
+                            <div class="text-xs text-gray-400 mb-1 truncate" title="{{ s.step.name }}">{{ s.step.name }}</div>
+                            <div class="text-2xl font-bold
+                                {% if s.trend_mine > 0 %}text-success
+                                {% elif s.trend_mine < 0 %}text-error
+                                {% else %}text-base-content{% endif %}">
+                                {{ s.current_mine }}
+                            </div>
+                            <div class="text-xs mt-1">
+                                {% if s.trend_mine > 0 %}<span class="text-success">↑ +{{ s.trend_mine }}</span>
+                                {% elif s.trend_mine < 0 %}<span class="text-error">↓ {{ s.trend_mine }}</span>
+                                {% else %}<span class="text-gray-400">— 0</span>{% endif %}
+                                <span class="text-gray-400"> vs poprz.</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-base-300 rounded-full h-2 mb-2">
+                            <div class="h-2 rounded-full bg-primary"
+                                style="width: {% if s.pct_of_first_mine is not None %}{{ s.pct_of_first_mine }}{% else %}0{% endif %}%"></div>
+                        </div>
+                        <div class="text-center">
+                            {% if s.pct_of_first_mine is not None %}
+                            <div class="text-xs text-gray-400"><span class="font-medium text-base-content">{{ s.pct_of_first_mine }}%</span> całości</div>
+                            {% endif %}
+                            {% if s.pct_of_prev_mine is not None %}
+                            <div class="text-xs text-gray-400"><span class="font-medium text-base-content">{{ s.pct_of_prev_mine }}%</span> poprz. kroku</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if not forloop.last %}
+                    <div class="flex items-center pt-3 text-gray-400 text-lg flex-shrink-0">→</div>
+                    {% endif %}
+                    {% endfor %}
                 </div>
+
+                <!-- Separator -->
+                <div class="border-t border-base-300 mb-4"></div>
+
+                <!-- Etykieta ścieżki Firma -->
+                <div class="text-xs font-semibold text-gray-400 mb-1">Firma</div>
+
+                <!-- Lejek — Firma -->
+                <div class="flex items-stretch gap-1 overflow-x-auto pb-2">
+                    {% for s in ps.steps %}
+                    <div class="flex flex-col items-center min-w-28 flex-1">
+                        <div class="w-full rounded-lg p-3 mb-2 text-center
+                            {% if s.trend_all > 0 %}bg-success/15 border border-success/30
+                            {% elif s.trend_all < 0 %}bg-error/15 border border-error/30
+                            {% else %}bg-base-300 border border-base-300{% endif %}">
+                            <div class="text-xs text-gray-400 mb-1 truncate" title="{{ s.step.name }}">{{ s.step.name }}</div>
+                            <div class="text-2xl font-bold
+                                {% if s.trend_all > 0 %}text-success
+                                {% elif s.trend_all < 0 %}text-error
+                                {% else %}text-base-content{% endif %}">
+                                {{ s.current_all }}
+                            </div>
+                            <div class="text-xs mt-1">
+                                {% if s.trend_all > 0 %}<span class="text-success">↑ +{{ s.trend_all }}</span>
+                                {% elif s.trend_all < 0 %}<span class="text-error">↓ {{ s.trend_all }}</span>
+                                {% else %}<span class="text-gray-400">— 0</span>{% endif %}
+                                <span class="text-gray-400"> vs poprz.</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-base-300 rounded-full h-2 mb-2">
+                            <div class="h-2 rounded-full bg-neutral"
+                                style="width: {{ s.bar_width }}%"></div>
+                        </div>
+                        <div class="text-center">
+                            {% if s.pct_of_first_all is not None %}
+                            <div class="text-xs text-gray-400"><span class="font-medium text-base-content">{{ s.pct_of_first_all }}%</span> całości</div>
+                            {% endif %}
+                            {% if s.pct_of_prev_all is not None %}
+                            <div class="text-xs text-gray-400"><span class="font-medium text-base-content">{{ s.pct_of_prev_all }}%</span> poprz. kroku</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if not forloop.last %}
+                    <div class="flex items-center pt-3 text-gray-400 text-lg flex-shrink-0">→</div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
             </div>
         </div>
         {% endfor %}

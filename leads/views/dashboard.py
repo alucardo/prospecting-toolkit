@@ -46,17 +46,33 @@ def dashboard(request):
     for pipeline in Pipeline.objects.filter(show_on_dashboard=True).prefetch_related('steps'):
         steps_stats = []
         for step in pipeline.steps.all():
-            current_all = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_30)
-            current_mine = current_all.filter(assigned_to=request.user)
-            prev_all = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_60, entered_at__lt=date_30)
-            prev_mine = prev_all.filter(assigned_to=request.user)
+            current_all = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_30).count()
+            current_mine = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_30, assigned_to=request.user).count()
+            prev_all = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_60, entered_at__lt=date_30).count()
+            prev_mine = LeadPipelineStepHistory.objects.filter(step=step, entered_at__gte=date_60, entered_at__lt=date_30, assigned_to=request.user).count()
             steps_stats.append({
                 'step': step,
-                'current_mine': current_mine.count(),
-                'current_all': current_all.count(),
-                'prev_mine': prev_mine.count(),
-                'prev_all': prev_all.count(),
+                'current_mine': current_mine,
+                'current_all': current_all,
+                'prev_mine': prev_mine,
+                'prev_all': prev_all,
             })
+
+        # Oblicz procenty względem kroku 1 i względem poprzedniego kroku
+        first_all = steps_stats[0]['current_all'] if steps_stats else 0
+        first_mine = steps_stats[0]['current_mine'] if steps_stats else 0
+        for i, s in enumerate(steps_stats):
+            prev_step_all = steps_stats[i - 1]['current_all'] if i > 0 else None
+            prev_step_mine = steps_stats[i - 1]['current_mine'] if i > 0 else None
+            s['pct_of_first_all'] = round(s['current_all'] / first_all * 100) if first_all else None
+            s['pct_of_first_mine'] = round(s['current_mine'] / first_mine * 100) if first_mine else None
+            s['pct_of_prev_all'] = round(s['current_all'] / prev_step_all * 100) if (i > 0 and prev_step_all) else None
+            s['pct_of_prev_mine'] = round(s['current_mine'] / prev_step_mine * 100) if (i > 0 and prev_step_mine) else None
+            s['bar_width'] = s['pct_of_first_all'] if s['pct_of_first_all'] is not None else 0
+            # Trend: current vs prev
+            s['trend_all'] = s['current_all'] - s['prev_all']
+            s['trend_mine'] = s['current_mine'] - s['prev_mine']
+
         pipeline_stats.append({
             'pipeline': pipeline,
             'steps': steps_stats,

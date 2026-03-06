@@ -85,6 +85,21 @@ def pipeline_detail(request, pk):
             'prev_mine': prev_mine.count(),
         })
 
+    # Oblicz procenty
+    first_all = stats[0]['current_all'] if stats else 0
+    first_mine = stats[0]['current_mine'] if stats else 0
+    for i, s in enumerate(stats):
+        prev_step_all = stats[i - 1]['current_all'] if i > 0 else None
+        prev_step_mine = stats[i - 1]['current_mine'] if i > 0 else None
+        s['pct_of_first_all'] = round(s['current_all'] / first_all * 100) if first_all else None
+        s['pct_of_first_mine'] = round(s['current_mine'] / first_mine * 100) if first_mine else None
+        s['pct_of_prev_all'] = round(s['current_all'] / prev_step_all * 100) if (i > 0 and prev_step_all) else None
+        s['pct_of_prev_mine'] = round(s['current_mine'] / prev_step_mine * 100) if (i > 0 and prev_step_mine) else None
+        s['bar_width_all'] = s['pct_of_first_all'] if s['pct_of_first_all'] is not None else 0
+        s['bar_width_mine'] = s['pct_of_first_mine'] if s['pct_of_first_mine'] is not None else 0
+        s['trend_all'] = s['current_all'] - s['prev_all']
+        s['trend_mine'] = s['current_mine'] - s['prev_mine']
+
     return render(request, 'leads/pipeline/detail.html', {
         'pipeline': pipeline,
         'steps': steps,
