@@ -35,7 +35,14 @@
                         {% endif %}
                     </div>
                     {% endfor %}
+                    {% if in_pipeline %}
                     <button type="submit" class="btn btn-primary w-full mt-2">Zapisz</button>
+                    {% else %}
+                    <div class="flex gap-2 mt-2">
+                        <button type="submit" name="action" value="save" class="btn btn-primary flex-1">Zapisz</button>
+                        <button type="submit" name="action" value="save_and_pipeline" class="btn btn-secondary flex-1">Zapisz i dodaj do pipeline</button>
+                    </div>
+                    {% endif %}
                 </form>
             </div>
         </div>

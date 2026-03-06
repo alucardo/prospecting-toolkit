@@ -21,11 +21,14 @@ def call_log_create(request, pk):
                 from datetime import datetime, timedelta
                 call_log.next_contact_date = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=120)
             call_log.save()
+            if request.POST.get('action') == 'save_and_pipeline':
+                return redirect('leads:lead_pipeline_add', lead_pk=lead.pk)
             return redirect('leads:lead_detail', pk=lead.pk)
 
     context = {
         'form': form,
         'lead': lead,
+        'in_pipeline': hasattr(lead, 'pipeline_entry'),
     }
     return render(request, 'leads/call_log/new.html', context)
 
