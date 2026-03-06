@@ -7,20 +7,26 @@ from ..models import Lead, City, LeadStatusHistory
 from ..forms import LeadForm, LeadNoteForm, LeadContactForm
 
 
+DEFAULT_EXCLUDED_STATUSES = {'rejected', 'close', 'not_interested', 'client', 'complete_profile'}
+
 @login_required
 def lead_index(request):
-    show_rejected = request.GET.get('show_rejected') == '1'
     search = request.GET.get('search', '').strip()
     city_filter = request.GET.get('city', '')
-    status_filter = request.GET.getlist('status')
     email_filter = request.GET.get('email_filter', '')
+
+    # Jesli uzytkownik nie wyslal zadnego filtra statusu, domyslnie zaznacz wszystkie poza wykluczonymi
+    all_status_values = {v for v, _ in Lead.STATUS_CHOICES}
+    default_statuses = sorted(all_status_values - DEFAULT_EXCLUDED_STATUSES)
+
+    if 'status' in request.GET:
+        status_filter = request.GET.getlist('status')
+    else:
+        status_filter = default_statuses
 
     leads = Lead.objects.select_related('city').annotate(
         call_count=Count('call_logs')
     ).order_by('-created_at')
-
-    if not show_rejected:
-        leads = leads.exclude(status='rejected')
 
     if city_filter:
         leads = leads.filter(city__pk=city_filter)
@@ -59,13 +65,13 @@ def lead_index(request):
     context = {
         'leads': page,
         'total_count': paginator.count,
-        'show_rejected': show_rejected,
         'search': search,
         'cities': cities,
         'city_filter': city_filter,
         'status_filter': status_filter,
         'status_choices': Lead.STATUS_CHOICES,
         'email_filter': email_filter,
+        'default_excluded_statuses': DEFAULT_EXCLUDED_STATUSES,
     }
     return render(request, 'leads/lead/index.html', context)
 

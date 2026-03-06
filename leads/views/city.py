@@ -1,21 +1,35 @@
 from django.shortcuts import render, redirect
 from django.db.models import Count, Q
 from django.contrib.auth.decorators import login_required
-from ..models import City, SearchQuery
+from django.core.paginator import Paginator
+from ..models import City, SearchQuery, Lead
 from ..forms import CityForm, SearchQueryForm
 from ..services.apify import run_google_maps_scraper
 from ..tasks import fetch_apify_results
+from .lead import DEFAULT_EXCLUDED_STATUSES
 
 
 @login_required
 def city_index(request):
+    potential_statuses = [v for v, _ in Lead.STATUS_CHOICES if v not in DEFAULT_EXCLUDED_STATUSES]
+    search = request.GET.get('search', '').strip()
+
     cities = City.objects.annotate(
-        leads_potential=Count('leads', filter=Q(leads__status__in=['new', 'no_answer', 'call_later', 'interested'])),
+        leads_potential=Count('leads', filter=Q(leads__status__in=potential_statuses)),
         leads_refused=Count('leads', filter=Q(leads__status='not_interested')),
         leads_clients=Count('leads', filter=Q(leads__status='client')),
     ).order_by('name')
+
+    if search:
+        cities = cities.filter(name__icontains=search)
+
+    paginator = Paginator(cities, 25)
+    page = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'cities': cities,
+        'cities': page,
+        'total_count': paginator.count,
+        'search': search,
     }
     return render(request, 'leads/city/index.html', context)
 
