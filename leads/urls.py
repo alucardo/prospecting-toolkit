@@ -47,6 +47,10 @@ urlpatterns = [
     path('leads/<int:pk>/audit/edit/', views.reports.audit_edit, name='audit_edit'),
     path('profile/', views.user_contact.user_contact_edit, name='user_contact_edit'),
 
+    # Frazy kluczowe województw
+    path('frazy/', views.voivodeship_keywords.voivodeship_keyword_index, name='voivodeship_keyword_index'),
+    path('frazy/<int:pk>/', views.voivodeship_keywords.voivodeship_keyword_detail, name='voivodeship_keyword_detail'),
+
     # Pipelines
     path('pipelines/', views.pipeline.pipeline_index, name='pipeline_index'),
     path('pipelines/new/', views.pipeline.pipeline_create, name='pipeline_create'),

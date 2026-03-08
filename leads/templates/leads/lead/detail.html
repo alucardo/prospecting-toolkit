@@ -60,21 +60,27 @@
                     </div>
                     <!-- Frazy kluczowe -->
                     <div class="mt-3">
-                        {% if lead.keywords_list.all %}
+                        {% if keywords_with_volume %}
                         <table class="w-full text-xs mb-2">
                             <thead>
                                 <tr class="text-gray-400 border-b border-base-300">
                                     <th class="text-left py-1 font-normal">Fraza kluczowa</th>
+                                    <th class="text-center py-1 font-normal w-16">Wyszuk.</th>
                                     <th class="text-center py-1 font-normal w-10">Poz.</th>
                                     <th class="text-center py-1 font-normal w-20">Sprawdzono</th>
                                     <th class="w-5"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for kw in lead.keywords_list.all %}
+                                {% for kw in keywords_with_volume %}
                                 {% with last=kw.rank_checks.first %}
                                 <tr class="border-b border-base-300 last:border-0">
                                     <td class="py-1 pr-2">{{ kw.phrase }}</td>
+                                    <td class="text-center py-1">
+                                        {% if kw.monthly_searches is not None %}
+                                        <span class="font-medium">{{ kw.monthly_searches }}</span>
+                                        {% else %}&mdash;{% endif %}
+                                    </td>
                                     <td class="text-center py-1">
                                         {% if last %}
                                             {% if last.position %}

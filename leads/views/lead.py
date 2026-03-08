@@ -3,7 +3,7 @@ from django.db.models import Count, Q
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-from ..models import Lead, City, LeadStatusHistory
+from ..models import Lead, City, LeadStatusHistory, VoivodeshipKeyword
 from ..forms import LeadForm, LeadNoteForm, LeadContactForm
 
 
@@ -102,6 +102,22 @@ def lead_detail(request, pk):
     status_history = status_history_qs if full_history else status_history_qs[:5]
     status_history_count = status_history_qs.count()
 
+    # Wolumeny fraz z województwa leada
+    voivodeship = lead.city.voivodeship if lead.city else None
+    keyword_volumes = {}
+    if voivodeship:
+        vkws = VoivodeshipKeyword.objects.filter(
+            voivodeship=voivodeship,
+            phrase__in=lead.keywords_list.values_list('phrase', flat=True)
+        )
+        keyword_volumes = {vkw.phrase: vkw.monthly_searches for vkw in vkws}
+
+    # Dodaj wolumen bezposrednio do obiektow fraz (unikamy template trickow)
+    keywords_with_volume = []
+    for kw in lead.keywords_list.all().prefetch_related('rank_checks'):
+        kw.monthly_searches = keyword_volumes.get(kw.phrase)  # None jesli brak
+        keywords_with_volume.append(kw)
+
     context = {
         'lead': lead,
         'call_logs': call_logs,
@@ -110,6 +126,7 @@ def lead_detail(request, pk):
         'status_history_count': status_history_count,
         'full_history': full_history,
         'contact_form': contact_form,
+        'keywords_with_volume': keywords_with_volume,
     }
     return render(request, 'leads/lead/detail.html', context)
 

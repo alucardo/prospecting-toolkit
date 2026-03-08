@@ -255,6 +255,7 @@ class GoogleBusinessAnalysis(models.Model):
     has_social_media = models.BooleanField(null=True, blank=True)       # None = nie sprawdzono
     website_recommendations = models.TextField(blank=True)              # zalecenia dot. strony WWW
     custom_summary_items = models.JSONField(default=list, blank=True)   # dodatkowe podpunkty do podsumowania
+    show_keyword_searches = models.BooleanField(null=True, blank=True, default=None)  # czy pokazywac wyszukania w PDF
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -350,6 +351,32 @@ class LeadKeyword(models.Model):
 
     def __str__(self):
         return f"{self.phrase} ({self.lead.name})"
+
+
+class VoivodeshipKeyword(models.Model):
+    """Unikalna fraza kluczowa na poziomie województwa.
+    Agreguje frazy ze wszystkich leadów w danym województwie."""
+    voivodeship = models.ForeignKey(
+        Voivodeship,
+        on_delete=models.CASCADE,
+        related_name='keywords',
+    )
+    phrase = models.CharField(max_length=200)
+    monthly_searches = models.CharField(
+        max_length=50, null=True, blank=True,
+        verbose_name='Wyszukania/miesiąc',
+    )
+    searches_updated_at = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name='Data aktualizacji',
+    )
+
+    class Meta:
+        unique_together = [('voivodeship', 'phrase')]
+        ordering = ['phrase']
+
+    def __str__(self):
+        return f"{self.phrase} ({self.voivodeship.name})"
 
 
 class LeadNote(models.Model):

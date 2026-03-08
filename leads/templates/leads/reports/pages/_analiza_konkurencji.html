@@ -16,15 +16,21 @@
         <thead>
           <tr>
             <th>Fraza kluczowa</th>
+            {% if analysis.show_keyword_searches %}<th>Wyszukania/mies.</th>{% endif %}
             <th>Obecna pozycja</th>
           </tr>
         </thead>
         <tbody>
-          {% for keyword in lead.keywords_list.all %}
+          {% for keyword in keywords_with_volume %}
             {% with last_check=keyword.rank_checks.first %}
               {% if last_check %}
               <tr>
                 <td>{{ keyword.phrase }}</td>
+                {% if analysis.show_keyword_searches %}
+                <td>
+                  {% if keyword.monthly_searches is not None %}{{ keyword.monthly_searches }}{% else %}&mdash;{% endif %}
+                </td>
+                {% endif %}
                 <td>
                   {% if last_check.position is None %}
                     <span class="position-bad">poza TOP 20</span>

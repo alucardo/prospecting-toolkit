@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Frazy kluczowe wg województw</h1>
+</div>
+
+<div class="overflow-x-auto">
+    <table class="table bg-base-200 rounded-box">
+        <thead>
+            <tr>
+                <th>Województwo</th>
+                <th class="text-center">Frazy łącznie</th>
+                <th class="text-center">Uzupełnione</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            {% if row.total > 0 %}
+            <tr class="hover">
+                <td class="font-medium">{{ row.voivodeship.name }}</td>
+                <td class="text-center font-bold">{{ row.total }}</td>
+                <td class="text-center text-success">{{ row.with_volume }}</td>
+                <td>
+                    <a href="{% url 'leads:voivodeship_keyword_detail' row.voivodeship.pk %}"
+                        class="btn btn-ghost btn-xs">Edytuj →</a>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

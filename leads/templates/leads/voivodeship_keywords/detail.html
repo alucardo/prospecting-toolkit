@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:voivodeship_keyword_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
+    <h1 class="text-2xl font-bold">{{ voivodeship.name }} — frazy kluczowe</h1>
+    <span class="text-gray-400 text-sm">({{ keywords.count }} fraz)</span>
+</div>
+
+{% if keywords %}
+<form method="post">
+    {% csrf_token %}
+    <div class="overflow-x-auto">
+        <table class="table bg-base-200 rounded-box">
+            <thead>
+                <tr>
+                    <th>Fraza</th>
+                    <th class="text-center w-48">Wyszukania / miesiąc</th>
+                    <th class="text-center w-40">Aktualizacja</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for kw in keywords %}
+                <tr class="hover">
+                    <td class="font-medium">{{ kw.phrase }}</td>
+                    <td class="text-center">
+                        <input
+                            type="text"
+                            name="searches_{{ kw.pk }}"
+                            value="{{ kw.monthly_searches|default:'' }}"
+                            placeholder="np. 1000, ~500, 10K"
+                            class="input input-bordered input-sm w-36 text-center">
+                    </td>
+                    <td class="text-center text-xs text-gray-400">
+                        {% if kw.searches_updated_at %}
+                            {{ kw.searches_updated_at|date:"d.m.Y" }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4 flex justify-end">
+        <button type="submit" class="btn btn-primary">Zapisz wszystkie</button>
+    </div>
+</form>
+{% else %}
+<div class="alert alert-info">
+    <span>Brak fraz dla tego województwa. Frazy pojawią się automatycznie po dodaniu ich do leadów z miastami w tym województwie.</span>
+</div>
+{% endif %}
+
+{% endblock %}

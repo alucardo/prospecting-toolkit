@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
 
-from leads.models import Lead, UserContact
+from leads.models import Lead, UserContact, VoivodeshipKeyword
 from leads.services.pdf_service import html_to_pdf
 
 
@@ -35,6 +35,16 @@ def _get_photo_big_base64() -> str:
 
 DAY_ORDER = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd']
 
+
+def _annotate_keywords_with_volume(lead, keyword_volumes):
+    """Zwraca frazy leada z dopisanym monthly_searches z voivodeship."""
+    result = []
+    for kw in lead.keywords_list.all().prefetch_related('rank_checks'):
+        kw.monthly_searches = keyword_volumes.get(kw.phrase)
+        result.append(kw)
+    return result
+
+
 def _get_context(request, pk: int) -> dict:
     """Wspólny kontekst dla preview i PDF."""
     lead = get_object_or_404(Lead, pk=pk)
@@ -46,6 +56,16 @@ def _get_context(request, pk: int) -> dict:
         for day in DAY_ORDER:
             if day in analysis.hours_data:
                 hours_ordered.append((day, analysis.hours_data[day]))
+
+    # Wolumeny fraz z województwa leada
+    voivodeship = lead.city.voivodeship if lead.city else None
+    keyword_volumes = {}
+    if voivodeship:
+        vkws = VoivodeshipKeyword.objects.filter(
+            voivodeship=voivodeship,
+            phrase__in=lead.keywords_list.values_list('phrase', flat=True)
+        )
+        keyword_volumes = {vkw.phrase: vkw.monthly_searches for vkw in vkws}
 
     # Zdjecie uzytkownika jako base64 (wymagane dla Playwright)
     contact_photo_b64 = None
@@ -67,6 +87,8 @@ def _get_context(request, pk: int) -> dict:
         "logo_b64": _get_logo_base64(),
         "photo_small_b64": _get_photo_small_base64(),
         "photo_big_b64": _get_photo_big_base64(),
+        "keyword_volumes": keyword_volumes,
+        "keywords_with_volume": _annotate_keywords_with_volume(lead, keyword_volumes),
     }
 
 
@@ -109,6 +131,9 @@ def audit_edit(request, pk):
         # Rekomendacje AI można ręcznie poprawić
         analysis.name_recommendation = request.POST.get('name_recommendation', '').strip()
         analysis.description_recommendation = request.POST.get('description_recommendation', '').strip()
+
+        # Checkbox: show_keyword_searches (obecny w POST = True, nieobecny = False)
+        analysis.show_keyword_searches = 'show_keyword_searches' in request.POST
 
         analysis.save()
         return redirect('leads:audit_edit', pk=pk)
