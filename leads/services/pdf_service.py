@@ -11,6 +11,7 @@ def html_to_pdf(html_content: str) -> bytes:
             pdf_bytes = page.pdf(
                 format="A4",
                 print_background=True,
+                scale=0.75,
                 margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
             )
         finally:
