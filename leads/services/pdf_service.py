@@ -1,32 +1,18 @@
-import asyncio
-from playwright.async_api import async_playwright
 from playwright.sync_api import sync_playwright
-
-
-async def _html_to_pdf_async(html_content: str) -> bytes:
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
-        await page.set_content(html_content, wait_until="networkidle")
-        pdf_bytes = await page.pdf(
-            format="A4",
-            print_background=True,
-            margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
-        )
-        await browser.close()
-    return pdf_bytes
 
 
 def html_to_pdf(html_content: str) -> bytes:
     """Generuje PDF z HTML używając Playwright."""
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page()
-        page.set_content(html_content, wait_until="networkidle")
-        pdf_bytes = page.pdf(
-            format="A4",
-            print_background=True,
-            margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
-        )
-        browser.close()
+        try:
+            page = browser.new_page()
+            page.set_content(html_content, wait_until="domcontentloaded")
+            pdf_bytes = page.pdf(
+                format="A4",
+                print_background=True,
+                margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
+            )
+        finally:
+            browser.close()
     return pdf_bytes
