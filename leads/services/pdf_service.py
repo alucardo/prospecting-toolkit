@@ -6,12 +6,11 @@ def html_to_pdf(html_content: str) -> bytes:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
-            page = browser.new_page()
+            page = browser.new_page(viewport={"width": 794, "height": 1123})
             page.set_content(html_content, wait_until="domcontentloaded")
             pdf_bytes = page.pdf(
                 format="A4",
                 print_background=True,
-                scale=0.75,
                 margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
             )
         finally:
