@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:script_index' %}" class="btn btn-ghost btn-sm">← Skrypty</a>
+    <h1 class="text-2xl font-bold">
+        {% if script %}Edytuj skrypt{% else %}Nowy skrypt{% endif %}
+    </h1>
+</div>
+
+<div class="max-w-2xl">
+    <form method="post" class="card bg-base-200">
+        <div class="card-body flex flex-col gap-4">
+            {% csrf_token %}
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Nazwa skryptu</span></label>
+                <input type="text" name="name" class="input input-bordered w-full"
+                       value="{{ script.name|default:'' }}"
+                       placeholder="np. Skrypt zimny Q1 2025" required>
+            </div>
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Treść skryptu</span></label>
+                <textarea name="content" class="textarea textarea-bordered w-full font-mono text-sm"
+                          rows="16" placeholder="Treść rozmowy..." required>{{ script.content|default:'' }}</textarea>
+                <label class="label">
+                    <span class="label-text-alt text-gray-400">Możesz używać emoji, tytułów sekcji, list — jak chcesz ustrukturyzować skrypt.</span>
+                </label>
+            </div>
+
+            {% if script %}
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" name="is_active" class="checkbox"
+                           {% if script.is_active %}checked{% endif %}>
+                    <span class="label-text">Skrypt aktywny (widoczny przy dodawaniu rozmów)</span>
+                </label>
+            </div>
+            {% endif %}
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-primary">Zapisz</button>
+                <a href="{% url 'leads:script_index' %}" class="btn btn-ghost">Anuluj</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

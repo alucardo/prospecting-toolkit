@@ -35,26 +35,6 @@ def client_detail(request, pk):
     from django.utils import timezone
     import json
 
-    # --- Tabela snapshotow miesiecznych ---
-    recent_snapshots = list(lead.rank_snapshots.all()[:6])
-    all_phrases = list(lead.keywords_list.values_list('phrase', flat=True))
-
-    rows = []
-    for phrase in all_phrases:
-        cells = []
-        for snap in recent_snapshots:
-            pos = next(
-                (item['position'] for item in snap.positions if item['phrase'] == phrase),
-                None
-            )
-            cells.append(pos)
-
-        trend = None
-        if len(cells) >= 2 and cells[0] is not None and cells[1] is not None:
-            trend = cells[1] - cells[0]
-
-        rows.append({'phrase': phrase, 'trend': trend, 'cells': cells})
-
     # --- Dane do wykresow: wszystkie rank_checks per fraza ---
     charts = []
     for kw in lead.keywords_list.prefetch_related('rank_checks').all():
@@ -82,8 +62,6 @@ def client_detail(request, pk):
 
     return render(request, 'leads/client/detail.html', {
         'lead': lead,
-        'snapshots': recent_snapshots,
-        'rows': rows,
         'charts_json': json.dumps(charts, ensure_ascii=False),
         'analysis': lead.business_analyses.first(),
     })

@@ -119,6 +119,20 @@ class Lead(models.Model):
     def __str__(self):
         return f"{self.name} ({self.city})"
 
+class CallScript(models.Model):
+    name = models.CharField(max_length=200)
+    content = models.TextField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
 class CallLog(models.Model):
     TYPE_CALL = 'call'
     TYPE_EMAIL = 'email'
@@ -157,6 +171,13 @@ class CallLog(models.Model):
     )
     type = models.CharField(max_length=50, choices=TYPE_CHOICES, default=TYPE_CALL)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
+    script = models.ForeignKey(
+        'CallScript',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='call_logs',
+        verbose_name='Skrypt rozmowy',
+    )
     note = models.TextField(blank=True)
     next_contact_date = models.DateTimeField(null=True, blank=True)
     is_reminder_active = models.BooleanField(default=False)

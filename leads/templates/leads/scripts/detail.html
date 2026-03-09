@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:script_index' %}" class="btn btn-ghost btn-sm">← Skrypty</a>
+    <h1 class="text-2xl font-bold">{{ script.name }}</h1>
+    <a href="{% url 'leads:script_edit' script.pk %}" class="btn btn-ghost btn-sm">✏️ Edytuj</a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="card bg-base-200">
+        <div class="card-body py-4 text-center">
+            <div class="text-3xl font-bold">{{ total }}</div>
+            <div class="text-xs text-gray-400 mt-1">rozmów ze skryptem</div>
+        </div>
+    </div>
+    <div class="card bg-base-200">
+        <div class="card-body py-4 text-center">
+            <div class="text-3xl font-bold">{{ with_next }}</div>
+            <div class="text-xs text-gray-400 mt-1">umówiono kolejny kontakt</div>
+        </div>
+    </div>
+    <div class="card bg-base-200">
+        <div class="card-body py-4 text-center">
+            {% if effectiveness is None %}
+                <div class="text-2xl font-bold text-gray-400">—</div>
+                <div class="text-xs text-gray-400 mt-1">brak danych</div>
+            {% elif effectiveness >= 50 %}
+                <div class="text-3xl font-bold text-success">{{ effectiveness }}%</div>
+                <div class="text-xs text-gray-400 mt-1">skuteczność</div>
+            {% elif effectiveness >= 25 %}
+                <div class="text-3xl font-bold text-warning">{{ effectiveness }}%</div>
+                <div class="text-xs text-gray-400 mt-1">skuteczność</div>
+            {% else %}
+                <div class="text-3xl font-bold text-error">{{ effectiveness }}%</div>
+                <div class="text-xs text-gray-400 mt-1">skuteczność</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Treść skryptu -->
+    <div class="card bg-base-200">
+        <div class="card-body">
+            <h2 class="card-title text-base mb-2">📄 Treść skryptu</h2>
+            <pre class="text-sm whitespace-pre-wrap font-sans leading-relaxed">{{ script.content }}</pre>
+        </div>
+    </div>
+
+    <!-- Ostatnie rozmowy -->
+    <div class="card bg-base-200">
+        <div class="card-body p-0">
+            <h2 class="card-title text-base px-5 pt-4 pb-2">📞 Ostatnie rozmowy</h2>
+            {% if logs %}
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Lead</th>
+                        <th>Status</th>
+                        <th class="text-center">Kontakt</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="hover">
+                        <td>
+                            <a href="{% url 'leads:lead_detail' log.lead.pk %}" class="link link-hover text-sm">
+                                {{ log.lead.name }}
+                            </a>
+                            {% if log.lead.city %}
+                            <div class="text-xs text-gray-400">{{ log.lead.city }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="text-xs">{{ log.get_status_display }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if log.next_contact_date %}
+                                <span class="text-success text-sm">✓</span>
+                            {% else %}
+                                <span class="text-gray-300 text-sm">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-xs text-gray-400">{{ log.called_at|date:"d.m.Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="px-5 pb-4 text-sm text-gray-400">Brak rozmów z tym skryptem.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

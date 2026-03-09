@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery, Lead, CallLog, ImportFile, LeadNote, LeadContact, Pipeline, PipelineStep, LeadPipelineEntry, Voivodeship
+from .models import City, SearchQuery, Lead, CallLog, CallScript, ImportFile, LeadNote, LeadContact, Pipeline, PipelineStep, LeadPipelineEntry, Voivodeship
 
 
 class CallLogForm(forms.ModelForm):
@@ -13,9 +13,14 @@ class CallLogForm(forms.ModelForm):
 
         return cleaned_data
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['script'].queryset = CallScript.objects.filter(is_active=True)
+        self.fields['script'].empty_label = '— brak skryptu —'
+
     class Meta:
         model = CallLog
-        fields = ['type', 'status', 'note', 'next_contact_date']
+        fields = ['type', 'status', 'script', 'note', 'next_contact_date']
         widgets = {
             'type': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
@@ -31,6 +36,9 @@ class CallLogForm(forms.ModelForm):
             'next_contact_date': forms.DateTimeInput(attrs={
                 'class': 'input input-bordered w-full',
                 'type': 'datetime-local',
+            }),
+            'script': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
             }),
         }
 

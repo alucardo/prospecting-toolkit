@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views.scripts import script_index, script_create, script_edit, script_delete, script_detail
 
 app_name = 'leads'
 
@@ -69,4 +70,11 @@ urlpatterns = [
     path('leads/<int:lead_pk>/pipeline/add/', views.pipeline.lead_pipeline_add, name='lead_pipeline_add'),
     path('leads/<int:lead_pk>/pipeline/move/', views.pipeline.lead_pipeline_move, name='lead_pipeline_move'),
     path('leads/<int:lead_pk>/pipeline/edit/', views.pipeline.lead_pipeline_edit, name='lead_pipeline_edit'),
+
+    # Skrypty rozmów
+    path('skrypty/', script_index, name='script_index'),
+    path('skrypty/nowy/', script_create, name='script_create'),
+    path('skrypty/<int:pk>/', script_detail, name='script_detail'),
+    path('skrypty/<int:pk>/edytuj/', script_edit, name='script_edit'),
+    path('skrypty/<int:pk>/usun/', script_delete, name='script_delete'),
 ]

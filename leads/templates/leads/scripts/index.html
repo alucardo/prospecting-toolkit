@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">📋 Skrypty rozmów</h1>
+    <a href="{% url 'leads:script_create' %}" class="btn btn-primary btn-sm">+ Nowy skrypt</a>
+</div>
+
+{% if rows %}
+<div class="card bg-base-200">
+    <div class="card-body p-0">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Skrypt</th>
+                    <th class="text-center w-28">Rozmów</th>
+                    <th class="text-center w-28">Umówiono kontakt</th>
+                    <th class="text-center w-28">Skuteczność</th>
+                    <th class="text-center w-20">Status</th>
+                    <th class="w-24"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="hover">
+                    <td>
+                        <a href="{% url 'leads:script_detail' row.script.pk %}" class="font-medium link link-hover">
+                            {{ row.script.name }}
+                        </a>
+                        <div class="text-xs text-gray-400 mt-0.5">
+                            Dodany {{ row.script.created_at|date:"d.m.Y" }}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <span class="font-mono">{{ row.total }}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="font-mono">{{ row.with_next_contact }}</span>
+                    </td>
+                    <td class="text-center">
+                        {% if row.effectiveness is None %}
+                            <span class="text-gray-400 text-xs">brak danych</span>
+                        {% elif row.effectiveness >= 50 %}
+                            <span class="badge badge-success">{{ row.effectiveness }}%</span>
+                        {% elif row.effectiveness >= 25 %}
+                            <span class="badge badge-warning">{{ row.effectiveness }}%</span>
+                        {% else %}
+                            <span class="badge badge-error">{{ row.effectiveness }}%</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if row.script.is_active %}
+                            <span class="badge badge-ghost badge-sm">aktywny</span>
+                        {% else %}
+                            <span class="badge badge-ghost badge-sm text-gray-400">nieaktywny</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'leads:script_edit' row.script.pk %}" class="btn btn-ghost btn-xs">✏️</a>
+                        <form method="post" action="{% url 'leads:script_delete' row.script.pk %}" class="inline"
+                              onsubmit="return confirm('Usunąć skrypt {{ row.script.name }}?')">
+                            {% csrf_token %}
+                            <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <div class="text-center">
+        <p class="text-gray-500 mb-3">Brak skryptów rozmów</p>
+        <a href="{% url 'leads:script_create' %}" class="btn btn-primary btn-sm">Dodaj pierwszy skrypt</a>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4 text-xs text-gray-400">
+    Skuteczność = % rozmów ze skryptem, po których umówiono kolejny kontakt (ustawiono datę następnego kontaktu).
+</div>
+{% endblock %}
