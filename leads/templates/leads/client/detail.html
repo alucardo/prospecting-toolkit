@@ -163,4 +163,102 @@
         {% endif %}
     </div>
 </div>
+{% if charts_json != '[]' %}
+<div class="mt-6">
+    <h2 class="text-lg font-bold mb-4">📊 Trendy pozycji</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="charts-container"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    const charts = {{ charts_json|safe }};
+    const container = document.getElementById('charts-container');
+
+    charts.forEach(function(chart, i) {
+        // Karta
+        const card = document.createElement('div');
+        card.className = 'card bg-base-200';
+
+        // Badge trendu
+        let trendHtml = '<span class="text-gray-300 text-xs">brak danych</span>';
+        if (chart.trend !== null) {
+            if (chart.trend > 0)
+                trendHtml = '<span class="badge badge-success badge-sm">↑' + chart.trend + ' miejsc</span>';
+            else if (chart.trend < 0)
+                trendHtml = '<span class="badge badge-error badge-sm">↓' + Math.abs(chart.trend) + ' miejsc</span>';
+            else
+                trendHtml = '<span class="badge badge-ghost badge-sm">bez zmian</span>';
+        }
+
+        card.innerHTML = `
+            <div class="card-body py-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-medium text-sm">${chart.phrase}</h3>
+                    ${trendHtml}
+                </div>
+                <canvas id="chart-${i}" height="120"></canvas>
+            </div>`;
+        container.appendChild(card);
+
+        // Kolory punktow
+        const pointColors = chart.data.map(function(pos) {
+            if (pos === null) return 'transparent';
+            if (pos <= 3)  return '#22c55e';
+            if (pos <= 10) return '#f59e0b';
+            return '#ef4444';
+        });
+
+        new Chart(document.getElementById('chart-' + i), {
+            type: 'line',
+            data: {
+                labels: chart.labels,
+                datasets: [{
+                    label: 'Pozycja',
+                    data: chart.data,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99,102,241,0.08)',
+                    pointBackgroundColor: pointColors,
+                    pointBorderColor: pointColors,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    tension: 0.3,
+                    fill: true,
+                    spanGaps: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.parsed.y === null
+                                    ? 'poza TOP 20'
+                                    : 'Pozycja: ' + ctx.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        reverse: true,
+                        min: 1,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(val) { return Number.isInteger(val) ? val : ''; }
+                        }
+                    },
+                    x: {
+                        ticks: { font: { size: 10 }, maxRotation: 45 }
+                    }
+                }
+            }
+        });
+    });
+})();
+</script>
+{% endif %}
+
 {% endblock %}

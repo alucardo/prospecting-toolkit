@@ -17,5 +17,5 @@ def lead_keyword_check_single(request, lead_pk, keyword_pk):
     from leads.models import LeadKeyword
     keyword = get_object_or_404(LeadKeyword, pk=keyword_pk, lead_id=lead_pk)
     if request.method == 'POST':
-        check_keyword_rankings.delay(lead_pk, keyword_ids=[keyword_pk])
+        check_keyword_rankings.delay(lead_pk, keyword_ids=[keyword_pk], force=True)
     return redirect('leads:lead_detail', pk=lead_pk)

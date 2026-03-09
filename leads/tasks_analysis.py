@@ -523,13 +523,25 @@ Odpowiedz TYLKO jako JSON, bez zadnego tekstu przed ani po:
 
 
 @shared_task
-def check_keyword_rankings(lead_id, keyword_ids=None):
-    """Sprawdza pozycje wizytowki. Jesli keyword_ids podane - tylko te frazy, inaczej wszystkie."""
+def check_keyword_rankings(lead_id, keyword_ids=None, force=False):
+    """Sprawdza pozycje wizytowki. Jesli keyword_ids podane - tylko te frazy, inaczej wszystkie.
+    Pomija frazy ktore byly juz sprawdzane dzisiaj, chyba ze force=True."""
     from .models import Lead, LeadKeyword, KeywordRankCheck, AppSettings
+    from django.utils import timezone
 
     lead = Lead.objects.get(pk=lead_id)
     app_settings = AppSettings.get()
     keywords = lead.keywords_list.filter(pk__in=keyword_ids) if keyword_ids else lead.keywords_list.all()
+
+    if not force:
+        # Pomiń frazy które były już sprawdzane dzisiaj
+        today = timezone.now().date()
+        keywords = [
+            kw for kw in keywords
+            if not kw.rank_checks.filter(checked_at__date=today).exists()
+        ]
+        if not keywords:
+            return  # Wszystkie frazy już sprawdzone dzisiaj
 
     if not keywords:
         return
