@@ -69,3 +69,4 @@ jobs:
             python manage.py collectstatic --noinput
             systemctl restart prospecting-toolkit
             systemctl restart prospecting-celery
+            systemctl restart prospecting-celery-beat

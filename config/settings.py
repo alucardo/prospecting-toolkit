@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -94,6 +95,21 @@ DATABASES = {
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'django-db'
+
+CELERY_BEAT_SCHEDULE = {
+    # Co poniedzialek o 6:00 sprawdz pozycje wszystkich klientow
+    'check-all-clients-rankings-weekly': {
+        'task': 'leads.tasks_analysis.check_all_clients_rankings',
+        'schedule': 604800,  # 7 dni w sekundach
+        'options': {'expires': 3600},
+    },
+    # 1. dnia kazdego miesiaca o 7:00 zrob snapshot
+    'monthly-snapshot-all-clients': {
+        'task': 'leads.tasks_analysis.monthly_snapshot_all_clients',
+        'schedule': crontab(day_of_month='1', hour='7', minute='0'),
+        'options': {'expires': 3600},
+    },
+}
 
 CACHES = {
     'default': {

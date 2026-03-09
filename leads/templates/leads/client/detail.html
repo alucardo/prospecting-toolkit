@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:client_index' %}" class="btn btn-ghost btn-sm">← Klienci</a>
+    <h1 class="text-2xl font-bold">{{ lead.name }}</h1>
+    <a href="{% url 'leads:lead_detail' lead.pk %}" class="btn btn-ghost btn-xs">📋 Lead</a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+    <!-- Podstawowe dane -->
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="card-title text-sm text-gray-500 font-normal">KLIENT</h2>
+            <div class="text-sm flex flex-col gap-1 mt-1">
+                {% if lead.phone %}<div>📞 {{ lead.phone }}</div>{% endif %}
+                {% if lead.email %}<div>✉️ {{ lead.email }}</div>{% endif %}
+                {% if lead.city %}<div>📍 {{ lead.city }}</div>{% endif %}
+                {% if lead.google_maps_url %}
+                <a href="{{ lead.google_maps_url }}" target="_blank" class="link link-primary text-xs">🗺 Wizytówka Google</a>
+                {% else %}
+                <span class="text-warning text-xs">⚠ Brak linku do wizytówki</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Status analizy -->
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="card-title text-sm text-gray-500 font-normal">ANALIZA WIZYTÓWKI</h2>
+            {% if analysis %}
+            <div class="flex flex-col gap-2 mt-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                    {% if analysis.rating %}
+                    <span class="text-2xl font-bold {% if analysis.rating >= 4.5 %}text-success{% elif analysis.rating >= 4.0 %}text-warning{% else %}text-error{% endif %}">{{ analysis.rating }}</span>
+                    <span class="text-xs text-gray-400">/ 5.0</span>
+                    {% endif %}
+                    {% if analysis.reviews_count %}
+                    <span class="text-sm text-gray-500">{{ analysis.reviews_count }} opinii</span>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <a href="{% url 'leads:report_google_analysis_preview' lead.pk %}" target="_blank" class="btn btn-xs btn-outline">👁 Podgląd</a>
+                    <a href="{% url 'leads:report_google_analysis' lead.pk %}" class="btn btn-xs btn-primary">📄 PDF</a>
+                    <a href="{% url 'leads:audit_edit' lead.pk %}" class="btn btn-xs btn-ghost">✏️ Audyt</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="mt-2">
+                <p class="text-xs text-gray-400 mb-2">Brak danych z wizytówki</p>
+                {% if lead.google_maps_url %}
+                <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-xs btn-outline">📥 Pobierz dane</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Akcje -->
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="card-title text-sm text-gray-500 font-normal">AKCJE</h2>
+            <div class="flex flex-col gap-2 mt-1">
+                <form method="post" action="{% url 'leads:client_check_rankings' lead.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-outline btn-sm w-full">🔍 Sprawdź pozycje teraz</button>
+                </form>
+                <form method="post" action="{% url 'leads:client_snapshot_trigger' lead.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-outline btn-sm w-full">📸 Zapisz snapshot miesiąca</button>
+                </form>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">
+                Pozycje sprawdzane automatycznie co tydzień.<br>
+                Snapshot zapisywany 1. dnia każdego miesiąca.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela historii pozycji -->
+<div class="card bg-base-200">
+    <div class="card-body">
+        <h2 class="card-title text-base mb-4">📈 Historia pozycji</h2>
+
+        {% if snapshots %}
+        <div class="overflow-x-auto">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th class="text-left">Fraza kluczowa</th>
+                        <th class="text-center w-16">Trend</th>
+                        {% for snap in snapshots %}
+                        <th class="text-center w-20">
+                            <div class="text-xs font-semibold">{{ snap.label }}</div>
+                            <div class="text-xs text-gray-400 font-normal">
+                                {% if snap.triggered_by == 'manual' %}ręczny{% else %}auto{% endif %}
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr class="hover">
+                        <td class="text-sm font-medium">{{ row.phrase }}</td>
+                        <td class="text-center">
+                            {% if row.trend is None %}
+                                <span class="text-gray-300 text-xs">—</span>
+                            {% elif row.trend > 0 %}
+                                <span class="text-success font-bold text-sm">↑{{ row.trend }}</span>
+                            {% elif row.trend < 0 %}
+                                <span class="text-error font-bold text-sm">↓{{ row.trend|stringformat:"+d"|slice:"1:" }}</span>
+                            {% else %}
+                                <span class="text-gray-400 text-sm">→</span>
+                            {% endif %}
+                        </td>
+                        {% for pos in row.cells %}
+                        <td class="text-center">
+                            {% if pos is None %}
+                                <span class="text-gray-300 text-xs">brak</span>
+                            {% elif pos <= 3 %}
+                                <span class="font-bold text-success">{{ pos }}</span>
+                            {% elif pos <= 10 %}
+                                <span class="font-bold text-warning">{{ pos }}</span>
+                            {% else %}
+                                <span class="font-bold text-error">{{ pos }}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex gap-4 mt-3 text-xs text-gray-400">
+            <span><span class="text-success font-bold">1–3</span> TOP 3</span>
+            <span><span class="text-warning font-bold">4–10</span> TOP 10</span>
+            <span><span class="text-error font-bold">11+</span> Poza TOP 10</span>
+            <span><span class="text-success font-bold">↑</span> poprawa vs poprzedni miesiąc</span>
+        </div>
+
+        {% elif rows %}
+        <div class="hero min-h-24 bg-base-100 rounded-box">
+            <div class="text-center">
+                <p class="text-gray-500 text-sm mb-2">Brak snapshotów pozycji</p>
+                <p class="text-xs text-gray-400">Kliknij „Sprawdź pozycje teraz", a następnie „Zapisz snapshot miesiąca"</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="hero min-h-24 bg-base-100 rounded-box">
+            <div class="text-center">
+                <p class="text-gray-500 text-sm mb-2">Brak fraz kluczowych</p>
+                <a href="{% url 'leads:lead_detail' lead.pk %}" class="btn btn-xs btn-outline">Dodaj frazy w widoku leada</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

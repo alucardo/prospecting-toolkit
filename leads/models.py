@@ -379,6 +379,33 @@ class VoivodeshipKeyword(models.Model):
         return f"{self.phrase} ({self.voivodeship.name})"
 
 
+class ClientRankSnapshot(models.Model):
+    """Zamrozony stan pozycji fraz klienta w danym miesiacu."""
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='rank_snapshots')
+    year = models.IntegerField()
+    month = models.IntegerField()  # 1-12
+    # JSON: [{"phrase": "fraza", "position": 5}, ...]
+    positions = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+    triggered_by = models.CharField(
+        max_length=20,
+        choices=[('auto', 'Automatyczny'), ('manual', 'Ręczny')],
+        default='auto',
+    )
+
+    class Meta:
+        ordering = ['-year', '-month']
+        unique_together = [('lead', 'year', 'month')]
+
+    def __str__(self):
+        return f"{self.lead.name} — {self.month:02d}/{self.year}"
+
+    @property
+    def label(self):
+        import calendar
+        return f"{calendar.month_abbr[self.month]} {self.year}"
+
+
 class LeadNote(models.Model):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notes')
     content = models.TextField()

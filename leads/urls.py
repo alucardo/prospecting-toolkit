@@ -47,6 +47,12 @@ urlpatterns = [
     path('leads/<int:pk>/audit/edit/', views.reports.audit_edit, name='audit_edit'),
     path('profile/', views.user_contact.user_contact_edit, name='user_contact_edit'),
 
+    # Klienci
+    path('klienci/', views.client.client_index, name='client_index'),
+    path('klienci/<int:pk>/', views.client.client_detail, name='client_detail'),
+    path('klienci/<int:pk>/snapshot/', views.client.client_snapshot_trigger, name='client_snapshot_trigger'),
+    path('klienci/<int:pk>/check-rankings/', views.client.client_check_rankings, name='client_check_rankings'),
+
     # Frazy kluczowe województw
     path('frazy/', views.voivodeship_keywords.voivodeship_keyword_index, name='voivodeship_keyword_index'),
     path('frazy/<int:pk>/', views.voivodeship_keywords.voivodeship_keyword_detail, name='voivodeship_keyword_detail'),

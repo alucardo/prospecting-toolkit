@@ -726,6 +726,56 @@ def run_google_business_analysis(analysis_id, keywords=None):
 
 
 @shared_task
+def check_all_clients_rankings():
+    """Cotygodniowy task: sprawdza pozycje fraz wszystkich klientow."""
+    from .models import Lead
+    clients = Lead.objects.filter(status='client').prefetch_related('keywords_list')
+    for client in clients:
+        if client.keywords_list.exists():
+            check_keyword_rankings.delay(client.pk)
+
+
+@shared_task
+def take_client_rank_snapshot(lead_id, triggered_by='auto'):
+    """Tworzy snapshot pozycji dla klienta na dany miesiac.
+    Jesli snapshot na ten miesiac juz istnieje - nadpisuje go."""
+    from .models import Lead, ClientRankSnapshot, KeywordRankCheck
+    from django.utils import timezone
+
+    lead = Lead.objects.get(pk=lead_id)
+    now = timezone.now()
+
+    # Zbierz ostatnia znana pozycje dla kazdej frazy
+    positions = []
+    for kw in lead.keywords_list.prefetch_related('rank_checks').all():
+        last_check = kw.rank_checks.first()  # ordering = -checked_at
+        positions.append({
+            'phrase': kw.phrase,
+            'position': last_check.position if last_check else None,
+            'checked_at': last_check.checked_at.isoformat() if last_check else None,
+        })
+
+    ClientRankSnapshot.objects.update_or_create(
+        lead=lead,
+        year=now.year,
+        month=now.month,
+        defaults={
+            'positions': positions,
+            'triggered_by': triggered_by,
+        },
+    )
+
+
+@shared_task
+def monthly_snapshot_all_clients():
+    """1. dnia miesiaca: tworzy snapshot dla wszystkich klientow."""
+    from .models import Lead
+    clients = Lead.objects.filter(status='client')
+    for client in clients:
+        take_client_rank_snapshot.delay(client.pk, triggered_by='auto')
+
+
+@shared_task
 def fetch_business_posts(analysis_id, keyword):
     """Background task: pobiera posty wizytowki i aktualizuje analize."""
     from .models import GoogleBusinessAnalysis, AppSettings

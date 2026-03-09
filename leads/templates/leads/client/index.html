@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">👥 Klienci ({{ data|length }})</h1>
+</div>
+
+{% if data %}
+<div class="overflow-x-auto">
+    <table class="table bg-base-200 rounded-box">
+        <thead>
+            <tr>
+                <th>Klient</th>
+                <th>Miasto</th>
+                <th class="text-center">Wizytówka</th>
+                <th class="text-center">Analiza</th>
+                <th class="text-center">Frazy</th>
+                <th class="text-right">Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            {% with lead=row.lead analysis=row.analysis %}
+            <tr class="hover">
+                <td>
+                    <a href="{% url 'leads:client_detail' lead.pk %}" class="font-medium link link-hover">{{ lead.name }}</a>
+                    {% if lead.phone %}<div class="text-xs text-gray-400">{{ lead.phone }}</div>{% endif %}
+                </td>
+                <td class="text-sm text-gray-500">{{ lead.city|default:"—" }}</td>
+
+                <!-- Wizytówka Google -->
+                <td class="text-center">
+                    {% if row.has_maps_url %}
+                        <a href="{{ lead.google_maps_url }}" target="_blank"
+                           class="badge badge-success badge-sm" title="{{ lead.google_maps_url }}">
+                           ✓ Połączona
+                        </a>
+                    {% else %}
+                        <a href="{% url 'leads:lead_edit' lead.pk %}"
+                           class="badge badge-warning badge-sm">⚠ Brak linku</a>
+                    {% endif %}
+                </td>
+
+                <!-- Status analizy -->
+                <td class="text-center">
+                    {% if not analysis %}
+                        <span class="badge badge-ghost badge-sm">Brak danych</span>
+                    {% elif analysis.status == 'pending' %}
+                        <span class="badge badge-info badge-sm">
+                            <span class="loading loading-spinner loading-xs mr-1"></span>Pobieranie…
+                        </span>
+                    {% elif analysis.status == 'error' %}
+                        <span class="badge badge-error badge-sm">Błąd</span>
+                    {% elif analysis.status == 'fetched' %}
+                        <span class="badge badge-warning badge-sm">Pobrano</span>
+                    {% elif analysis.status == 'analyzed' %}
+                        <span class="badge badge-success badge-sm">✓ Gotowa</span>
+                    {% endif %}
+                </td>
+
+                <!-- Frazy -->
+                <td class="text-center text-sm">
+                    {% if row.keywords_count > 0 %}
+                        <span class="text-success font-medium">{{ row.keywords_count }}</span>
+                    {% else %}
+                        <span class="text-gray-300">—</span>
+                    {% endif %}
+                </td>
+
+                <!-- Akcje -->
+                <td class="text-right">
+                    <div class="flex gap-1 justify-end flex-wrap">
+                        {% if row.has_maps_url %}
+                            <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-xs btn-outline"
+                                    title="Pobierz / odśwież dane z Google">
+                                    {% if not analysis %}📥 Pobierz dane{% else %}🔄 Odśwież{% endif %}
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        {% if analysis and analysis.status != 'error' and analysis.status != 'pending' %}
+                            <a href="{% url 'leads:report_google_analysis_preview' lead.pk %}"
+                               target="_blank" class="btn btn-xs btn-outline">👁 Podgląd</a>
+                            <a href="{% url 'leads:report_google_analysis' lead.pk %}"
+                               class="btn btn-xs btn-primary">📄 PDF</a>
+                        {% endif %}
+
+                        <a href="{% url 'leads:audit_edit' lead.pk %}"
+                           class="btn btn-xs btn-ghost" title="Edytuj dane audytu">✏️</a>
+                    </div>
+                </td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <div class="text-center">
+        <p class="text-gray-500 mb-2">Brak klientów</p>
+        <p class="text-xs text-gray-400">Leady ze statusem „Klient" pojawią się tutaj automatycznie</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
