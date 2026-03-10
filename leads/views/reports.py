@@ -32,6 +32,50 @@ def _get_photo_big_base64() -> str:
     photo_big_path = Path(settings.BASE_DIR) / "leads/static/leads/images/photo_big.jpg"
     return base64.b64encode(photo_big_path.read_bytes()).decode("utf-8")
 
+def loga_base64():
+    hs_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/hs.jpg"
+    bh_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/bh.jpg"
+    rw_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/rw.jpg"
+    tb_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/tb.jpg"
+    vino_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/vino.jpg"
+    viet_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/viet.jpg"
+    szym_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/szym.jpg"
+    zac_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/zac.jpg"
+    groj_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/groj.jpg"
+    siesta_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/siesta.jpg"
+    fish_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/fish.jpg"
+    prosto_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/prosto.jpg"
+    at_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/at.jpg"
+    blis_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/blis.jpg"
+    rob_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/rob.jpg"
+    wcz_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/wcz.jpg"
+    ex_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/ex.jpg"
+    cze_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/cze.jpg"
+    pizza_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/pizza.jpg"
+    szlak_path = Path(settings.BASE_DIR) / "leads/static/leads/images/loga/szlak.jpg"
+    return {
+        "hs": base64.b64encode(hs_path.read_bytes()).decode("utf-8"),
+        "bh": base64.b64encode(bh_path.read_bytes()).decode("utf-8"),
+        "rw": base64.b64encode(rw_path.read_bytes()).decode("utf-8"),
+        "tb": base64.b64encode(tb_path.read_bytes()).decode("utf-8"),
+        "vino": base64.b64encode(vino_path.read_bytes()).decode("utf-8"),
+        "viet": base64.b64encode(viet_path.read_bytes()).decode("utf-8"),
+        "szym": base64.b64encode(szym_path.read_bytes()).decode("utf-8"),
+        "zac": base64.b64encode(zac_path.read_bytes()).decode("utf-8"),
+        "groj": base64.b64encode(groj_path.read_bytes()).decode("utf-8"),
+        "siesta": base64.b64encode(siesta_path.read_bytes()).decode("utf-8"),
+        "fish": base64.b64encode(fish_path.read_bytes()).decode("utf-8"),
+        "prosto": base64.b64encode(prosto_path.read_bytes()).decode("utf-8"),
+        "at": base64.b64encode(at_path.read_bytes()).decode("utf-8"),
+        "blis": base64.b64encode(blis_path.read_bytes()).decode("utf-8"),
+        "rob": base64.b64encode(rob_path.read_bytes()).decode("utf-8"),
+        "wcz": base64.b64encode(wcz_path.read_bytes()).decode("utf-8"),
+        "ex": base64.b64encode(ex_path.read_bytes()).decode("utf-8"),
+        "cze": base64.b64encode(cze_path.read_bytes()).decode("utf-8"),
+        "pizza": base64.b64encode(pizza_path.read_bytes()).decode("utf-8"),
+        "szlak": base64.b64encode(szlak_path.read_bytes()).decode("utf-8"),
+    }
+
 
 DAY_ORDER = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd']
 
@@ -73,6 +117,8 @@ def _get_context(request, pk: int) -> dict:
         contact_photo_b64 = base64.b64encode(contact.photo.read()).decode('utf-8')
         contact.photo.seek(0)  # reset po odczycie
 
+    loga_b64 = loga_base64()
+
     return {
         "analysis": analysis,
         "lead": lead,
@@ -89,6 +135,7 @@ def _get_context(request, pk: int) -> dict:
         "photo_big_b64": _get_photo_big_base64(),
         "keyword_volumes": keyword_volumes,
         "keywords_with_volume": _annotate_keywords_with_volume(lead, keyword_volumes),
+        "loga_b64": loga_b64,
     }
 
 
