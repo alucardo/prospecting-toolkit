@@ -1,7 +1,11 @@
+import os
+import tempfile
+import base64
 from celery import shared_task
-from .models import Lead, SearchQuery
+from .models import Lead, SearchQuery, UserContact, VoivodeshipKeyword
 from .services.email_scraper import scrape_email
 from .services.apify import fetch_and_save_leads
+from .services.pdf_service import html_to_pdf
 
 
 @shared_task
@@ -18,6 +22,28 @@ def scrape_lead_email(lead_id):
 def scrape_leads_emails_bulk(lead_ids):
     for lead_id in lead_ids:
         scrape_lead_email.delay(lead_id)
+
+
+@shared_task(bind=True, time_limit=300)
+def generate_pdf_report(self, lead_pk, user_pk):
+    """
+    Generuje PDF raportu w tle i zapisuje do pliku tymczasowego.
+    Zwraca ścieżkę do pliku — polling endpoint serwuje go i usuwa.
+    """
+    from django.template.loader import render_to_string
+    from .views.reports import _get_context_for_task
+
+    context = _get_context_for_task(lead_pk, user_pk)
+    html = render_to_string('leads/reports/google_analysis.html', context)
+    pdf_bytes = html_to_pdf(html)
+
+    # Zapisz do pliku tymczasowego z unikalną nazwą (task_id)
+    tmp_dir = tempfile.gettempdir()
+    out_path = os.path.join(tmp_dir, f'pdf_report_{self.request.id}.pdf')
+    with open(out_path, 'wb') as f:
+        f.write(pdf_bytes)
+
+    return out_path
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)

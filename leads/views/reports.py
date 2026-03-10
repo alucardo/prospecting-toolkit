@@ -1,10 +1,12 @@
 import base64
+import os
 from pathlib import Path
 
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 from leads.models import Lead, UserContact, VoivodeshipKeyword
 from leads.services.pdf_service import html_to_pdf
@@ -89,6 +91,18 @@ def _annotate_keywords_with_volume(lead, keyword_volumes):
     return result
 
 
+def _get_context_for_task(lead_pk: int, user_pk: int) -> dict:
+    """Kontekst dla Celery task — bez obiektu request."""
+    from django.contrib.auth.models import User
+
+    class FakeRequest:
+        def __init__(self, user):
+            self.user = user
+
+    user = User.objects.get(pk=user_pk)
+    return _get_context(FakeRequest(user), lead_pk)
+
+
 def _get_context(request, pk: int) -> dict:
     """Wspólny kontekst dla preview i PDF."""
     lead = get_object_or_404(Lead, pk=pk)
@@ -144,14 +158,47 @@ def google_analysis_preview(request, pk):
 
 
 def google_analysis_pdf(request, pk):
-    context = _get_context(request, pk)
-    html = render_to_string("leads/reports/google_analysis.html", context)
-    pdf_bytes = html_to_pdf(html)
-    lead_name = context['lead'].name
+    """Odpala Celery task i zwraca stronę z paskiem postępu."""
+    from leads.tasks import generate_pdf_report
+    lead = get_object_or_404(Lead, pk=pk)
+    task = generate_pdf_report.delay(lead.pk, request.user.pk)
+    return render(request, 'leads/reports/pdf_generating.html', {
+        'task_id': task.id,
+        'lead': lead,
+        'poll_url': reverse('leads:pdf_status', kwargs={'pk': pk}),
+    })
 
-    response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="Audyt {lead_name}.pdf"'
-    return response
+
+def pdf_status(request, pk):
+    """Polling endpoint — zwraca JSON ze statusem tasku lub serwuje gotowy PDF."""
+    import json
+    from celery.result import AsyncResult
+
+    task_id = request.GET.get('task_id')
+    if not task_id:
+        return HttpResponse(json.dumps({'status': 'error'}), content_type='application/json')
+
+    result = AsyncResult(task_id)
+
+    if result.state == 'SUCCESS':
+        pdf_path = result.result
+        lead = get_object_or_404(Lead, pk=pk)
+        try:
+            with open(pdf_path, 'rb') as f:
+                pdf_bytes = f.read()
+            os.unlink(pdf_path)  # usuń plik po pobraniu
+        except FileNotFoundError:
+            return HttpResponse(json.dumps({'status': 'error', 'msg': 'Plik nie znaleziony'}), content_type='application/json')
+
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="Audyt {lead.name}.pdf"'
+        return response
+
+    elif result.state == 'FAILURE':
+        return HttpResponse(json.dumps({'status': 'error', 'msg': str(result.result)}), content_type='application/json')
+
+    else:  # PENDING, STARTED, RETRY
+        return HttpResponse(json.dumps({'status': result.state}), content_type='application/json')
 
 
 def audit_edit(request, pk):

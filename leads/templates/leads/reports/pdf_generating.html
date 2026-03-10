@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="hero min-h-64">
+  <div class="hero-content text-center flex-col gap-6">
+    <div>
+      <h1 class="text-2xl font-bold mb-2">Generowanie raportu PDF</h1>
+      <p class="text-gray-500">{{ lead.name }}</p>
+    </div>
+
+    <div id="status-area">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+      <p class="text-gray-400 mt-3" id="status-msg">Trwa generowanie, proszę czekać...</p>
+    </div>
+
+    <div id="error-area" class="hidden">
+      <div class="alert alert-error max-w-md">
+        <span id="error-msg">Wystąpił błąd podczas generowania PDF.</span>
+      </div>
+      <a href="{% url 'leads:lead_detail' lead.pk %}" class="btn btn-ghost mt-3">← Wróć</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const taskId = "{{ task_id }}";
+  const pollUrl = "{{ poll_url }}?task_id=" + taskId;
+
+  function poll() {
+    fetch(pollUrl)
+      .then(function(response) {
+        // Jeśli odpowiedź to PDF — pobierz
+        const ct = response.headers.get('Content-Type') || '';
+        if (ct.includes('application/pdf')) {
+          return response.blob().then(function(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "Audyt {{ lead.name|escapejs }}.pdf";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            document.getElementById('status-msg').textContent = 'PDF gotowy — pobieranie...';
+            // Wróć do leada po chwili
+            setTimeout(function() {
+              window.location.href = "{% url 'leads:lead_detail' lead.pk %}";
+            }, 2000);
+          });
+        }
+        return response.json().then(function(data) {
+          if (data.status === 'error') {
+            document.getElementById('status-area').classList.add('hidden');
+            document.getElementById('error-area').classList.remove('hidden');
+            document.getElementById('error-msg').textContent = data.msg || 'Wystąpił błąd.';
+          } else {
+            // PENDING / STARTED — poll ponownie za 2s
+            setTimeout(poll, 2000);
+          }
+        });
+      })
+      .catch(function() {
+        setTimeout(poll, 3000);
+      });
+  }
+
+  setTimeout(poll, 1500);
+})();
+</script>
+{% endblock %}
