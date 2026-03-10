@@ -167,13 +167,14 @@ class DashboardReminderTest(TestCase):
 
     def test_inactive_reminder_not_shown(self):
         """Nieaktywne przypomnienie (is_reminder_active=False) nie pojawia się."""
-        CallLog.objects.create(
+        # Signal aktywuje reminder przy create() — wymuszamy dezaktywację przez update() bez signala
+        log = CallLog.objects.create(
             lead=self.lead,
             user=self.user,
             status='call_later',
             next_contact_date=timezone.now() - timezone.timedelta(days=1),
-            is_reminder_active=False,
         )
+        CallLog.objects.filter(pk=log.pk).update(is_reminder_active=False)
         response = self.client.get(self.url)
         self.assertEqual(len(response.context['reminders']), 0)
 
