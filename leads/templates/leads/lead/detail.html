@@ -667,28 +667,18 @@
                         &nbsp;&middot;&nbsp; od {{ entry.entered_at|date:"d.m.Y" }}
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <!-- Przesuń do kroku -->
-                    {% with steps=entry.pipeline.steps.all %}
-                    {% if steps.count > 1 %}
-                    <div class="dropdown dropdown-end">
-                        <label tabindex="0" class="btn btn-outline btn-sm">Przesuń ▼</label>
-                        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48 z-10">
-                            {% for step in steps %}
-                            {% if step.pk != entry.current_step.pk %}
-                            <li>
-                                <form method="post" action="{% url 'leads:lead_pipeline_move' lead.pk %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="step" value="{{ step.pk }}">
-                                    <button type="submit" class="w-full text-left">{{ step.order }}. {{ step.name }}</button>
-                                </form>
-                            </li>
-                            {% endif %}
-                            {% endfor %}
-                        </ul>
-                    </div>
+                <div class="flex gap-2 items-center">
+                    {% if next_pipeline_step %}
+                    <form method="post" action="{% url 'leads:lead_pipeline_move' lead.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="step" value="{{ next_pipeline_step.pk }}">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Przesuń → {{ next_pipeline_step.name }}
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="badge badge-success badge-sm">Ostatni etap</span>
                     {% endif %}
-                    {% endwith %}
                     <a href="{% url 'leads:lead_pipeline_edit' lead.pk %}" class="btn btn-ghost btn-sm">✏️</a>
                 </div>
             </div>

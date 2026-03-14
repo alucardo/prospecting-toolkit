@@ -185,22 +185,44 @@ def lead_pipeline_add(request, lead_pk):
 
 @login_required
 def lead_pipeline_move(request, lead_pk):
-    """Przesuń leada do następnego kroku."""
+    """Przesuń leada do wybranego kroku, automatycznie przechodząc przez kroki pośrednie."""
     lead = get_object_or_404(Lead, pk=lead_pk)
     entry = get_object_or_404(LeadPipelineEntry, lead=lead)
 
     if request.method == 'POST':
         step_pk = request.POST.get('step')
-        step = get_object_or_404(PipelineStep, pk=step_pk, pipeline=entry.pipeline)
+        target_step = get_object_or_404(PipelineStep, pk=step_pk, pipeline=entry.pipeline)
+        current_order = entry.current_step.order
+        target_order = target_step.order
 
-        entry.current_step = step
-        entry.save(update_fields=['current_step'])
+        # Pobierz kroki pośrednie (i docelowy) posortowane po order
+        if target_order > current_order:
+            # Przesunięcie do przodu — dodaj wszystkie kroki między obecnym a docelowym
+            steps_to_record = entry.pipeline.steps.filter(
+                order__gt=current_order,
+                order__lte=target_order,
+            ).order_by('order')
+        elif target_order < current_order:
+            # Cofnięcie — tylko sam krok docelowy (bez pośrednich)
+            steps_to_record = entry.pipeline.steps.filter(pk=target_step.pk)
+        else:
+            steps_to_record = []
 
-        LeadPipelineStepHistory.objects.create(
-            entry=entry,
-            step=step,
-            assigned_to=entry.assigned_to,
+        # Pobierz zestaw kroków już zapisanych w historii (unikamy duplikatów)
+        already_recorded = set(
+            entry.step_history.values_list('step_id', flat=True)
         )
+
+        for step in steps_to_record:
+            if step.pk not in already_recorded:
+                LeadPipelineStepHistory.objects.create(
+                    entry=entry,
+                    step=step,
+                    assigned_to=entry.assigned_to,
+                )
+
+        entry.current_step = target_step
+        entry.save(update_fields=['current_step'])
 
     return redirect('leads:lead_detail', pk=lead.pk)
 

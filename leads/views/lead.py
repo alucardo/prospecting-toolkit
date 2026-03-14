@@ -118,6 +118,14 @@ def lead_detail(request, pk):
         kw.monthly_searches = keyword_volumes.get(kw.phrase)  # None jesli brak
         keywords_with_volume.append(kw)
 
+    # Następny krok w pipeline
+    next_pipeline_step = None
+    if hasattr(lead, 'pipeline_entry'):
+        entry = lead.pipeline_entry
+        next_pipeline_step = entry.pipeline.steps.filter(
+            order__gt=entry.current_step.order
+        ).order_by('order').first()
+
     context = {
         'lead': lead,
         'call_logs': call_logs,
@@ -127,6 +135,7 @@ def lead_detail(request, pk):
         'full_history': full_history,
         'contact_form': contact_form,
         'keywords_with_volume': keywords_with_volume,
+        'next_pipeline_step': next_pipeline_step,
     }
     return render(request, 'leads/lead/detail.html', context)
 

@@ -14,7 +14,16 @@ def html_to_pdf(html_content: str) -> bytes:
 
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch()
+            browser = p.chromium.launch(args=[
+                '--no-sandbox',
+                '--disable-dev-shm-usage',  # kluczowe na serwerach z małym /dev/shm
+                '--disable-gpu',
+                '--disable-extensions',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--mute-audio',
+                '--no-first-run',
+            ])
             try:
                 page = browser.new_page(viewport={"width": 794, "height": 1123})
                 page.goto(f'file://{tmp_path}', wait_until="domcontentloaded")
