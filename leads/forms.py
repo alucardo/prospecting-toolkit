@@ -247,8 +247,11 @@ class LeadPipelineEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         pipeline = kwargs.pop('pipeline', None)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if pipeline:
             self.fields['current_step'].queryset = PipelineStep.objects.filter(pipeline=pipeline)
         else:
             self.fields['current_step'].queryset = PipelineStep.objects.none()
+        if user and not self.instance.pk:
+            self.fields['assigned_to'].initial = user.pk

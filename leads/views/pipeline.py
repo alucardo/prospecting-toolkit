@@ -158,11 +158,11 @@ def lead_pipeline_add(request, lead_pk):
     pipeline_id = request.POST.get('pipeline') or request.GET.get('pipeline')
     pipeline = get_object_or_404(Pipeline, pk=pipeline_id) if pipeline_id else None
 
-    form = LeadPipelineEntryForm(pipeline=pipeline)
+    form = LeadPipelineEntryForm(pipeline=pipeline, user=request.user)
     pipelines = Pipeline.objects.all()
 
     if request.method == 'POST':
-        form = LeadPipelineEntryForm(request.POST, pipeline=pipeline)
+        form = LeadPipelineEntryForm(request.POST, pipeline=pipeline, user=request.user)
         if form.is_valid():
             entry = form.save(commit=False)
             entry.lead = lead
