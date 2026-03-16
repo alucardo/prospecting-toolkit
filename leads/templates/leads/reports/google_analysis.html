@@ -3,8 +3,28 @@
 <head>
 <meta charset="UTF-8">
   {% include "leads/reports/_style.html" %}
+  <style>
+    #print-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    #print-btn:hover { background: #1d4ed8; }
+    @media print { #print-btn { display: none !important; } }
+  </style>
 </head>
 <body>
+  <button id="print-btn" onclick="window.print()">&#128438; Pobierz PDF</button>
   {% include "leads/reports/pages/_okladka.html" %}
   {% include "leads/reports/pages/_wprowadzenie.html" %}
   {% include "leads/reports/pages/_analiza_konkurencji.html" %}
