@@ -277,6 +277,7 @@ class GoogleBusinessAnalysis(models.Model):
     website_recommendations = models.TextField(blank=True)              # zalecenia dot. strony WWW
     custom_summary_items = models.JSONField(default=list, blank=True)   # dodatkowe podpunkty do podsumowania
     show_keyword_searches = models.BooleanField(null=True, blank=True, default=None)  # czy pokazywac wyszukania w PDF
+    show_price_list = models.BooleanField(default=False)  # czy dodac cennik do audytu
 
     created_at = models.DateTimeField(auto_now_add=True)
 

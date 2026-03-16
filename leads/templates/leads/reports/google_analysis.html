@@ -20,6 +20,9 @@
   {% include "leads/reports/pages/_summary.html" %}
   {% include "leads/reports/pages/_plan.html" %}
   {% include "leads/reports/pages/_logos.html" %}
+  {% if analysis.show_price_list %}
+    {% include "leads/reports/pages/_price.html" %}
+  {% endif %}
   {% include "leads/reports/pages/_contact.html" %}
 </body>
 </html>

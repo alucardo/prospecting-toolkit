@@ -118,6 +118,16 @@
                 <span class="label-text-alt text-gray-400 ml-8">Jeśli zaznaczone, raport PDF będzie zawierał kolumnę z liczbą wyszukań/miesiąc</span>
             </div>
 
+            <!-- Cennik w audycie -->
+            <div class="form-control mb-4">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" name="show_price_list" class="checkbox checkbox-sm"
+                        {% if analysis.show_price_list %}checked{% endif %}>
+                    <span class="label-text">Dołącz cennik do audytu</span>
+                </label>
+                <span class="label-text-alt text-gray-400 ml-8">Jeśli zaznaczone, audyt będzie zawierał sekcję z cennikiem</span>
+            </div>
+
             <!-- Dodatkowe punkty podsumowania -->
             <div class="form-control">
                 <label class="label"><span class="label-text">Dodatkowe punkty podsumowania</span></label>

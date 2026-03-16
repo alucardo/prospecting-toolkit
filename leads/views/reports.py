@@ -228,6 +228,7 @@ def audit_edit(request, pk):
 
         # Checkbox: show_keyword_searches (obecny w POST = True, nieobecny = False)
         analysis.show_keyword_searches = 'show_keyword_searches' in request.POST
+        analysis.show_price_list = 'show_price_list' in request.POST
 
         analysis.save()
         return redirect('leads:audit_edit', pk=pk)
