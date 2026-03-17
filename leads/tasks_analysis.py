@@ -569,7 +569,11 @@ def check_keyword_rankings(lead_id, keyword_ids=None, force=False):
                 "language_name": "Polish",
                 "depth": 20,
             }
-            if lead.city.location_coordinate:
+            if lead.keyword_search_nationwide:
+                # Cały kraj
+                payload["location_name"] = "Poland"
+            elif lead.city.location_coordinate:
+                # Miasto (domyślnie)
                 payload["location_coordinate"] = lead.city.location_coordinate
             else:
                 payload["location_name"] = "Poland"

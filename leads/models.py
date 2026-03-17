@@ -114,6 +114,7 @@ class Lead(models.Model):
     email_scraped = models.BooleanField(default=False)
 
     raw_data = models.JSONField(default=dict)
+    keyword_search_nationwide = models.BooleanField(default=False, verbose_name='Sprawdzaj pozycje dla całego kraju')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
