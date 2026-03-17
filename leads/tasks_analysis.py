@@ -563,44 +563,75 @@ def check_keyword_rankings(lead_id, keyword_ids=None, force=False):
 
     for kw in keywords:
         try:
-            # Uzyj SERP Maps endpoint - zwraca ranked liste biznesow
-            payload = {
-                "keyword": kw.phrase,
-                "language_name": "Polish",
-                "depth": 20,
-            }
             if lead.keyword_search_nationwide:
-                # Cały kraj
-                payload["location_name"] = "Poland"
-            elif lead.city.location_coordinate:
-                # Miasto (domyślnie)
-                payload["location_coordinate"] = lead.city.location_coordinate
-            else:
-                payload["location_name"] = "Poland"
-
-            response = requests.post(
-                "https://api.dataforseo.com/v3/serp/google/maps/live/advanced",
-                headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
-                json=[payload],
-                timeout=60,
-            )
-            response.raise_for_status()
-            items = response.json().get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
-
-            position = None
-            for item in items:
-                item_cid = item.get('cid')
-                # Porownuj CID jako string i int
-                cid_match = cid_number and (
-                    item_cid == cid_number or
-                    str(item_cid) == str(cid_number)
+                # Cały kraj — organiczny SERP Google
+                payload = {
+                    "keyword": kw.phrase,
+                    "language_name": "Polish",
+                    "location_name": "Poland",
+                    "depth": 100,
+                }
+                response = requests.post(
+                    "https://api.dataforseo.com/v3/serp/google/organic/live/advanced",
+                    headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
+                    json=[payload],
+                    timeout=60,
                 )
-                # Dopasowanie po nazwie jako fallback
-                name_match = not cid_number and lead.name.lower() in (item.get('title') or '').lower()
+                response.raise_for_status()
+                items = response.json().get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
 
-                if cid_match or name_match:
-                    position = item.get('rank_absolute')
-                    break
+                position = None
+                website_domain = None
+                if lead.website:
+                    # Wyciagnij domenę ze strony leada do dopasowania
+                    from urllib.parse import urlparse
+                    parsed = urlparse(lead.website if lead.website.startswith('http') else f'http://{lead.website}')
+                    website_domain = parsed.netloc.lower().lstrip('www.')
+
+                for item in items:
+                    if item.get('type') != 'organic':
+                        continue
+                    item_url = (item.get('url') or '').lower()
+                    item_domain = (item.get('domain') or '').lower().lstrip('www.')
+                    # Dopasuj po domenie strony WWW lub nazwie firmy w URL
+                    domain_match = website_domain and (website_domain in item_domain or item_domain in website_domain)
+                    name_match = lead.name.lower() in item_url
+                    if domain_match or name_match:
+                        position = item.get('rank_absolute')
+                        break
+
+            else:
+                # Miasto — Google Maps SERP
+                payload = {
+                    "keyword": kw.phrase,
+                    "language_name": "Polish",
+                    "depth": 20,
+                }
+                if lead.city.location_coordinate:
+                    payload["location_coordinate"] = lead.city.location_coordinate
+                else:
+                    payload["location_name"] = "Poland"
+
+                response = requests.post(
+                    "https://api.dataforseo.com/v3/serp/google/maps/live/advanced",
+                    headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
+                    json=[payload],
+                    timeout=60,
+                )
+                response.raise_for_status()
+                items = response.json().get('tasks', [{}])[0].get('result', [{}])[0].get('items', [])
+
+                position = None
+                for item in items:
+                    item_cid = item.get('cid')
+                    cid_match = cid_number and (
+                        item_cid == cid_number or
+                        str(item_cid) == str(cid_number)
+                    )
+                    name_match = not cid_number and lead.name.lower() in (item.get('title') or '').lower()
+                    if cid_match or name_match:
+                        position = item.get('rank_absolute')
+                        break
 
             KeywordRankCheck.objects.create(keyword=kw, position=position)
 
