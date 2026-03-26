@@ -72,6 +72,11 @@ urlpatterns = [
     path('leads/<int:lead_pk>/pipeline/move/', views.pipeline.lead_pipeline_move, name='lead_pipeline_move'),
     path('leads/<int:lead_pk>/pipeline/edit/', views.pipeline.lead_pipeline_edit, name='lead_pipeline_edit'),
 
+    # Log działań klientów
+    path('leads/<int:lead_pk>/activity/', views.activity_log.activity_log_index, name='activity_log_index'),
+    path('leads/<int:lead_pk>/activity/<int:pk>/edit/', views.activity_log.activity_log_edit, name='activity_log_edit'),
+    path('leads/<int:lead_pk>/activity/<int:pk>/delete/', views.activity_log.activity_log_delete, name='activity_log_delete'),
+
     # Skrypty rozmów
     path('skrypty/', script_index, name='script_index'),
     path('skrypty/nowy/', script_create, name='script_create'),

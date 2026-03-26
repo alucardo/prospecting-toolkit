@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost btn-sm">← Wróć</a>
+    <h1 class="text-2xl font-bold">Log działań</h1>
+    <span class="text-gray-500">{{ lead.name }}</span>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Formularz dodawania -->
+    <div>
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <h2 class="card-title text-base">+ Nowy wpis</h2>
+                <form method="post" class="flex flex-col gap-3">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">{{ field.label }}{% if field.field.required %} *{% endif %}</span>
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="text-error text-sm mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Dodaj wpis</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista wpisów -->
+    <div class="md:col-span-2">
+
+        <!-- Filtr miesiąca -->
+        <form method="get" class="flex items-center gap-3 mb-4">
+            <input type="month" name="month" value="{{ month }}"
+                class="input input-bordered input-sm">
+            <button type="submit" class="btn btn-outline btn-sm">Filtruj</button>
+            {% if month %}
+            <a href="{% url 'leads:activity_log_index' lead.pk %}" class="btn btn-ghost btn-sm">✕ Wyczyść</a>
+            {% endif %}
+            <span class="text-gray-400 text-sm ml-auto">{{ logs|length }} wpis{% if logs|length != 1 %}ów{% endif %}</span>
+        </form>
+
+        {% if logs %}
+        <div class="flex flex-col gap-2">
+            {% for log in logs %}
+            <div class="card bg-base-200">
+                <div class="card-body py-3">
+                    <div class="flex justify-between items-start gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-medium text-sm">{{ log.title }}</span>
+                            </div>
+                            {% if log.description %}
+                            <p class="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{{ log.description }}</p>
+                            {% endif %}
+                            <div class="flex gap-3 mt-2 text-xs text-gray-400">
+                                <span>📅 {{ log.date|date:"d.m.Y" }}</span>
+                                {% if log.user %}<span>{{ log.user.get_full_name|default:log.user.username }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="flex gap-1 shrink-0">
+                            <a href="{% url 'leads:activity_log_edit' lead.pk log.pk %}" class="btn btn-ghost btn-xs">✏️</a>
+                            <form method="post" action="{% url 'leads:activity_log_delete' lead.pk log.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-ghost btn-xs text-error"
+                                    onclick="return confirm('Usunąć ten wpis?')">🗑</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="hero min-h-32 bg-base-200 rounded-box">
+            <p class="text-gray-500">Brak wpisów{% if month %} w wybranym miesiącu{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

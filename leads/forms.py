@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, SearchQuery, Lead, CallLog, CallScript, ImportFile, LeadNote, LeadContact, Pipeline, PipelineStep, LeadPipelineEntry, Voivodeship
+from .models import City, SearchQuery, Lead, CallLog, CallScript, ImportFile, LeadNote, LeadContact, Pipeline, PipelineStep, LeadPipelineEntry, Voivodeship, ClientActivityLog
 
 
 class CallLogForm(forms.ModelForm):
@@ -258,3 +258,24 @@ class LeadPipelineEntryForm(forms.ModelForm):
             self.fields['current_step'].queryset = PipelineStep.objects.none()
         if user and not self.instance.pk:
             self.fields['assigned_to'].initial = user.pk
+
+
+class ClientActivityLogForm(forms.ModelForm):
+    class Meta:
+        model = ClientActivityLog
+        fields = ['title', 'description', 'date']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'input input-bordered w-full',
+                'placeholder': 'np. Dodano 15 nowych zdjęć do wizytyówki',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'textarea textarea-bordered w-full',
+                'rows': 4,
+                'placeholder': 'Opcjonalny opis szczegółowy...',
+            }),
+            'date': forms.DateInput(attrs={
+                'class': 'input input-bordered w-full',
+                'type': 'date',
+            }),
+        }

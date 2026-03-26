@@ -510,6 +510,26 @@ class LeadPipelineStepHistory(models.Model):
         ordering = ['entered_at']
 
 
+class ClientActivityLog(models.Model):
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name='activity_logs',
+        limit_choices_to={'status': 'client'},
+    )
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='activity_logs')
+    title = models.CharField(max_length=300)
+    description = models.TextField(blank=True)
+    date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+
+    def __str__(self):
+        return f"{self.lead.name} — {self.title} ({self.date})"
+
+
 class AppSettings(models.Model):
     """Singleton — zawsze tylko jeden rekord."""
     openai_api_key = models.CharField(max_length=255, blank=True)
