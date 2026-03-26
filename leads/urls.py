@@ -72,6 +72,9 @@ urlpatterns = [
     path('leads/<int:lead_pk>/pipeline/move/', views.pipeline.lead_pipeline_move, name='lead_pipeline_move'),
     path('leads/<int:lead_pk>/pipeline/edit/', views.pipeline.lead_pipeline_edit, name='lead_pipeline_edit'),
 
+    # Google Business Profile
+    path('gbp/locations/', views.gbp.gbp_locations, name='gbp_locations'),
+
     # Log działań klientów
     path('leads/<int:lead_pk>/activity/', views.activity_log.activity_log_index, name='activity_log_index'),
     path('leads/<int:lead_pk>/activity/<int:pk>/edit/', views.activity_log.activity_log_edit, name='activity_log_edit'),

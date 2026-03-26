@@ -19,10 +19,13 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from leads.views.google_oauth import oauth_start, oauth_callback
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('google/oauth/start/', oauth_start, name='google_oauth_start'),
+    path('google/oauth/callback/', oauth_callback, name='google_oauth_callback'),
     path('', include('leads.urls', namespace='leads')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

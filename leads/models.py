@@ -115,6 +115,11 @@ class Lead(models.Model):
 
     raw_data = models.JSONField(default=dict)
     keyword_search_nationwide = models.BooleanField(default=False, verbose_name='Sprawdzaj pozycje dla całego kraju')
+    gbp_location_name = models.CharField(
+        max_length=100, blank=True,
+        verbose_name='GBP location name',
+        help_text='Format: locations/123456789 — identyfikator wizytyówki w Google Business Profile'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -535,6 +540,7 @@ class AppSettings(models.Model):
     openai_api_key = models.CharField(max_length=255, blank=True)
     dataforseo_login = models.CharField(max_length=255, blank=True)
     dataforseo_password = models.CharField(max_length=255, blank=True)
+    google_refresh_token = models.TextField(blank=True)  # OAuth2 refresh token do GBP API
 
     class Meta:
         verbose_name = 'Ustawienia aplikacji'
