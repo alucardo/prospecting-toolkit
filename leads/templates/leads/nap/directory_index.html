@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">📁 Katalogi NAP</h1>
+        <p class="text-sm text-gray-400 mt-1">Lista serwisów do zamieszczania danych NAP (Name, Address, Phone)</p>
+    </div>
+    <a href="{% url 'leads:nap_directory_create' %}" class="btn btn-primary btn-sm">+ Nowy katalog</a>
+</div>
+
+{# Filtry #}
+<div class="flex flex-wrap gap-3 mb-5">
+    <form method="get" class="flex gap-2 items-center">
+        {% if tag_filter %}<input type="hidden" name="tag" value="{{ tag_filter }}">{% endif %}
+        <input type="text" name="search" value="{{ search }}"
+               placeholder="🔍 Szukaj po nazwie..." class="input input-bordered input-sm w-56">
+        <button type="submit" class="btn btn-sm btn-ghost">Szukaj</button>
+        {% if search %}
+            <a href="{% url 'leads:nap_directory_index' %}{% if tag_filter %}?tag={{ tag_filter }}{% endif %}" class="btn btn-sm btn-ghost text-gray-400">✕</a>
+        {% endif %}
+    </form>
+
+    <div class="flex flex-wrap gap-1 items-center">
+        <a href="{% url 'leads:nap_directory_index' %}{% if search %}?search={{ search }}{% endif %}"
+           class="badge {% if not tag_filter %}badge-neutral{% else %}badge-ghost{% endif %} cursor-pointer">
+            Wszystkie
+        </a>
+        {% for tag in tags %}
+        <a href="?tag={{ tag.id }}{% if search %}&search={{ search }}{% endif %}"
+           class="badge {% if tag_filter == tag.id|stringformat:'s' %}badge-neutral{% else %}badge-ghost{% endif %} cursor-pointer">
+            {{ tag.name }}
+            <span class="ml-1 text-xs opacity-60">({{ tag.dir_count }})</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% if directories %}
+<div class="card bg-base-200">
+    <div class="card-body p-0">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Nazwa katalogu</th>
+                    <th>Adres WWW</th>
+                    <th>Tagi</th>
+                    <th class="text-center w-24">Status</th>
+                    <th class="w-24"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dir in directories %}
+                <tr class="hover {% if not dir.is_active %}opacity-50{% endif %}">
+                    <td>
+                        <span class="font-medium">{{ dir.name }}</span>
+                        {% if dir.notes %}
+                        <div class="text-xs text-gray-400 mt-0.5 max-w-xs truncate">{{ dir.notes }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ dir.url }}" target="_blank" rel="noopener"
+                           class="link link-hover text-sm font-mono text-blue-500">
+                            {{ dir.url|truncatechars:50 }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="flex flex-wrap gap-1">
+                            {% for tag in dir.tags.all %}
+                            <span class="badge badge-outline badge-sm">{{ tag.name }}</span>
+                            {% empty %}
+                            <span class="text-gray-400 text-xs">—</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        {% if dir.is_active %}
+                            <span class="badge badge-success badge-sm">aktywny</span>
+                        {% else %}
+                            <span class="badge badge-ghost badge-sm">nieaktywny</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'leads:nap_directory_edit' dir.pk %}" class="btn btn-ghost btn-xs">✏️</a>
+                        <form method="post" action="{% url 'leads:nap_directory_delete' dir.pk %}" class="inline"
+                              onsubmit="return confirm('Usunąć katalog {{ dir.name }}?')">
+                            {% csrf_token %}
+                            <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="mt-3 text-xs text-gray-400">{{ directories|length }} katalog{{ directories|length|pluralize:",,ów" }}</div>
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <div class="text-center">
+        <p class="text-gray-500 mb-3">Brak katalogów NAP{% if search or tag_filter %} spełniających kryteria{% endif %}</p>
+        {% if not search and not tag_filter %}
+        <a href="{% url 'leads:nap_directory_create' %}" class="btn btn-primary btn-sm">Dodaj pierwszy katalog</a>
+        {% else %}
+        <a href="{% url 'leads:nap_directory_index' %}" class="btn btn-ghost btn-sm">Wyczyść filtry</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

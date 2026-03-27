@@ -64,22 +64,12 @@ def _auth_headers(access_token):
     return {'Authorization': f'Bearer {access_token}'}
 
 
-def list_accounts(access_token):
-    """Zwraca listę kont GBP (zwykle jedno)."""
-    resp = requests.get(
-        'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-        headers=_auth_headers(access_token),
-    )
-    resp.raise_for_status()
-    return resp.json().get('accounts', [])
-
-
-def list_locations(access_token, account_name):
-    """Zwraca listę lokalizacji dla danego konta.
-    account_name format: 'accounts/123456789'
+def list_locations(access_token):
+    """Zwraca listę wszystkich lokalizacji z wszystkich kont.
+    Używa wildcard '-' żeby ominąć Account Management API.
     """
     resp = requests.get(
-        f'https://mybusinessbusinessinformation.googleapis.com/v1/{account_name}/locations',
+        'https://mybusinessbusinessinformation.googleapis.com/v1/accounts/-/locations',
         headers=_auth_headers(access_token),
         params={
             'readMask': 'name,title,storefrontAddress,websiteUri',

@@ -1,13 +1,11 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 from ..models import Lead, AppSettings
-from ..services.gbp_service import get_access_token, list_accounts, list_locations
+from ..services.gbp_service import get_access_token, list_locations
 
 
 @login_required
 def gbp_locations(request):
-    """Widok do przypisywania lokalizacji GBP do klientów."""
     app_settings = AppSettings.get()
     error = None
     locations = []
@@ -18,22 +16,23 @@ def gbp_locations(request):
     else:
         try:
             access_token = get_access_token(app_settings.google_refresh_token)
-            accounts = list_accounts(access_token)
-            for account in accounts:
-                account_name = account.get('name')
-                locs = list_locations(access_token, account_name)
-                for loc in locs:
-                    locations.append({
-                        'name': loc.get('name'),          # locations/123456789
-                        'title': loc.get('title', '—'),
-                        'address': _format_address(loc.get('storefrontAddress', {})),
-                        'website': loc.get('websiteUri', ''),
-                    })
+            locs = list_locations(access_token)
+            for loc in locs:
+                locations.append({
+                    'name': loc.get('name'),
+                    'title': loc.get('title', '—'),
+                    'address': _format_address(loc.get('storefrontAddress', {})),
+                    'website': loc.get('websiteUri', ''),
+                })
         except Exception as e:
-            error = f'Błąd pobierania lokalizacji: {e}'
+            import requests as req_lib
+            if isinstance(e, req_lib.HTTPError) and e.response is not None:
+                error = f'HTTP {e.response.status_code}\n\n{e.response.text}'
+            else:
+                import traceback
+                error = f'{e}\n\n{traceback.format_exc()}'
 
     if request.method == 'POST':
-        # Zapisz przypisania: POST zawiera lead_<pk> = location_name
         for key, value in request.POST.items():
             if key.startswith('lead_'):
                 try:

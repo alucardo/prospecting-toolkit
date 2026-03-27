@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:nap_directory_index' %}" class="btn btn-ghost btn-sm">← Katalogi NAP</a>
+    <h1 class="text-2xl font-bold">
+        {% if directory %}Edytuj katalog{% else %}Nowy katalog NAP{% endif %}
+    </h1>
+</div>
+
+<div class="max-w-2xl">
+    <form method="post" class="card bg-base-200">
+        <div class="card-body flex flex-col gap-4">
+            {% csrf_token %}
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Nazwa katalogu</span></label>
+                <input type="text" name="name" class="input input-bordered w-full"
+                       value="{{ directory.name|default:'' }}"
+                       placeholder="np. Panorama Firm" required>
+            </div>
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Adres WWW</span></label>
+                <input type="url" name="url" class="input input-bordered w-full font-mono"
+                       value="{{ directory.url|default:'' }}"
+                       placeholder="https://www.przyklad.pl" required>
+            </div>
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Tagi</span></label>
+                <div class="flex flex-wrap gap-2 p-3 bg-base-100 rounded-lg border border-base-300 min-h-12">
+                    {% for tag in tags %}
+                    <label class="cursor-pointer flex items-center gap-1.5">
+                        <input type="checkbox" name="tags" value="{{ tag.id }}" class="checkbox checkbox-sm"
+                               {% if tag.id in selected_tags %}checked{% endif %}>
+                        <span class="text-sm">{{ tag.name }}</span>
+                    </label>
+                    {% empty %}
+                    <span class="text-sm text-gray-400">Brak tagów — <a href="{% url 'leads:nap_tag_create' %}" class="link">dodaj pierwszy tag</a></span>
+                    {% endfor %}
+                </div>
+                <label class="label">
+                    <span class="label-text-alt">
+                        <a href="{% url 'leads:nap_tag_index' %}" class="link link-hover text-gray-400">Zarządzaj tagami →</a>
+                    </span>
+                </label>
+            </div>
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Notatki <span class="text-gray-400">(opcjonalnie)</span></span></label>
+                <textarea name="notes" class="textarea textarea-bordered w-full" rows="3"
+                          placeholder="np. wymaga rejestracji, płatny, tylko lokalne...">{{ directory.notes|default:'' }}</textarea>
+            </div>
+
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-3">
+                    <input type="checkbox" name="is_active" class="checkbox"
+                           {% if directory.is_active or not directory %}checked{% endif %}>
+                    <span class="label-text">Katalog aktywny</span>
+                </label>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-primary">Zapisz</button>
+                <a href="{% url 'leads:nap_directory_index' %}" class="btn btn-ghost">Anuluj</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

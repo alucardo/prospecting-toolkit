@@ -16,4 +16,4 @@ from .whisper import whisper_transcribe
 from .phone_search import phone_search
 from .analysis_posts_status import analysis_posts_status
 from .reports import google_analysis_pdf, google_analysis_preview
-from . import reports, user_contact, pipeline, voivodeship_keywords, client, activity_log, gbp
+from . import reports, user_contact, pipeline, voivodeship_keywords, client, activity_log, gbp, nap

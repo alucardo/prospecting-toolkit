@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:nap_tag_index' %}" class="btn btn-ghost btn-sm">← Tagi NAP</a>
+    <h1 class="text-2xl font-bold">
+        {% if tag %}Edytuj tag{% else %}Nowy tag{% endif %}
+    </h1>
+</div>
+
+<div class="max-w-sm">
+    <form method="post" class="card bg-base-200">
+        <div class="card-body flex flex-col gap-4">
+            {% csrf_token %}
+
+            <div class="form-control">
+                <label class="label"><span class="label-text">Nazwa tagu</span></label>
+                <input type="text" name="name" class="input input-bordered w-full"
+                       value="{{ tag.name|default:'' }}"
+                       placeholder="np. ogólnopolski, lokalny, branżowy, płatny..."
+                       autofocus required>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-primary">Zapisz</button>
+                <a href="{% url 'leads:nap_tag_index' %}" class="btn btn-ghost">Anuluj</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-4">
+        <a href="{% url 'leads:nap_directory_index' %}" class="btn btn-ghost btn-sm">← Katalogi NAP</a>
+        <h1 class="text-2xl font-bold">🏷️ Tagi katalogów NAP</h1>
+    </div>
+    <a href="{% url 'leads:nap_tag_create' %}" class="btn btn-primary btn-sm">+ Nowy tag</a>
+</div>
+
+{% if tags %}
+<div class="card bg-base-200 max-w-xl">
+    <div class="card-body p-0">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Nazwa tagu</th>
+                    <th class="text-center w-32">Katalogów</th>
+                    <th class="w-24"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tag in tags %}
+                <tr class="hover">
+                    <td>
+                        <a href="{% url 'leads:nap_directory_index' %}?tag={{ tag.id }}"
+                           class="font-medium link link-hover">
+                            {{ tag.name }}
+                        </a>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge badge-ghost">{{ tag.dir_count }}</span>
+                    </td>
+                    <td class="text-right">
+                        <a href="{% url 'leads:nap_tag_edit' tag.pk %}" class="btn btn-ghost btn-xs">✏️</a>
+                        <form method="post" action="{% url 'leads:nap_tag_delete' tag.pk %}" class="inline"
+                              onsubmit="return confirm('Usunąć tag {{ tag.name }}? Zostanie odłączony od wszystkich katalogów.')">
+                            {% csrf_token %}
+                            <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="mt-3 text-xs text-gray-400">{{ tags|length }} tag{{ tags|length|pluralize:",i,ów" }}</div>
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box max-w-xl">
+    <div class="text-center">
+        <p class="text-gray-500 mb-3">Brak tagów</p>
+        <a href="{% url 'leads:nap_tag_create' %}" class="btn btn-primary btn-sm">Dodaj pierwszy tag</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

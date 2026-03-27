@@ -552,3 +552,38 @@ class AppSettings(models.Model):
 
     def __str__(self):
         return 'Ustawienia aplikacji'
+
+
+class NapDirectoryTag(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name='Nazwa tagu')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Tag katalogu NAP'
+        verbose_name_plural = 'Tagi katalogów NAP'
+
+    def __str__(self):
+        return self.name
+
+
+class NapDirectory(models.Model):
+    name = models.CharField(max_length=255, verbose_name='Nazwa katalogu')
+    url = models.URLField(max_length=500, verbose_name='Adres WWW')
+    is_active = models.BooleanField(default=True, verbose_name='Aktywny')
+    notes = models.TextField(blank=True, verbose_name='Notatki')
+    tags = models.ManyToManyField(
+        NapDirectoryTag,
+        blank=True,
+        related_name='directories',
+        verbose_name='Tagi',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Katalog NAP'
+        verbose_name_plural = 'Katalogi NAP'
+
+    def __str__(self):
+        return self.name

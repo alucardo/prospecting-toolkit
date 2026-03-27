@@ -80,6 +80,16 @@ urlpatterns = [
     path('leads/<int:lead_pk>/activity/<int:pk>/edit/', views.activity_log.activity_log_edit, name='activity_log_edit'),
     path('leads/<int:lead_pk>/activity/<int:pk>/delete/', views.activity_log.activity_log_delete, name='activity_log_delete'),
 
+    # Katalogi NAP
+    path('nap/', views.nap.nap_directory_index, name='nap_directory_index'),
+    path('nap/nowy/', views.nap.nap_directory_create, name='nap_directory_create'),
+    path('nap/<int:pk>/edytuj/', views.nap.nap_directory_edit, name='nap_directory_edit'),
+    path('nap/<int:pk>/usun/', views.nap.nap_directory_delete, name='nap_directory_delete'),
+    path('nap/tagi/', views.nap.nap_tag_index, name='nap_tag_index'),
+    path('nap/tagi/nowy/', views.nap.nap_tag_create, name='nap_tag_create'),
+    path('nap/tagi/<int:pk>/edytuj/', views.nap.nap_tag_edit, name='nap_tag_edit'),
+    path('nap/tagi/<int:pk>/usun/', views.nap.nap_tag_delete, name='nap_tag_delete'),
+
     # Skrypty rozmów
     path('skrypty/', script_index, name='script_index'),
     path('skrypty/nowy/', script_create, name='script_create'),
