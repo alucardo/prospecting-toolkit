@@ -6,6 +6,7 @@
     <h1 class="text-2xl font-bold">{{ lead.name }}</h1>
     <a href="{% url 'leads:lead_detail' lead.pk %}" class="btn btn-ghost btn-xs">📋 Lead</a>
     <a href="{% url 'leads:activity_log_index' lead.pk %}" class="btn btn-ghost btn-sm">📋 Log działań</a>
+    <a href="{% url 'leads:lead_nap_index' lead.pk %}" class="btn btn-ghost btn-sm">📍 NAP</a>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

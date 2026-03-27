@@ -587,3 +587,49 @@ class NapDirectory(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class LeadNapEntry(models.Model):
+    STATUS_ADDED_BY_US = 'added_by_us'
+    STATUS_PRE_EXISTING = 'pre_existing'
+    STATUS_CHOICES = [
+        (STATUS_ADDED_BY_US, 'Dodany przeze mnie'),
+        (STATUS_PRE_EXISTING, 'Był przed nami'),
+    ]
+
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name='nap_entries',
+        verbose_name='Klient',
+    )
+    directory = models.ForeignKey(
+        NapDirectory,
+        on_delete=models.CASCADE,
+        related_name='lead_entries',
+        verbose_name='Katalog NAP',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        verbose_name='Status wpisu',
+    )
+    notes = models.CharField(max_length=500, blank=True, verbose_name='Notatka')
+    added_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='nap_entries',
+        verbose_name='Oznaczył',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('lead', 'directory')]
+        ordering = ['directory__name']
+        verbose_name = 'Wpis NAP klienta'
+        verbose_name_plural = 'Wpisy NAP klientów'
+
+    def __str__(self):
+        return f"{self.lead.name} → {self.directory.name} ({self.get_status_display()})"
