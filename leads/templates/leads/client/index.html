@@ -12,53 +12,23 @@
             <tr>
                 <th>Klient</th>
                 <th>Miasto</th>
-                <th class="text-center">Wizytówka</th>
-                <th class="text-center">Analiza</th>
                 <th class="text-center">Frazy</th>
+                <th class="text-center">Działania w tym miesiącu</th>
+                <th class="text-center">Ostatnie 30 dni</th>
                 <th class="text-right">Akcje</th>
             </tr>
         </thead>
         <tbody>
             {% for row in data %}
-            {% with lead=row.lead analysis=row.analysis %}
+            {% with lead=row.lead %}
             <tr class="hover">
                 <td>
                     <a href="{% url 'leads:client_detail' lead.pk %}" class="font-medium link link-hover">{{ lead.name }}</a>
                     {% if lead.phone %}<div class="text-xs text-gray-400">{{ lead.phone }}</div>{% endif %}
                 </td>
+
                 <td class="text-sm text-gray-500">{{ lead.city|default:"—" }}</td>
 
-                <!-- Wizytówka Google -->
-                <td class="text-center">
-                    {% if row.has_maps_url %}
-                        <a href="{{ lead.google_maps_url }}" target="_blank"
-                           class="badge badge-success badge-sm" title="{{ lead.google_maps_url }}">
-                           ✓ Połączona
-                        </a>
-                    {% else %}
-                        <a href="{% url 'leads:lead_edit' lead.pk %}"
-                           class="badge badge-warning badge-sm">⚠ Brak linku</a>
-                    {% endif %}
-                </td>
-
-                <!-- Status analizy -->
-                <td class="text-center">
-                    {% if not analysis %}
-                        <span class="badge badge-ghost badge-sm">Brak danych</span>
-                    {% elif analysis.status == 'pending' %}
-                        <span class="badge badge-info badge-sm">
-                            <span class="loading loading-spinner loading-xs mr-1"></span>Pobieranie…
-                        </span>
-                    {% elif analysis.status == 'error' %}
-                        <span class="badge badge-error badge-sm">Błąd</span>
-                    {% elif analysis.status == 'fetched' %}
-                        <span class="badge badge-warning badge-sm">Pobrano</span>
-                    {% elif analysis.status == 'analyzed' %}
-                        <span class="badge badge-success badge-sm">✓ Gotowa</span>
-                    {% endif %}
-                </td>
-
-                <!-- Frazy -->
                 <td class="text-center text-sm">
                     {% if row.keywords_count > 0 %}
                         <span class="text-success font-medium">{{ row.keywords_count }}</span>
@@ -67,29 +37,32 @@
                     {% endif %}
                 </td>
 
-                <!-- Akcje -->
+                <td class="text-center">
+                    {% if row.activities_this_month > 0 %}
+                        <a href="{% url 'leads:activity_log_index' lead.pk %}"
+                           class="badge badge-primary badge-sm font-medium">
+                            {{ row.activities_this_month }}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'leads:activity_log_index' lead.pk %}"
+                           class="badge badge-ghost badge-sm text-gray-400">0</a>
+                    {% endif %}
+                </td>
+
+                <td class="text-center">
+                    {% if row.activities_30d > 0 %}
+                        <a href="{% url 'leads:activity_log_index' lead.pk %}"
+                           class="badge badge-secondary badge-sm font-medium">
+                            {{ row.activities_30d }}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'leads:activity_log_index' lead.pk %}"
+                           class="badge badge-ghost badge-sm text-gray-400">0</a>
+                    {% endif %}
+                </td>
+
                 <td class="text-right">
-                    <div class="flex gap-1 justify-end flex-wrap">
-                        {% if row.has_maps_url %}
-                            <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-xs btn-outline"
-                                    title="Pobierz / odśwież dane z Google">
-                                    {% if not analysis %}📥 Pobierz dane{% else %}🔄 Odśwież{% endif %}
-                                </button>
-                            </form>
-                        {% endif %}
-
-                        {% if analysis and analysis.status != 'error' and analysis.status != 'pending' %}
-                            <a href="{% url 'leads:report_google_analysis_preview' lead.pk %}"
-                               target="_blank" class="btn btn-xs btn-outline">👁 Podgląd</a>
-                            <a href="{% url 'leads:report_google_analysis' lead.pk %}"
-                               class="btn btn-xs btn-primary">📄 PDF</a>
-                        {% endif %}
-
-                        <a href="{% url 'leads:audit_edit' lead.pk %}"
-                           class="btn btn-xs btn-ghost" title="Edytuj dane audytu">✏️</a>
-                    </div>
+                    <a href="{% url 'leads:lead_edit' lead.pk %}" class="btn btn-xs btn-ghost" title="Edytuj">✏️</a>
                 </td>
             </tr>
             {% endwith %}

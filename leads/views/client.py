@@ -1,28 +1,50 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from ..models import Lead
+from django.utils import timezone
+from ..models import Lead, ClientActivityLog
 from ..tasks_analysis import take_client_rank_snapshot, check_keyword_rankings
 
 
 @login_required
 def client_index(request):
+    now = timezone.now()
     clients = (
         Lead.objects
         .filter(status='client')
         .select_related('city')
-        .prefetch_related('business_analyses', 'keywords_list')
+        .prefetch_related('keywords_list')
         .order_by('name')
     )
 
+    # Działania w tym miesiącu — jedna query dla wszystkich klientów
+    activities_this_month = (
+        ClientActivityLog.objects
+        .filter(date__year=now.year, date__month=now.month)
+        .values_list('lead_id', flat=True)
+    )
+    activity_counts = {}
+    for lead_id in activities_this_month:
+        activity_counts[lead_id] = activity_counts.get(lead_id, 0) + 1
+
+    # Działania w ostatnich 30 dniach
+    thirty_days_ago = now.date() - timezone.timedelta(days=30)
+    activities_30d = (
+        ClientActivityLog.objects
+        .filter(date__gte=thirty_days_ago)
+        .values_list('lead_id', flat=True)
+    )
+    activity_counts_30d = {}
+    for lead_id in activities_30d:
+        activity_counts_30d[lead_id] = activity_counts_30d.get(lead_id, 0) + 1
+
     data = []
     for client in clients:
-        analysis = client.business_analyses.first()
         data.append({
             'lead': client,
-            'analysis': analysis,
-            'has_maps_url': bool(client.google_maps_url),
             'keywords_count': client.keywords_list.count(),
+            'activities_this_month': activity_counts.get(client.pk, 0),
+            'activities_30d': activity_counts_30d.get(client.pk, 0),
         })
 
     return render(request, 'leads/client/index.html', {'data': data})
