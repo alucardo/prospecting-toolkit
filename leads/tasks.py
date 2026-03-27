@@ -2,7 +2,7 @@ import os
 import tempfile
 import base64
 from celery import shared_task
-from .models import Lead, SearchQuery, UserContact, VoivodeshipKeyword
+from .models import Lead, SearchQuery, UserContact, Voivodeship, VoivodeshipKeyword
 from .services.email_scraper import scrape_email
 from .services.apify import fetch_and_save_leads
 from .services.pdf_service import html_to_pdf
@@ -44,6 +44,54 @@ def generate_pdf_report(self, lead_pk, user_pk):
         f.write(pdf_bytes)
 
     return out_path
+
+
+@shared_task(bind=True, time_limit=300)
+def fetch_keyword_volumes_task(self, voivodeship_id):
+    """Pobiera wolumeny wyszukan z DataForSEO dla fraz bez wartosci w tle."""
+    from django.utils import timezone
+    from django.db import models as db_models
+    from .models import AppSettings
+    from .services.dataforseo_volumes import fetch_keyword_volumes
+    from .constants import get_dataforseo_location_code
+
+    voivodeship = Voivodeship.objects.get(pk=voivodeship_id)
+    app_settings = AppSettings.get()
+
+    if not app_settings.dataforseo_login or not app_settings.dataforseo_password:
+        return
+
+    # Reset daty dla fraz ktore byly sprawdzane z blednym endpointem
+    voivodeship.keywords.filter(
+        monthly_searches__isnull=True,
+        searches_updated_at__isnull=False,
+    ).update(searches_updated_at=None)
+
+    keywords_to_update = list(
+        voivodeship.keywords.filter(monthly_searches__isnull=True)
+    )
+    if not keywords_to_update:
+        return
+
+    phrases = [kw.phrase for kw in keywords_to_update]
+    location_code = get_dataforseo_location_code(voivodeship.name)
+    volumes = fetch_keyword_volumes(
+        phrases,
+        app_settings.dataforseo_login,
+        app_settings.dataforseo_password,
+        location_code=location_code,
+    )
+
+    now = timezone.now()
+    for kw in keywords_to_update:
+        volume = volumes.get(kw.phrase)
+        if volume is not None:
+            kw.monthly_searches = str(volume)
+            kw.searches_updated_at = now
+            kw.save(update_fields=['monthly_searches', 'searches_updated_at'])
+        else:
+            kw.searches_updated_at = now
+            kw.save(update_fields=['searches_updated_at'])
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)

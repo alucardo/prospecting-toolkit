@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from django.db import models
 from django.utils import timezone
 from ..models import Voivodeship, VoivodeshipKeyword, AppSettings
-from ..services.dataforseo_volumes import fetch_keyword_volumes
 from ..constants import get_dataforseo_location_code
 
 
@@ -84,47 +83,8 @@ def voivodeship_keyword_fetch_volumes(request, pk):
     if not app_settings.dataforseo_login or not app_settings.dataforseo_password:
         return redirect('leads:voivodeship_keyword_detail', pk=pk)
 
-    # Pobieramy wszystkie frazy bez wartości — użytkownik kliknął przycisk świadomie.
-    # Cooldown 30 dni chroni tylko frazy które DataForSEO już sprawdził i NIE znał
-    # (monthly_searches IS NULL ale searches_updated_at ustawione niedawno).
-    # Tutaj resetujemy searches_updated_at dla takich fraz, żeby wymusić ponowne sprawdzenie.
-    stale_threshold = timezone.now() - timezone.timedelta(days=30)
-    keywords_to_update = list(
-        voivodeship.keywords.filter(monthly_searches__isnull=True)
-    )
-    # Reset daty dla fraz które były sprawdzane z błędnym endpointem
-    # (mają searches_updated_at ale brak wartości) — wymuszamy ponowne pobranie
-    voivodeship.keywords.filter(
-        monthly_searches__isnull=True,
-        searches_updated_at__isnull=False,
-    ).update(searches_updated_at=None)
-
-    if not keywords_to_update:
-        return redirect('leads:voivodeship_keyword_detail', pk=pk)
-
-    phrases = [kw.phrase for kw in keywords_to_update]
-    location_code = get_dataforseo_location_code(voivodeship.name)
-    volumes = fetch_keyword_volumes(
-        phrases,
-        app_settings.dataforseo_login,
-        app_settings.dataforseo_password,
-        location_code=location_code,
-    )
-
-    now = timezone.now()
-    updated = 0
-    for kw in keywords_to_update:
-        volume = volumes.get(kw.phrase)
-        if volume is not None:
-            # DataForSEO zna wolumin — zapisz wartość i datę
-            kw.monthly_searches = str(volume)
-            kw.searches_updated_at = now
-            kw.save(update_fields=['monthly_searches', 'searches_updated_at'])
-            updated += 1
-        else:
-            # DataForSEO nie ma danych dla tej frazy — zapisz samą datę sprawdzenia
-            # dzięki temu nie będziemy płacić za nią przy każdym kliknięciu
-            kw.searches_updated_at = now
-            kw.save(update_fields=['searches_updated_at'])
+    # Odpal task Celery w tle — gunicorn nie czeka, uzytkownik dostaje natychmiastowy redirect
+    from ..tasks import fetch_keyword_volumes_task
+    fetch_keyword_volumes_task.delay(voivodeship.pk)
 
     return redirect('leads:voivodeship_keyword_detail', pk=pk)
