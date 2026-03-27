@@ -2,13 +2,15 @@ import requests
 import base64
 
 
-def fetch_keyword_volumes(phrases, login, password, location_name="Poland", language_name="Polish"):
+def fetch_keyword_volumes(phrases, login, password, location_code=2616, language_name="Polish"):
     """
     Pobiera miesięczne wolumeny wyszukiwań dla listy fraz z DataForSEO.
-    Endpoint: dataforseo_labs/google/bulk_keyword_metrics/live
+    Endpoint: keywords_data/google_ads/search_volume/live
 
-    location_name powinno byc polem dataforseo_name z modelu Voivodeship,
-    np. "Silesian Voivodeship, Poland" — nie ogolne "Poland".
+    location_code: int — kod lokalizacji DataForSEO (nie string!)
+        2616        = cała Polska (fallback)
+        20847-20862 = poszczególne województwa
+    Użyj get_dataforseo_location_code() z constants.py żeby pobrać kod dla województwa.
 
     Zwraca słownik: {fraza: volume_int_or_None}
     Przy błędzie zwraca pusty słownik.
@@ -22,7 +24,7 @@ def fetch_keyword_volumes(phrases, login, password, location_name="Poland", lang
         "Content-Type": "application/json",
     }
 
-    # DataForSEO przyjmuje max 1000 fraz naraz — dzielimy na chunki
+    # google_ads/search_volume/live przyjmuje max 1000 fraz naraz
     CHUNK_SIZE = 1000
     result = {}
 
@@ -30,11 +32,11 @@ def fetch_keyword_volumes(phrases, login, password, location_name="Poland", lang
         chunk = phrases[i:i + CHUNK_SIZE]
         try:
             response = requests.post(
-                "https://api.dataforseo.com/v3/dataforseo_labs/google/bulk_keyword_metrics/live",
+                "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live",
                 headers=headers,
                 json=[{
                     "keywords": chunk,
-                    "location_name": location_name,
+                    "location_code": location_code,
                     "language_name": language_name,
                 }],
                 timeout=60,
@@ -50,16 +52,10 @@ def fetch_keyword_volumes(phrases, login, password, location_name="Poland", lang
             if task.get("status_code") != 20000:
                 continue
 
-            task_result = (task.get("result") or [None])[0]
-            if not task_result:
-                continue
-
-            items = task_result.get("items") or []
+            items = (task.get("result") or [])
             for item in items:
                 keyword = item.get("keyword", "")
-                metrics = item.get("keyword_info") or {}
-                volume = metrics.get("search_volume")
-                # Normalizuj: None zostaje None, 0 zostaje 0
+                volume = item.get("search_volume")
                 result[keyword] = volume
 
         except Exception:

@@ -9,16 +9,20 @@
     <form method="post" action="{% url 'leads:voivodeship_keyword_fetch_volumes' voivodeship.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-sm btn-outline btn-primary"
-                onclick="return confirm('Pobrać wyszukiwania dla {{ missing_count }} fraz?\nLokalizacja: {{ dataforseo_location }}')">
-            📊 Pobierz wyszukiwania ({{ missing_count }} brakujących)
+                onclick="return confirm('Pobrać wyszukiwania?\nWysłane do API: {{ fetchable_count }} fraz\nPominęte (sprawdzone &lt;30 dni): {{ checked_no_data }}\nLokalizacja: {{ dataforseo_location }}')">
+            📊 Pobierz wyszukiwania
+            <span class="badge badge-sm ml-1">{{ missing_count }} bez wartości</span>
+            {% if fetchable_count < missing_count %}
+            <span class="badge badge-ghost badge-sm ml-1" title="Reszta była sprawdzona w ciągu ostatnich 30 dni">{{ fetchable_count }} do API</span>
+            {% endif %}
         </button>
     </form>
     {% else %}
     <span class="badge badge-success badge-sm">✓ Wszystkie frazy uzupełnione</span>
     {% endif %}
     {% if checked_no_data > 0 %}
-    <span class="badge badge-ghost badge-sm" title="DataForSEO nie zwrocił danych dla tych fraz. Zostaną sprawdzone ponownie za 30 dni.">
-        ❓ {{ checked_no_data }} bez danych w DataForSEO
+    <span class="badge badge-ghost badge-sm" title="DataForSEO nie zna tych fraz. Zostaną sprawdzone ponownie za 30 dni.">
+        ❓ {{ checked_no_data }} nieznanych w DataForSEO
     </span>
     {% endif %}
 </div>

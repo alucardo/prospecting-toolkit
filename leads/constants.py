@@ -21,39 +21,41 @@ BLOCKED_SCRAPING_DOMAINS = [
 ]
 
 
-# Mapa polskich nazw województw na nazwy lokalizacji DataForSEO
-# DataForSEO wymaga angielskich nazw regionów w formacie "X Voivodeship, Poland"
-VOIVODESHIP_DATAFORSEO_MAP = {
-    # Polskie nazwy (różne warianty) → DataForSEO location_name
-    'dolnośląskie':             'Lower Silesian Voivodeship, Poland',
-    'kujawsko-pomorskie':       'Kuyavian-Pomeranian Voivodeship, Poland',
-    'lubelskie':                'Lublin Voivodeship, Poland',
-    'lubuskie':                 'Lubusz Voivodeship, Poland',
-    'łódzkie':                  'Lodz Voivodeship, Poland',
-    'małopolskie':              'Lesser Poland Voivodeship, Poland',
-    'mazowieckie':              'Masovian Voivodeship, Poland',
-    'opolskie':                 'Opole Voivodeship, Poland',
-    'podkarpackie':             'Subcarpathian Voivodeship, Poland',
-    'podlaskie':                'Podlaskie Voivodeship, Poland',
-    'pomorskie':                'Pomeranian Voivodeship, Poland',
-    'śląskie':                  'Silesian Voivodeship, Poland',
-    'świętokrzyskie':           'Holy Cross Voivodeship, Poland',
-    'warmińsko-mazurskie':      'Warmian-Masurian Voivodeship, Poland',
-    'wielkopolskie':            'Greater Poland Voivodeship, Poland',
-    'zachodniopomorskie':       'West Pomeranian Voivodeship, Poland',
+# Mapa polskich nazw województw → location_code DataForSEO
+# Kody pobrane z: GET /v3/keywords_data/google_ads/locations/pl
+# Endpoint: keywords_data/google_ads/search_volume/live wymaga location_code (int)
+VOIVODESHIP_LOCATION_CODE_MAP = {
+    'dolnośląskie':        20847,  # Lower Silesian Voivodeship
+    'kujawsko-pomorskie': 20848,  # Kuyavian-Pomeranian Voivodeship
+    'lubelskie':          20851,  # Lublin Voivodeship
+    'lubuskie':           20849,  # Lubusz Voivodeship
+    'łódzkie':             20850,  # Lodz Voivodeship
+    'małopolskie':        20852,  # Lesser Poland Voivodeship
+    'mazowieckie':        20853,  # Masovian Voivodeship
+    'opolskie':           20854,  # Opole Voivodeship
+    'podkarpackie':       20856,  # Podkarpackie Voivodeship
+    'podlaskie':          20855,  # Podlaskie Voivodeship
+    'pomorskie':          20857,  # Pomeranian Voivodeship
+    'śląskie':             20859,  # Silesian Voivodeship
+    'świętokrzyskie':      20858,  # Swietokrzyskie Voivodeship
+    'warmińsko-mazurskie': 20860,  # Warmian-Masurian Voivodeship
+    'wielkopolskie':      20861,  # Greater Poland Voivodeship
+    'zachodniopomorskie': 20862,  # West Pomeranian Voivodeship
 }
 
+POLAND_LOCATION_CODE = 2616  # fallback: cała Polska
 
-def get_dataforseo_location(voivodeship_name):
+
+def get_dataforseo_location_code(voivodeship_name):
     """
-    Zwraca nazwę lokalizacji DataForSEO na podstawie polskiej nazwy województwa.
+    Zwraca location_code DataForSEO na podstawie polskiej nazwy województwa.
     Porównuje bez względu na wielkość liter i białe znaki.
-    Fallback: 'Poland' jeśli nie znaleziono.
+    Fallback: 2616 (cała Polska) jeśli nie znaleziono.
     """
     if not voivodeship_name:
-        return 'Poland'
+        return POLAND_LOCATION_CODE
     normalized = voivodeship_name.strip().lower()
-    return VOIVODESHIP_DATAFORSEO_MAP.get(normalized, 'Poland')
+    return VOIVODESHIP_LOCATION_CODE_MAP.get(normalized, POLAND_LOCATION_CODE)
 
 
 def is_blocked_for_scraping(url):

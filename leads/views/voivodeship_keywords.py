@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import timezone
 from ..models import Voivodeship, VoivodeshipKeyword, AppSettings
 from ..services.dataforseo_volumes import fetch_keyword_volumes
-from ..constants import get_dataforseo_location
+from ..constants import get_dataforseo_location_code
 
 
 @login_required
@@ -47,7 +47,10 @@ def voivodeship_keyword_detail(request, pk):
 
     keywords = voivodeship.keywords.all()
     stale_threshold = timezone.now() - timezone.timedelta(days=30)
-    missing_count = keywords.filter(
+    # Wszystkie frazy bez wartości — do pokazania przycisku
+    missing_count = keywords.filter(monthly_searches__isnull=True).count()
+    # Z nich: ile faktycznie zostanie wysłanych do API (nie sprawdzane w ciągu 30 dni)
+    fetchable_count = keywords.filter(
         monthly_searches__isnull=True,
     ).filter(
         models.Q(searches_updated_at__isnull=True) |
@@ -63,8 +66,9 @@ def voivodeship_keyword_detail(request, pk):
         'voivodeship': voivodeship,
         'keywords': keywords,
         'missing_count': missing_count,
+        'fetchable_count': fetchable_count,
         'checked_no_data': checked_no_data,
-        'dataforseo_location': get_dataforseo_location(voivodeship.name),
+        'dataforseo_location': f"{get_dataforseo_location_code(voivodeship.name)} ({voivodeship.name})",
     })
 
 
@@ -80,28 +84,31 @@ def voivodeship_keyword_fetch_volumes(request, pk):
     if not app_settings.dataforseo_login or not app_settings.dataforseo_password:
         return redirect('leads:voivodeship_keyword_detail', pk=pk)
 
-    # Tylko frazy bez wartości, które nie były sprawdzane w ostatnich 30 dniach
-    # (jeśli DataForSEO nie znał frazy, nie płacimy za nią ponownie przez miesiąc)
+    # Pobieramy wszystkie frazy bez wartości — użytkownik kliknął przycisk świadomie.
+    # Cooldown 30 dni chroni tylko frazy które DataForSEO już sprawdził i NIE znał
+    # (monthly_searches IS NULL ale searches_updated_at ustawione niedawno).
+    # Tutaj resetujemy searches_updated_at dla takich fraz, żeby wymusić ponowne sprawdzenie.
     stale_threshold = timezone.now() - timezone.timedelta(days=30)
     keywords_to_update = list(
-        voivodeship.keywords.filter(
-            monthly_searches__isnull=True,
-        ).filter(
-            models.Q(searches_updated_at__isnull=True) |
-            models.Q(searches_updated_at__lt=stale_threshold)
-        )
+        voivodeship.keywords.filter(monthly_searches__isnull=True)
     )
+    # Reset daty dla fraz które były sprawdzane z błędnym endpointem
+    # (mają searches_updated_at ale brak wartości) — wymuszamy ponowne pobranie
+    voivodeship.keywords.filter(
+        monthly_searches__isnull=True,
+        searches_updated_at__isnull=False,
+    ).update(searches_updated_at=None)
 
     if not keywords_to_update:
         return redirect('leads:voivodeship_keyword_detail', pk=pk)
 
     phrases = [kw.phrase for kw in keywords_to_update]
-    location = get_dataforseo_location(voivodeship.name)
+    location_code = get_dataforseo_location_code(voivodeship.name)
     volumes = fetch_keyword_volumes(
         phrases,
         app_settings.dataforseo_login,
         app_settings.dataforseo_password,
-        location_name=location,
+        location_code=location_code,
     )
 
     now = timezone.now()
