@@ -16,6 +16,11 @@
     {% else %}
     <span class="badge badge-success badge-sm">✓ Wszystkie frazy uzupełnione</span>
     {% endif %}
+    {% if checked_no_data > 0 %}
+    <span class="badge badge-ghost badge-sm" title="DataForSEO nie zwrocił danych dla tych fraz. Zostaną sprawdzone ponownie za 30 dni.">
+        ❓ {{ checked_no_data }} bez danych w DataForSEO
+    </span>
+    {% endif %}
 </div>
 
 {% if keywords %}
