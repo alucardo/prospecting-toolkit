@@ -5,6 +5,17 @@
     <a href="{% url 'leads:voivodeship_keyword_index' %}" class="btn btn-ghost btn-sm">← Wróć</a>
     <h1 class="text-2xl font-bold">{{ voivodeship.name }} — frazy kluczowe</h1>
     <span class="text-gray-400 text-sm">({{ keywords.count }} fraz)</span>
+    {% if missing_count > 0 %}
+    <form method="post" action="{% url 'leads:voivodeship_keyword_fetch_volumes' voivodeship.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline btn-primary"
+                onclick="return confirm('Pobrać wyszukiwania dla {{ missing_count }} fraz?\nLokalizacja: {{ dataforseo_location }}')">
+            📊 Pobierz wyszukiwania ({{ missing_count }} brakujących)
+        </button>
+    </form>
+    {% else %}
+    <span class="badge badge-success badge-sm">✓ Wszystkie frazy uzupełnione</span>
+    {% endif %}
 </div>
 
 {% if keywords %}

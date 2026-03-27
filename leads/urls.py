@@ -58,6 +58,7 @@ urlpatterns = [
     # Frazy kluczowe województw
     path('frazy/', views.voivodeship_keywords.voivodeship_keyword_index, name='voivodeship_keyword_index'),
     path('frazy/<int:pk>/', views.voivodeship_keywords.voivodeship_keyword_detail, name='voivodeship_keyword_detail'),
+    path('frazy/<int:pk>/fetch-volumes/', views.voivodeship_keywords.voivodeship_keyword_fetch_volumes, name='voivodeship_keyword_fetch_volumes'),
 
     # Pipelines
     path('pipelines/', views.pipeline.pipeline_index, name='pipeline_index'),
