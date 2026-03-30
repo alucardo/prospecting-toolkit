@@ -49,49 +49,68 @@ def generate_pdf_report(self, lead_pk, user_pk):
 @shared_task(bind=True, time_limit=300)
 def fetch_keyword_volumes_task(self, voivodeship_id):
     """Pobiera wolumeny wyszukan z DataForSEO dla fraz bez wartosci w tle."""
+    import logging
     from django.utils import timezone
-    from django.db import models as db_models
     from .models import AppSettings
     from .services.dataforseo_volumes import fetch_keyword_volumes
     from .constants import get_dataforseo_location_code
 
+    logger = logging.getLogger(__name__)
+
     voivodeship = Voivodeship.objects.get(pk=voivodeship_id)
     app_settings = AppSettings.get()
+    logger.info(f'[NAP volumes] start dla {voivodeship.name}, login={repr(app_settings.dataforseo_login)}')
 
     if not app_settings.dataforseo_login or not app_settings.dataforseo_password:
+        logger.warning('[NAP volumes] brak credentials DataForSEO')
         return
 
     # Reset daty dla fraz ktore byly sprawdzane z blednym endpointem
-    voivodeship.keywords.filter(
+    reset_count = voivodeship.keywords.filter(
         monthly_searches__isnull=True,
         searches_updated_at__isnull=False,
     ).update(searches_updated_at=None)
+    logger.info(f'[NAP volumes] reset searches_updated_at dla {reset_count} fraz')
 
     keywords_to_update = list(
         voivodeship.keywords.filter(monthly_searches__isnull=True)
     )
+    logger.info(f'[NAP volumes] fraz do pobrania: {len(keywords_to_update)}')
     if not keywords_to_update:
+        logger.warning('[NAP volumes] brak fraz do pobrania')
         return
 
     phrases = [kw.phrase for kw in keywords_to_update]
     location_code = get_dataforseo_location_code(voivodeship.name)
-    volumes = fetch_keyword_volumes(
-        phrases,
-        app_settings.dataforseo_login,
-        app_settings.dataforseo_password,
-        location_code=location_code,
-    )
+    logger.info(f'[NAP volumes] odpytuje DataForSEO: {len(phrases)} fraz, location_code={location_code}')
+
+    try:
+        volumes = fetch_keyword_volumes(
+            phrases,
+            app_settings.dataforseo_login,
+            app_settings.dataforseo_password,
+            location_code=location_code,
+        )
+    except Exception as e:
+        logger.error(f'[NAP volumes] blad fetch_keyword_volumes: {e}')
+        raise
+
+    logger.info(f'[NAP volumes] DataForSEO zwrocil {len(volumes)} wynikow')
 
     now = timezone.now()
+    updated = 0
     for kw in keywords_to_update:
         volume = volumes.get(kw.phrase)
         if volume is not None:
             kw.monthly_searches = str(volume)
             kw.searches_updated_at = now
             kw.save(update_fields=['monthly_searches', 'searches_updated_at'])
+            updated += 1
         else:
             kw.searches_updated_at = now
             kw.save(update_fields=['searches_updated_at'])
+
+    logger.info(f'[NAP volumes] zapisano {updated} wolumenow dla {voivodeship.name}')
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
