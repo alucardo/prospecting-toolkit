@@ -10,7 +10,7 @@
 
     <div class="card bg-base-200">
         <div class="card-body py-4">
-            <h2 class="font-bold mb-2">Parametry zapytania</h2>
+            <h2 class="font-bold mb-2">Parametry</h2>
             <table class="table table-sm">
                 <tr><th class="w-48">Województwo</th><td>{{ voivodeship.name }}</td></tr>
                 <tr><th>location_code</th><td><code>{{ location_code }}</code></td></tr>
@@ -21,42 +21,43 @@
         </div>
     </div>
 
-    {% if error %}
-    <div class="alert alert-error">
-        <span>❌ Błąd połączenia: {{ error }}</span>
-    </div>
-    {% else %}
+    {# TEST 1: Surowe API #}
     <div class="card {% if task_status == 20000 %}bg-success/10{% else %}bg-error/10{% endif %}">
         <div class="card-body py-4">
-            <h2 class="font-bold mb-2">Status odpowiedzi</h2>
-            <table class="table table-sm">
-                <tr><th class="w-48">status_code</th><td><code>{{ task_status }}</code></td></tr>
-                <tr><th>status_message</th><td>{{ task_message }}</td></tr>
-                <tr><th>Liczba wyników (result)</th><td><strong>{{ result_count }}</strong></td></tr>
+            <h2 class="font-bold mb-3">Test 1 — Bezpośrednie wywołanie API (jak w przeglądarce)</h2>
+            {% if api_error %}
+            <div class="alert alert-error"><span>❌ {{ api_error }}</span></div>
+            {% else %}
+            <table class="table table-sm mb-3">
+                <tr><th class="w-48">status_code</th><td><code>{{ task_status }}</code> — {{ task_message }}</td></tr>
+                <tr><th>Liczba wyników</th><td><strong>{{ result_count }}</strong></td></tr>
             </table>
+            {% if first_item %}
+            <pre class="bg-base-300 p-3 rounded-lg text-xs overflow-x-auto">{{ first_item }}</pre>
+            {% else %}
+            <div class="alert alert-warning"><span>⚠️ result jest pusty</span></div>
+            {% endif %}
+            {% endif %}
         </div>
     </div>
 
-    {% if first_item %}
-    <div class="card bg-base-200">
+    {# TEST 2: fetch_keyword_volumes (tak jak Celery task) #}
+    <div class="card {% if service_error %}bg-error/10{% elif service_count > 0 %}bg-success/10{% else %}bg-warning/10{% endif %}">
         <div class="card-body py-4">
-            <h2 class="font-bold mb-2">Pierwszy element result (struktura)</h2>
-            <pre class="bg-base-300 p-4 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">{{ first_item }}</pre>
+            <h2 class="font-bold mb-3">Test 2 — fetch_keyword_volumes() (tak jak robi Celery task)</h2>
+            {% if service_error %}
+            <div class="alert alert-error"><span>❌ Wyjątek: {{ service_error }}</span></div>
+            {% else %}
+            <table class="table table-sm mb-3">
+                <tr><th class="w-48">Zwrócono fraz</th><td><strong>{{ service_count }}</strong></td></tr>
+                <tr><th>Wyniki</th><td><code>{{ service_result }}</code></td></tr>
+            </table>
+            {% if service_count == 0 %}
+            <div class="alert alert-warning"><span>⚠️ Serwis zwrócił pusty słownik — tu jest problem</span></div>
+            {% endif %}
+            {% endif %}
         </div>
     </div>
-    {% else %}
-    <div class="alert alert-warning">
-        <span>⚠️ result jest pusty — API nie zwróciło żadnych elementów mimo status 20000</span>
-    </div>
-    {% endif %}
-
-    <div class="card bg-base-200">
-        <div class="card-body py-4">
-            <h2 class="font-bold mb-2">Pełna surowa odpowiedź</h2>
-            <pre class="bg-base-300 p-4 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">{{ raw }}</pre>
-        </div>
-    </div>
-    {% endif %}
 
 </div>
 {% endblock %}

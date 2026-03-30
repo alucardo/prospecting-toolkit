@@ -73,9 +73,10 @@ def voivodeship_keyword_detail(request, pk):
 
 @login_required
 def voivodeship_keyword_debug(request, pk):
-    """Diagnostyka — pokazuje surową odpowiedź DataForSEO bezpośrednio w przeglądarce."""
+    """Diagnostyka — dwa testy: surowe API + fetch_keyword_volumes()"""
     import requests as req
     import base64
+    from ..services.dataforseo_volumes import fetch_keyword_volumes
 
     voivodeship = get_object_or_404(Voivodeship, pk=pk)
     app_settings = AppSettings.get()
@@ -90,6 +91,7 @@ def voivodeship_keyword_debug(request, pk):
     )
     location_code = get_dataforseo_location_code(voivodeship.name)
 
+    # Test 1: surowe API
     try:
         response = req.post(
             "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live",
@@ -98,32 +100,46 @@ def voivodeship_keyword_debug(request, pk):
             timeout=60,
         )
         raw = response.json()
-        # Wyciągnij szczegóły
         task = (raw.get('tasks') or [{}])[0]
         task_status = task.get('status_code')
         task_message = task.get('status_message')
         result_items = task.get('result') or []
-        # Pierwszy item żeby zobaczyć strukturę
         first_item = result_items[0] if result_items else None
-        error = None
+        api_error = None
     except Exception as e:
-        raw = {}
         task_status = None
         task_message = None
         result_items = []
         first_item = None
-        error = str(e)
+        api_error = str(e)
+
+    # Test 2: fetch_keyword_volumes() — dokładnie jak Celery task
+    try:
+        service_result = fetch_keyword_volumes(
+            test_phrases,
+            app_settings.dataforseo_login,
+            app_settings.dataforseo_password,
+            location_code=location_code,
+        )
+        service_count = len(service_result)
+        service_error = None
+    except Exception as e:
+        service_result = {}
+        service_count = 0
+        service_error = str(e)
 
     return render(request, 'leads/voivodeship_keywords/debug.html', {
         'voivodeship': voivodeship,
         'location_code': location_code,
         'test_phrases': test_phrases,
-        'raw': raw,
         'task_status': task_status,
         'task_message': task_message,
         'result_count': len(result_items),
         'first_item': first_item,
-        'error': error,
+        'api_error': api_error,
+        'service_result': service_result,
+        'service_count': service_count,
+        'service_error': service_error,
     })
 
 
