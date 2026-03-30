@@ -52,11 +52,16 @@ def fetch_keyword_volumes(phrases, login, password, location_code=2616, language
             if task.get("status_code") != 20000:
                 continue
 
-            items = (task.get("result") or [])
+            # google_ads/search_volume/live zwraca result jako plaska lista obiektow
+            # (nie jest opakowana w dodatkowy slownik z kluczem 'items')
+            items = task.get("result") or []
             for item in items:
+                if not isinstance(item, dict):
+                    continue
                 keyword = item.get("keyword", "")
                 volume = item.get("search_volume")
-                result[keyword] = volume
+                if keyword:
+                    result[keyword] = volume
 
         except Exception:
             continue
