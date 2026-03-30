@@ -80,7 +80,24 @@ def fetch_keyword_volumes_task(self, voivodeship_id):
         logger.warning('[keyword volumes] brak fraz do pobrania')
         return
 
-    phrases = [kw.phrase for kw in keywords_to_update]
+    # Oczyszczamy frazy — DataForSEO odrzuca caly batch jesli jedna fraza ma niedozwolone znaki
+    import re as _re
+    def clean_phrase(p):
+        p = p.strip()
+        p = p.strip('.,;:!?()[]{}\"\'')
+        p = _re.sub(r'[^\w\s\-]', '', p, flags=_re.UNICODE)
+        p = p.strip()
+        return p
+
+    # Mapowanie: oczyszczona fraza -> obiekt keyword (do pozniejszego zapisu)
+    phrase_to_kw = {}
+    for kw in keywords_to_update:
+        cleaned = clean_phrase(kw.phrase)
+        if cleaned:
+            phrase_to_kw[cleaned] = kw
+
+    phrases = list(phrase_to_kw.keys())
+    logger.info(f'[keyword volumes] przyklad fraz po czyszczeniu: {phrases[:5]}')
     location_code = get_dataforseo_location_code(voivodeship.name)
     logger.info(f'[keyword volumes] odpytuje DataForSEO: {len(phrases)} fraz, location_code={location_code}')
 
@@ -117,8 +134,8 @@ def fetch_keyword_volumes_task(self, voivodeship_id):
 
     now = timezone.now()
     updated = 0
-    for kw in keywords_to_update:
-        volume = volumes.get(kw.phrase)
+    for cleaned_phrase, kw in phrase_to_kw.items():
+        volume = volumes.get(cleaned_phrase)
         if volume is not None:
             kw.monthly_searches = str(volume)
             kw.searches_updated_at = now
