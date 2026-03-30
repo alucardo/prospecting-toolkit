@@ -59,10 +59,10 @@ def fetch_keyword_volumes_task(self, voivodeship_id):
 
     voivodeship = Voivodeship.objects.get(pk=voivodeship_id)
     app_settings = AppSettings.get()
-    logger.info(f'[NAP volumes] start dla {voivodeship.name}, login={repr(app_settings.dataforseo_login)}')
+    logger.info(f'[keyword volumes] start dla {voivodeship.name}, login={repr(app_settings.dataforseo_login)}')
 
     if not app_settings.dataforseo_login or not app_settings.dataforseo_password:
-        logger.warning('[NAP volumes] brak credentials DataForSEO')
+        logger.warning('[keyword volumes] brak credentials DataForSEO')
         return
 
     # Reset daty dla fraz ktore byly sprawdzane z blednym endpointem
@@ -70,32 +70,50 @@ def fetch_keyword_volumes_task(self, voivodeship_id):
         monthly_searches__isnull=True,
         searches_updated_at__isnull=False,
     ).update(searches_updated_at=None)
-    logger.info(f'[NAP volumes] reset searches_updated_at dla {reset_count} fraz')
+    logger.info(f'[keyword volumes] reset searches_updated_at dla {reset_count} fraz')
 
     keywords_to_update = list(
         voivodeship.keywords.filter(monthly_searches__isnull=True)
     )
-    logger.info(f'[NAP volumes] fraz do pobrania: {len(keywords_to_update)}')
+    logger.info(f'[keyword volumes] fraz do pobrania: {len(keywords_to_update)}')
     if not keywords_to_update:
-        logger.warning('[NAP volumes] brak fraz do pobrania')
+        logger.warning('[keyword volumes] brak fraz do pobrania')
         return
 
     phrases = [kw.phrase for kw in keywords_to_update]
     location_code = get_dataforseo_location_code(voivodeship.name)
-    logger.info(f'[NAP volumes] odpytuje DataForSEO: {len(phrases)} fraz, location_code={location_code}')
+    logger.info(f'[keyword volumes] odpytuje DataForSEO: {len(phrases)} fraz, location_code={location_code}')
 
-    try:
-        volumes = fetch_keyword_volumes(
-            phrases,
-            app_settings.dataforseo_login,
-            app_settings.dataforseo_password,
-            location_code=location_code,
-        )
-    except Exception as e:
-        logger.error(f'[NAP volumes] blad fetch_keyword_volumes: {e}')
-        raise
+    # Wywolanie API bezposrednio (bez serwisu) zeby uniknac problemow z cache .pyc
+    import requests as req
+    import base64 as b64
+    credentials = b64.b64encode(
+        f"{app_settings.dataforseo_login}:{app_settings.dataforseo_password}".encode()
+    ).decode()
+    headers = {"Authorization": f"Basic {credentials}", "Content-Type": "application/json"}
 
-    logger.info(f'[NAP volumes] DataForSEO zwrocil {len(volumes)} wynikow')
+    volumes = {}
+    CHUNK = 1000
+    for i in range(0, len(phrases), CHUNK):
+        chunk = phrases[i:i + CHUNK]
+        try:
+            resp = req.post(
+                "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live",
+                headers=headers,
+                json=[{"keywords": chunk, "location_code": location_code, "language_name": "Polish"}],
+                timeout=120,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            task0 = (data.get('tasks') or [{}])[0]
+            logger.info(f'[keyword volumes] chunk {i}: status={task0.get("status_code")}, result_count={task0.get("result_count")}')
+            for item in (task0.get('result') or []):
+                if isinstance(item, dict) and item.get('keyword'):
+                    volumes[item['keyword']] = item.get('search_volume')
+        except Exception as e:
+            logger.error(f'[keyword volumes] blad chunk {i}: {e}')
+
+    logger.info(f'[keyword volumes] DataForSEO zwrocil {len(volumes)} wynikow')
 
     now = timezone.now()
     updated = 0
@@ -110,7 +128,7 @@ def fetch_keyword_volumes_task(self, voivodeship_id):
             kw.searches_updated_at = now
             kw.save(update_fields=['searches_updated_at'])
 
-    logger.info(f'[NAP volumes] zapisano {updated} wolumenow dla {voivodeship.name}')
+    logger.info(f'[keyword volumes] zapisano {updated} wolumenow dla {voivodeship.name}')
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
