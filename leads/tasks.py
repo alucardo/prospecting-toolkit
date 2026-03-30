@@ -106,7 +106,7 @@ def fetch_keyword_volumes_task(self, voivodeship_id):
             resp.raise_for_status()
             data = resp.json()
             task0 = (data.get('tasks') or [{}])[0]
-            logger.info(f'[keyword volumes] chunk {i}: status={task0.get("status_code")}, result_count={task0.get("result_count")}')
+            logger.info(f'[keyword volumes] chunk {i}: status={task0.get("status_code")}, msg={task0.get("status_message")}, result_count={task0.get("result_count")}, sent_data={task0.get("data")}')
             for item in (task0.get('result') or []):
                 if isinstance(item, dict) and item.get('keyword'):
                     volumes[item['keyword']] = item.get('search_volume')
