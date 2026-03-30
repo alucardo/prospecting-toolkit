@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost btn-sm">← {{ lead.name }}</a>
+    <h1 class="text-2xl font-bold">📊 Metryki GBP</h1>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    {# Formularz dodawania #}
+    <div>
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <h2 class="card-title text-base">+ Nowy wpis miesięczny</h2>
+                <form method="post" class="flex flex-col gap-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add">
+
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Miesiąc</span></label>
+                        <select name="month" class="select select-bordered select-sm w-full">
+                            {% for y, m, label in months_choices %}
+                            <option value="{{ m }}"
+                                data-year="{{ y }}"
+                                {% if m == current_month and y == current_year %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# Ukryte pole roku — aktualizowane przez JS #}
+                    <input type="hidden" name="year" id="selected-year" value="{{ current_year }}">
+
+                    <div class="divider text-xs my-0">Metryki</div>
+
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">📞 Telefony</span></label>
+                        <input type="number" name="calls" min="0"
+                            class="input input-bordered input-sm w-full" placeholder="np. 45">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">👁 Wyświetlenia profilu</span></label>
+                        <input type="number" name="profile_views" min="0"
+                            class="input input-bordered input-sm w-full" placeholder="np. 1200">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">🗺 Zapytania o trasę</span></label>
+                        <input type="number" name="direction_requests" min="0"
+                            class="input input-bordered input-sm w-full" placeholder="np. 30">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">🌐 Odwiedziny witryny</span></label>
+                        <input type="number" name="website_visits" min="0"
+                            class="input input-bordered input-sm w-full" placeholder="np. 80">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Zapisz</button>
+                </form>
+                <p class="text-xs text-gray-400 mt-2">
+                    Jeśli wpis dla tego miesiąca już istnieje, zostanie nadpisany.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {# Tabela wpisów #}
+    <div class="md:col-span-2">
+        {% if snapshots %}
+        <div class="card bg-base-200">
+            <div class="card-body p-0">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Miesiąc</th>
+                            <th class="text-center">📞 Telefony</th>
+                            <th class="text-center">👁 Wyświetlenia</th>
+                            <th class="text-center">🗺 Trasy</th>
+                            <th class="text-center">🌐 Witryna</th>
+                            <th class="w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for snap in snapshots %}
+                        <tr class="hover">
+                            <td class="font-medium">{{ snap.label }}</td>
+                            <td class="text-center">
+                                {% if snap.calls is not None %}{{ snap.calls }}{% else %}<span class="text-gray-300">—</span>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if snap.profile_views is not None %}{{ snap.profile_views }}{% else %}<span class="text-gray-300">—</span>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if snap.direction_requests is not None %}{{ snap.direction_requests }}{% else %}<span class="text-gray-300">—</span>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if snap.website_visits is not None %}{{ snap.website_visits }}{% else %}<span class="text-gray-300">—</span>{% endif %}
+                            </td>
+                            <td class="text-right">
+                                <form method="post"
+                                    onsubmit="return confirm('Usunąć wpis za {{ snap.label }}?')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="pk" value="{{ snap.pk }}">
+                                    <button type="submit" class="btn btn-ghost btn-xs text-error">🗑</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# Podsumowanie sumy #}
+        {% if snapshots|length > 1 %}
+        <div class="card bg-base-200 mt-4">
+            <div class="card-body py-3">
+                <h3 class="font-medium text-sm mb-2">Suma wszystkich wpisów</h3>
+                <div class="grid grid-cols-4 gap-3 text-center">
+                    <div>
+                        <div class="text-xs text-gray-400">📞 Telefony</div>
+                        <div class="text-lg font-bold">
+                            {% with total=0 %}
+                            {% for s in snapshots %}{% if s.calls %}{{ s.calls|add:total }}{% endif %}{% endfor %}
+                            {% endwith %}
+                            —
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Sumy zostaną dodane w kolejnej wersji.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="hero min-h-48 bg-base-200 rounded-box">
+            <div class="text-center">
+                <p class="text-gray-500 mb-2">Brak wpisów</p>
+                <p class="text-xs text-gray-400">Dodaj pierwszy wpis miesięczny korzystając z formularza</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+// Aktualizuj ukryte pole roku gdy zmienia się miesiąc
+document.querySelector('select[name="month"]').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    document.getElementById('selected-year').value = opt.dataset.year;
+});
+</script>
+
+{% endblock %}

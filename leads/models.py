@@ -654,3 +654,53 @@ class LeadTask(models.Model):
 
     def __str__(self):
         return f"{self.lead.name} — {self.title}"
+
+
+class GBPMetricsSnapshot(models.Model):
+    SOURCE_MANUAL = 'manual'
+    SOURCE_API = 'api'
+    SOURCE_CHOICES = [
+        (SOURCE_MANUAL, 'Ręcznie'),
+        (SOURCE_API, 'API'),
+    ]
+
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name='gbp_metrics',
+        verbose_name='Klient',
+    )
+    year = models.IntegerField(verbose_name='Rok')
+    month = models.IntegerField(verbose_name='Miesiąc')  # 1-12
+    day = models.IntegerField(null=True, blank=True, verbose_name='Dzień')  # NULL = wpis miesięczny
+
+    calls = models.IntegerField(null=True, blank=True, verbose_name='Telefony')
+    profile_views = models.IntegerField(null=True, blank=True, verbose_name='Wyświetlenia profilu')
+    direction_requests = models.IntegerField(null=True, blank=True, verbose_name='Zapytania o trasę')
+    website_visits = models.IntegerField(null=True, blank=True, verbose_name='Odwiedziny witryny')
+
+    source = models.CharField(
+        max_length=10,
+        choices=SOURCE_CHOICES,
+        default=SOURCE_MANUAL,
+        verbose_name='Źródło',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-year', '-month', '-day']
+        verbose_name = 'Metryki GBP'
+        verbose_name_plural = 'Metryki GBP'
+        unique_together = [('lead', 'year', 'month', 'day', 'source')]
+
+    def __str__(self):
+        if self.day:
+            return f"{self.lead.name} — {self.day:02d}.{self.month:02d}.{self.year}"
+        return f"{self.lead.name} — {self.month:02d}/{self.year}"
+
+    @property
+    def label(self):
+        import calendar
+        if self.day:
+            return f"{self.day:02d} {calendar.month_abbr[self.month]} {self.year}"
+        return f"{calendar.month_abbr[self.month]} {self.year}"
