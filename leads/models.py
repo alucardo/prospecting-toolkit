@@ -633,3 +633,24 @@ class LeadNapEntry(models.Model):
 
     def __str__(self):
         return f"{self.lead.name} → {self.directory.name} ({self.get_status_display()})"
+
+
+class LeadTask(models.Model):
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        verbose_name='Lead',
+    )
+    title = models.CharField(max_length=500, verbose_name='Zadanie')
+    is_done = models.BooleanField(default=False, verbose_name='Wykonane')
+    created_at = models.DateTimeField(auto_now_add=True)
+    done_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['is_done', '-created_at']
+        verbose_name = 'Zadanie'
+        verbose_name_plural = 'Zadania'
+
+    def __str__(self):
+        return f"{self.lead.name} — {self.title}"

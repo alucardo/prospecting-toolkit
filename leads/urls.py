@@ -82,6 +82,9 @@ urlpatterns = [
     path('leads/<int:lead_pk>/activity/<int:pk>/edit/', views.activity_log.activity_log_edit, name='activity_log_edit'),
     path('leads/<int:lead_pk>/activity/<int:pk>/delete/', views.activity_log.activity_log_delete, name='activity_log_delete'),
 
+    # Zadania klienta
+    path('klienci/<int:lead_pk>/zadania/', views.lead_task.lead_task_index, name='lead_task_index'),
+
     # NAP klienta
     path('klienci/<int:lead_pk>/nap/', views.lead_nap.lead_nap_index, name='lead_nap_index'),
     path('klienci/<int:lead_pk>/nap/<int:directory_pk>/set/', views.lead_nap.lead_nap_set, name='lead_nap_set'),
