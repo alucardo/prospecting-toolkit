@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:voivodeship_keyword_detail' voivodeship.pk %}" class="btn btn-ghost btn-sm">← {{ voivodeship.name }}</a>
+    <h1 class="text-2xl font-bold">🔍 Debug DataForSEO</h1>
+</div>
+
+<div class="flex flex-col gap-4 max-w-4xl">
+
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="font-bold mb-2">Parametry zapytania</h2>
+            <table class="table table-sm">
+                <tr><th class="w-48">Województwo</th><td>{{ voivodeship.name }}</td></tr>
+                <tr><th>location_code</th><td><code>{{ location_code }}</code></td></tr>
+                <tr><th>Frazy testowe</th><td>
+                    {% for p in test_phrases %}<div><code>{{ p }}</code></div>{% endfor %}
+                </td></tr>
+            </table>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <span>❌ Błąd połączenia: {{ error }}</span>
+    </div>
+    {% else %}
+    <div class="card {% if task_status == 20000 %}bg-success/10{% else %}bg-error/10{% endif %}">
+        <div class="card-body py-4">
+            <h2 class="font-bold mb-2">Status odpowiedzi</h2>
+            <table class="table table-sm">
+                <tr><th class="w-48">status_code</th><td><code>{{ task_status }}</code></td></tr>
+                <tr><th>status_message</th><td>{{ task_message }}</td></tr>
+                <tr><th>Liczba wyników (result)</th><td><strong>{{ result_count }}</strong></td></tr>
+            </table>
+        </div>
+    </div>
+
+    {% if first_item %}
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="font-bold mb-2">Pierwszy element result (struktura)</h2>
+            <pre class="bg-base-300 p-4 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">{{ first_item }}</pre>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <span>⚠️ result jest pusty — API nie zwróciło żadnych elementów mimo status 20000</span>
+    </div>
+    {% endif %}
+
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="font-bold mb-2">Pełna surowa odpowiedź</h2>
+            <pre class="bg-base-300 p-4 rounded-lg text-xs overflow-x-auto whitespace-pre-wrap">{{ raw }}</pre>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

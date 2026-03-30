@@ -1,5 +1,8 @@
+import logging
 import requests
 import base64
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_keyword_volumes(phrases, login, password, location_code=2616, language_name="Polish"):
@@ -46,15 +49,18 @@ def fetch_keyword_volumes(phrases, login, password, location_code=2616, language
 
             tasks = data.get("tasks") or []
             if not tasks:
+                logger.warning(f'[volumes] brak tasks w odpowiedzi: {data}')
                 continue
 
             task = tasks[0]
-            if task.get("status_code") != 20000:
+            task_status = task.get("status_code")
+            if task_status != 20000:
+                logger.warning(f'[volumes] task status {task_status}: {task.get("status_message")} | data: {task.get("data")}')
                 continue
 
             # google_ads/search_volume/live zwraca result jako plaska lista obiektow
-            # (nie jest opakowana w dodatkowy slownik z kluczem 'items')
             items = task.get("result") or []
+            logger.info(f'[volumes] chunk {i}: task OK, items={len(items)}, pierwszy={items[0] if items else None}')
             for item in items:
                 if not isinstance(item, dict):
                     continue
@@ -63,7 +69,8 @@ def fetch_keyword_volumes(phrases, login, password, location_code=2616, language
                 if keyword:
                     result[keyword] = volume
 
-        except Exception:
+        except Exception as e:
+            logger.error(f'[volumes] wyjatek w chunk {i}: {e}')
             continue
 
     return result

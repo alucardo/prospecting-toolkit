@@ -72,6 +72,62 @@ def voivodeship_keyword_detail(request, pk):
 
 
 @login_required
+def voivodeship_keyword_debug(request, pk):
+    """Diagnostyka — pokazuje surową odpowiedź DataForSEO bezpośrednio w przeglądarce."""
+    import requests as req
+    import base64
+
+    voivodeship = get_object_or_404(Voivodeship, pk=pk)
+    app_settings = AppSettings.get()
+
+    credentials = base64.b64encode(
+        f"{app_settings.dataforseo_login}:{app_settings.dataforseo_password}".encode()
+    ).decode()
+
+    test_phrases = list(
+        voivodeship.keywords.filter(monthly_searches__isnull=True)
+        .values_list('phrase', flat=True)[:3]
+    )
+    location_code = get_dataforseo_location_code(voivodeship.name)
+
+    try:
+        response = req.post(
+            "https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live",
+            headers={"Authorization": f"Basic {credentials}", "Content-Type": "application/json"},
+            json=[{"keywords": test_phrases, "location_code": location_code, "language_name": "Polish"}],
+            timeout=60,
+        )
+        raw = response.json()
+        # Wyciągnij szczegóły
+        task = (raw.get('tasks') or [{}])[0]
+        task_status = task.get('status_code')
+        task_message = task.get('status_message')
+        result_items = task.get('result') or []
+        # Pierwszy item żeby zobaczyć strukturę
+        first_item = result_items[0] if result_items else None
+        error = None
+    except Exception as e:
+        raw = {}
+        task_status = None
+        task_message = None
+        result_items = []
+        first_item = None
+        error = str(e)
+
+    return render(request, 'leads/voivodeship_keywords/debug.html', {
+        'voivodeship': voivodeship,
+        'location_code': location_code,
+        'test_phrases': test_phrases,
+        'raw': raw,
+        'task_status': task_status,
+        'task_message': task_message,
+        'result_count': len(result_items),
+        'first_item': first_item,
+        'error': error,
+    })
+
+
+@login_required
 def voivodeship_keyword_fetch_volumes(request, pk):
     """Pobiera wolumeny wyszukań z DataForSEO dla fraz bez wartości."""
     voivodeship = get_object_or_404(Voivodeship, pk=pk)
