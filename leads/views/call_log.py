@@ -53,6 +53,16 @@ def call_log_edit(request, pk, call_pk):
     return render(request, 'leads/call_log/edit.html', context)
 
 @login_required
+def reminder_dismiss(request, call_pk):
+    """Wyłącza przypomnienie dla danego wpisu CallLog. POST only."""
+    call_log = get_object_or_404(CallLog, pk=call_pk, user=request.user)
+    if request.method == 'POST':
+        call_log.is_reminder_active = False
+        call_log.save(update_fields=['is_reminder_active'])
+    return redirect('leads:dashboard')
+
+
+@login_required
 def call_log_delete(request, pk, call_pk):
     lead = get_object_or_404(Lead, pk=pk)
     call_log = get_object_or_404(CallLog, pk=call_pk)

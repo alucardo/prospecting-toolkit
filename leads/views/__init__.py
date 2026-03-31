@@ -1,4 +1,4 @@
-from .call_log import call_log_create, call_log_edit, call_log_delete
+from .call_log import call_log_create, call_log_edit, call_log_delete, reminder_dismiss
 from .city import city_index, city_create, city_edit, city_delete, city_detail, city_geocode
 from .dashboard import dashboard
 from .import_file import import_upload, import_map
