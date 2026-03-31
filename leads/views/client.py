@@ -115,10 +115,30 @@ def client_detail(request, pk):
             'trend': _calc_trend(checks),
         })
 
+    # Boksy z podsumowaniem aktywności
+    from django.db.models import Sum
+    from ..models import format_duration
+    now_date = timezone.now().date()
+    thirty_days_ago = now_date - timezone.timedelta(days=30)
+
+    act_month = lead.activity_logs.filter(
+        date__year=now_date.year, date__month=now_date.month
+    )
+    act_30d = lead.activity_logs.filter(date__gte=thirty_days_ago)
+
+    activities_month = act_month.count()
+    activities_30d = act_30d.count()
+    duration_month = act_month.aggregate(t=Sum('duration_minutes'))['t'] or 0
+    duration_30d = act_30d.aggregate(t=Sum('duration_minutes'))['t'] or 0
+
     return render(request, 'leads/client/detail.html', {
         'lead': lead,
         'charts_json': json.dumps(charts, ensure_ascii=False),
         'analysis': lead.business_analyses.first(),
+        'activities_month': activities_month,
+        'activities_30d': activities_30d,
+        'duration_month': format_duration(duration_month),
+        'duration_30d': format_duration(duration_30d),
     })
 
 

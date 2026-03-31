@@ -11,6 +11,25 @@
     <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="btn btn-ghost btn-sm">📊 Metryki</a>
 </div>
 
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">Działania w tym miesiącu</div>
+        <div class="stat-value text-2xl">{{ activities_month }}</div>
+    </div>
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">Działania — ostatnie 30 dni</div>
+        <div class="stat-value text-2xl">{{ activities_30d }}</div>
+    </div>
+    <div class="stat bg-primary/10 rounded-box py-3 px-4">
+        <div class="stat-title text-xs text-primary">⏱ Czas w tym miesiącu</div>
+        <div class="stat-value text-2xl text-primary">{{ duration_month|default:"—" }}</div>
+    </div>
+    <div class="stat bg-primary/10 rounded-box py-3 px-4">
+        <div class="stat-title text-xs text-primary">⏱ Czas — ostatnie 30 dni</div>
+        <div class="stat-value text-2xl text-primary">{{ duration_30d|default:"—" }}</div>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
     <!-- Podstawowe dane -->
