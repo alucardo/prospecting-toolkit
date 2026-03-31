@@ -261,9 +261,21 @@ class LeadPipelineEntryForm(forms.ModelForm):
 
 
 class ClientActivityLogForm(forms.ModelForm):
+    DURATION_CHOICES = [('', '— brak —')] + [
+        (m, f"{m // 60}h {m % 60:02d}min" if m >= 60 else f"{m} min")
+        for m in range(15, 361, 15)
+    ]
+
+    duration_minutes = forms.ChoiceField(
+        choices=DURATION_CHOICES,
+        required=False,
+        label='Czas trwania',
+        widget=forms.Select(attrs={'class': 'select select-bordered w-full'}),
+    )
+
     class Meta:
         model = ClientActivityLog
-        fields = ['title', 'description', 'date']
+        fields = ['title', 'description', 'date', 'duration_minutes']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
@@ -279,3 +291,9 @@ class ClientActivityLogForm(forms.ModelForm):
                 'type': 'date',
             }),
         }
+
+    def clean_duration_minutes(self):
+        val = self.cleaned_data.get('duration_minutes')
+        if val == '' or val is None:
+            return None
+        return int(val)

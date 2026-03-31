@@ -62,6 +62,9 @@
                             {% endif %}
                             <div class="flex gap-3 mt-2 text-xs text-gray-400">
                                 <span>📅 {{ log.date|date:"d.m.Y" }}</span>
+                                {% if log.duration_minutes %}
+                                <span>⏱ {{ log.duration_label }}</span>
+                                {% endif %}
                                 {% if log.user %}<span>{{ log.user.get_full_name|default:log.user.username }}</span>{% endif %}
                             </div>
                         </div>

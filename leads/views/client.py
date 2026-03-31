@@ -2,7 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
-from ..models import Lead, ClientActivityLog
+from django.db.models import Sum
+from ..models import Lead, ClientActivityLog, format_duration
 from ..tasks_analysis import take_client_rank_snapshot, check_keyword_rankings
 
 
@@ -38,6 +39,24 @@ def client_index(request):
     for lead_id in activities_30d:
         activity_counts_30d[lead_id] = activity_counts_30d.get(lead_id, 0) + 1
 
+    # Suma czasu w bieżącym miesiącu — jedna query
+    duration_month_qs = (
+        ClientActivityLog.objects
+        .filter(date__year=now.year, date__month=now.month, duration_minutes__isnull=False)
+        .values('lead_id')
+        .annotate(total=Sum('duration_minutes'))
+    )
+    duration_month = {row['lead_id']: row['total'] for row in duration_month_qs}
+
+    # Suma czasu w ostatnich 30 dniach — jedna query
+    duration_30d_qs = (
+        ClientActivityLog.objects
+        .filter(date__gte=thirty_days_ago, duration_minutes__isnull=False)
+        .values('lead_id')
+        .annotate(total=Sum('duration_minutes'))
+    )
+    duration_30d = {row['lead_id']: row['total'] for row in duration_30d_qs}
+
     data = []
     for client in clients:
         data.append({
@@ -45,9 +64,23 @@ def client_index(request):
             'keywords_count': client.keywords_list.count(),
             'activities_this_month': activity_counts.get(client.pk, 0),
             'activities_30d': activity_counts_30d.get(client.pk, 0),
+            'duration_month': format_duration(duration_month.get(client.pk, 0)),
+            'duration_30d': format_duration(duration_30d.get(client.pk, 0)),
         })
 
-    return render(request, 'leads/client/index.html', {'data': data})
+    # Sumy globalne dla wszystkich klientów
+    total_duration_month = sum(duration_month.values())
+    total_duration_30d = sum(duration_30d.values())
+    total_activities_month = sum(activity_counts.values())
+    total_activities_30d = sum(activity_counts_30d.values())
+
+    return render(request, 'leads/client/index.html', {
+        'data': data,
+        'total_duration_month': format_duration(total_duration_month),
+        'total_duration_30d': format_duration(total_duration_30d),
+        'total_activities_month': total_activities_month,
+        'total_activities_30d': total_activities_30d,
+    })
 
 
 @login_required

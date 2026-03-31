@@ -5,6 +5,25 @@
     <h1 class="text-2xl font-bold">👥 Klienci ({{ data|length }})</h1>
 </div>
 
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">Działania w tym miesiącu</div>
+        <div class="stat-value text-2xl">{{ total_activities_month }}</div>
+    </div>
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">Działania — ostatnie 30 dni</div>
+        <div class="stat-value text-2xl">{{ total_activities_30d }}</div>
+    </div>
+    <div class="stat bg-primary/10 rounded-box py-3 px-4">
+        <div class="stat-title text-xs text-primary">⏱ Czas w tym miesiącu</div>
+        <div class="stat-value text-2xl text-primary">{{ total_duration_month|default:"—" }}</div>
+    </div>
+    <div class="stat bg-primary/10 rounded-box py-3 px-4">
+        <div class="stat-title text-xs text-primary">⏱ Czas — ostatnie 30 dni</div>
+        <div class="stat-value text-2xl text-primary">{{ total_duration_30d|default:"—" }}</div>
+    </div>
+</div>
+
 {% if data %}
 <div class="overflow-x-auto">
     <table class="table bg-base-200 rounded-box">
@@ -15,6 +34,8 @@
                 <th class="text-center">Frazy</th>
                 <th class="text-center">Działania w tym miesiącu</th>
                 <th class="text-center">Ostatnie 30 dni</th>
+                <th class="text-center">⏱ Czas (mies.)</th>
+                <th class="text-center">⏱ Czas (30 dni)</th>
                 <th class="text-right">Akcje</th>
             </tr>
         </thead>
@@ -58,6 +79,22 @@
                     {% else %}
                         <a href="{% url 'leads:activity_log_index' lead.pk %}"
                            class="badge badge-ghost badge-sm text-gray-400">0</a>
+                    {% endif %}
+                </td>
+
+                <td class="text-center text-sm">
+                    {% if row.duration_month %}
+                    <span class="font-medium">{{ row.duration_month }}</span>
+                    {% else %}
+                    <span class="text-gray-300">—</span>
+                    {% endif %}
+                </td>
+
+                <td class="text-center text-sm">
+                    {% if row.duration_30d %}
+                    <span class="font-medium">{{ row.duration_30d }}</span>
+                    {% else %}
+                    <span class="text-gray-300">—</span>
                     {% endif %}
                 </td>
 

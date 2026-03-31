@@ -516,6 +516,9 @@ class LeadPipelineStepHistory(models.Model):
 
 
 class ClientActivityLog(models.Model):
+    DURATION_CHOICES = [(m, f"{m // 60}h {m % 60:02d}min" if m >= 60 else f"{m} min")
+                        for m in range(15, 361, 15)]
+
     lead = models.ForeignKey(
         Lead,
         on_delete=models.CASCADE,
@@ -526,7 +529,23 @@ class ClientActivityLog(models.Model):
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     date = models.DateField()
+    duration_minutes = models.IntegerField(
+        null=True, blank=True,
+        verbose_name='Czas trwania',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def duration_label(self):
+        if not self.duration_minutes:
+            return ''
+        h = self.duration_minutes // 60
+        m = self.duration_minutes % 60
+        if h and m:
+            return f"{h}h {m:02d}min"
+        elif h:
+            return f"{h}h"
+        return f"{self.duration_minutes} min"
 
     class Meta:
         ordering = ['-date', '-created_at']
@@ -654,6 +673,19 @@ class LeadTask(models.Model):
 
     def __str__(self):
         return f"{self.lead.name} — {self.title}"
+
+
+def format_duration(minutes):
+    """Formatuje minuty na czytelny string np. 1h 30min, 45 min, 2h."""
+    if not minutes:
+        return ''
+    h = minutes // 60
+    m = minutes % 60
+    if h and m:
+        return f"{h}h {m:02d}min"
+    elif h:
+        return f"{h}h"
+    return f"{minutes} min"
 
 
 class GBPMetricsSnapshot(models.Model):
