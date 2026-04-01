@@ -18,14 +18,14 @@
             <a href="{% url 'leads:pipeline_index' %}" class="btn btn-ghost btn-sm">Pipelines</a>
             <a href="{% url 'leads:voivodeship_keyword_index' %}" class="btn btn-ghost btn-sm">Frazy</a>
             <a href="{% url 'leads:client_index' %}" class="btn btn-ghost btn-sm">Klienci</a>
-            <a href="{% url 'leads:all_tasks_index' %}" class="btn btn-ghost btn-sm">✅ Zadania</a>
+            <a href="{% url 'leads:all_tasks_index' %}" class="btn btn-ghost btn-sm">Zadania</a>
 
             <div class="dropdown dropdown-bottom">
                 <label tabindex="0" class="btn btn-ghost btn-sm">Narzędzia ▾</label>
                 <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box shadow w-48 mt-1 z-50">
                     <li class="menu-title text-xs">NAP</li>
-                    <li><a href="{% url 'leads:nap_directory_index' %}">📁 Katalogi NAP</a></li>
-                    <li><a href="{% url 'leads:nap_tag_index' %}">🏷️ Tagi katalogów</a></li>
+                    <li><a href="{% url 'leads:nap_directory_index' %}">Katalogi NAP</a></li>
+                    <li><a href="{% url 'leads:nap_tag_index' %}">Tagi katalogów</a></li>
                 </ul>
             </div>
         </div>
@@ -38,15 +38,15 @@
         <div class="dropdown dropdown-end">
             <label tabindex="0" class="btn btn-ghost btn-sm">Konto ▾</label>
             <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box shadow w-44 mt-1 z-50">
-                <li><a href="{% url 'leads:user_contact_edit' %}">👤 Profil</a></li>
+                <li><a href="{% url 'leads:user_contact_edit' %}">Profil</a></li>
                 <li><a href="{% url 'leads:script_index' %}">Skrypty</a></li>
                 <li><a href="{% url 'leads:gbp_locations' %}">GBP</a></li>
-                <li><a href="{% url 'leads:settings' %}">⚙️ Ustawienia</a></li>
+                <li><a href="{% url 'leads:settings' %}">Ustawienia</a></li>
                 <li><hr class="my-1"></li>
                 <li>
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}
-                        <button type="submit" class="w-full text-left">🚪 Wyloguj</button>
+                        <button type="submit" class="w-full text-left">Wyloguj</button>
                     </form>
                 </li>
             </ul>
