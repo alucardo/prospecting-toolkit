@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">✅ Zadania do zrobienia</h1>
+        {% if total_count > 0 %}
+        <span class="badge badge-warning">{{ total_count }}</span>
+        {% else %}
+        <span class="badge badge-success">Wszystko zrobione 🎉</span>
+        {% endif %}
+    </div>
+</div>
+
+{% if grouped %}
+<div class="flex flex-col gap-6">
+    {% for group in grouped %}
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <div class="flex items-center justify-between mb-3">
+                <a href="{% url 'leads:client_detail' group.lead.pk %}"
+                   class="font-bold text-base link link-hover">
+                    {{ group.lead.name }}
+                </a>
+                <div class="flex items-center gap-2">
+                    <span class="badge badge-ghost badge-sm">{{ group.tasks|length }} zadań</span>
+                    <a href="{% url 'leads:lead_task_index' group.lead.pk %}"
+                       class="btn btn-ghost btn-xs">Wszystkie zadania →</a>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                {% for task in group.tasks %}
+                <div class="flex items-start gap-3 p-2 rounded-lg bg-base-300">
+                    {# Checkbox — oznacz jako zrobione #}
+                    <form method="post" class="shrink-0 mt-0.5">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle">
+                        <input type="hidden" name="task_pk" value="{{ task.pk }}">
+                        <button type="submit"
+                            class="w-5 h-5 rounded border-2 border-gray-400 hover:border-success hover:bg-success/20 transition-colors"
+                            title="Oznacz jako wykonane"></button>
+                    </form>
+
+                    <p class="flex-1 text-sm whitespace-pre-wrap">{{ task.title }}</p>
+
+                    <form method="post" class="shrink-0"
+                        onsubmit="return confirm('Usunąć zadanie?')">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="task_pk" value="{{ task.pk }}">
+                        <button type="submit" class="btn btn-ghost btn-xs text-error">🗑</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <div class="text-center">
+        <p class="text-4xl mb-3">🎉</p>
+        <p class="text-gray-500">Brak nieukończonych zadań</p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
