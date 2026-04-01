@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from ..models import Lead, LeadTask
+from ..models import Lead, LeadTask, TaskBlueprint
 
 
 @login_required
@@ -41,6 +41,7 @@ def lead_task_index(request, lead_pk):
 
     pending = tasks.filter(is_done=False)
     done = tasks.filter(is_done=True)
+    blueprints = TaskBlueprint.objects.prefetch_related('items').all()
 
     return render(request, 'leads/tasks/index.html', {
         'lead': lead,
@@ -48,7 +49,24 @@ def lead_task_index(request, lead_pk):
         'done': done,
         'pending_count': pending.count(),
         'done_count': done.count(),
+        'blueprints': blueprints,
     })
+
+
+@login_required
+def apply_blueprint(request, lead_pk, blueprint_pk):
+    """Kopiuje zadania z blueprintu do klienta. POST only."""
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+    blueprint = get_object_or_404(TaskBlueprint, pk=blueprint_pk)
+
+    if request.method == 'POST':
+        # Kopiowanie — tworzymy nowe LeadTask dla każdej pozycji blueprintu
+        # Bez sprawdzania duplikatów — tak jak ustaliłiśmy
+        items = blueprint.items.order_by('order', 'id')
+        for item in items:
+            LeadTask.objects.create(lead=lead, title=item.title)
+
+    return redirect('leads:lead_task_index', lead_pk=lead.pk)
 
 
 @login_required

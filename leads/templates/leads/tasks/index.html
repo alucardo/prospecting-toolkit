@@ -14,6 +14,53 @@
     </div>
 </div>
 
+{# Zastosuj szablon #}
+{% if blueprints %}
+<div class="mb-5 flex flex-wrap items-center gap-3">
+    <form method="get" id="blueprint-select-form" class="flex items-center gap-2">
+        <span class="text-sm text-gray-400 shrink-0">Zastosuj szablon:</span>
+        <select id="blueprint-select" class="select select-bordered select-sm w-64">
+            <option value="">-- wybierz szablon --</option>
+            {% for bp in blueprints %}
+            <option value="{% url 'leads:apply_blueprint' lead.pk bp.pk %}"
+                    data-count="{{ bp.items.count }}"
+                    data-name="{{ bp.name }}">
+                {{ bp.name }} ({{ bp.items.count }})
+            </option>
+            {% endfor %}
+        </select>
+        <button type="button" id="blueprint-apply-btn"
+                class="btn btn-outline btn-sm" disabled
+                onclick="applyBlueprint()">
+            Zastosuj
+        </button>
+    </form>
+    <a href="{% url 'leads:blueprint_index' %}" class="btn btn-ghost btn-xs text-gray-400">Zarządzaj szablonami →</a>
+</div>
+
+<form id="blueprint-post-form" method="post" action="" class="hidden">
+    {% csrf_token %}
+</form>
+
+<script>
+document.getElementById('blueprint-select').addEventListener('change', function() {
+    document.getElementById('blueprint-apply-btn').disabled = !this.value;
+});
+
+function applyBlueprint() {
+    const select = document.getElementById('blueprint-select');
+    const opt = select.options[select.selectedIndex];
+    if (!opt.value) return;
+    const name = opt.dataset.name;
+    const count = opt.dataset.count;
+    if (!confirm('Skopiować ' + count + ' zadań z szablonu "' + name + '"?')) return;
+    const form = document.getElementById('blueprint-post-form');
+    form.action = opt.value;
+    form.submit();
+}
+</script>
+{% endif %}
+
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
     {# Formularz dodawania #}

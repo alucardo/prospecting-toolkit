@@ -675,6 +675,40 @@ class LeadTask(models.Model):
         return f"{self.lead.name} — {self.title}"
 
 
+class TaskBlueprint(models.Model):
+    name = models.CharField(max_length=255, verbose_name='Nazwa szablonu')
+    description = models.TextField(blank=True, verbose_name='Opis')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Szablon zadań'
+        verbose_name_plural = 'Szablony zadań'
+
+    def __str__(self):
+        return self.name
+
+
+class TaskBlueprintItem(models.Model):
+    blueprint = models.ForeignKey(
+        TaskBlueprint,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name='Szablon',
+    )
+    title = models.CharField(max_length=500, verbose_name='Treść zadania')
+    order = models.PositiveIntegerField(default=0, verbose_name='Kolejność')
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'Pozycja szablonu'
+        verbose_name_plural = 'Pozycje szablonu'
+
+    def __str__(self):
+        return f"{self.blueprint.name} — {self.title}"
+
+
 def format_duration(minutes):
     """Formatuje minuty na czytelny string np. 1h 30min, 45 min, 2h."""
     if not minutes:

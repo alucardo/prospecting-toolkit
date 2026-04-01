@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">📋 Szablony zadań</h1>
+    <a href="{% url 'leads:blueprint_create' %}" class="btn btn-primary btn-sm">+ Nowy szablon</a>
+</div>
+
+{% if blueprints %}
+<div class="flex flex-col gap-3">
+    {% for bp in blueprints %}
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <a href="{% url 'leads:blueprint_detail' bp.pk %}"
+                       class="font-bold text-base link link-hover">{{ bp.name }}</a>
+                    {% if bp.description %}
+                    <p class="text-sm text-gray-400 mt-1">{{ bp.description }}</p>
+                    {% endif %}
+                    <div class="text-xs text-gray-400 mt-1">
+                        {{ bp.items.count }} zadań
+                    </div>
+                </div>
+                <div class="flex gap-1 shrink-0">
+                    <a href="{% url 'leads:blueprint_detail' bp.pk %}" class="btn btn-ghost btn-xs">✏️ Edytuj</a>
+                    <form method="post" action="{% url 'leads:blueprint_delete' bp.pk %}"
+                          onsubmit="return confirm('Usunąć szablon {{ bp.name }}?')">
+                        {% csrf_token %}
+                        <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <div class="text-center">
+        <p class="text-gray-500 mb-3">Brak szablonów zadań</p>
+        <a href="{% url 'leads:blueprint_create' %}" class="btn btn-primary btn-sm">Utwórz pierwszy szablon</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

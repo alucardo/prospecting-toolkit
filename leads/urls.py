@@ -86,6 +86,14 @@ urlpatterns = [
     # Zadania
     path('zadania/', views.lead_task.all_tasks_index, name='all_tasks_index'),
     path('klienci/<int:lead_pk>/zadania/', views.lead_task.lead_task_index, name='lead_task_index'),
+    path('klienci/<int:lead_pk>/zadania/zastosuj/<int:blueprint_pk>/', views.lead_task.apply_blueprint, name='apply_blueprint'),
+
+    # Szablony zadań (blueprinty)
+    path('szablony-zadan/', views.task_blueprint.blueprint_index, name='blueprint_index'),
+    path('szablony-zadan/nowy/', views.task_blueprint.blueprint_create, name='blueprint_create'),
+    path('szablony-zadan/<int:pk>/', views.task_blueprint.blueprint_detail, name='blueprint_detail'),
+    path('szablony-zadan/<int:pk>/edytuj/', views.task_blueprint.blueprint_edit, name='blueprint_edit'),
+    path('szablony-zadan/<int:pk>/usun/', views.task_blueprint.blueprint_delete, name='blueprint_delete'),
 
     # Metryki GBP
     path('klienci/<int:lead_pk>/metryki/', views.gbp_metrics.gbp_metrics_index, name='gbp_metrics_index'),
