@@ -83,7 +83,8 @@ urlpatterns = [
     path('leads/<int:lead_pk>/activity/<int:pk>/edit/', views.activity_log.activity_log_edit, name='activity_log_edit'),
     path('leads/<int:lead_pk>/activity/<int:pk>/delete/', views.activity_log.activity_log_delete, name='activity_log_delete'),
 
-    # Zadania klienta
+    # Zadania
+    path('zadania/', views.lead_task.all_tasks_index, name='all_tasks_index'),
     path('klienci/<int:lead_pk>/zadania/', views.lead_task.lead_task_index, name='lead_task_index'),
 
     # Metryki GBP
