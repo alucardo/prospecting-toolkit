@@ -81,6 +81,7 @@ def apply_blueprint(request, lead_pk, blueprint_pk):
 def all_tasks_index(request):
     """Wszystkie nieukończone zadania wszystkich klientów."""
     today = timezone.now().date()
+    status_filter = request.GET.get('status', '')  # overdue | active | none | ''
 
     tasks = (
         LeadTask.objects
@@ -102,17 +103,30 @@ def all_tasks_index(request):
         elif action == 'delete':
             task.delete()
 
-        return redirect('leads:all_tasks_index')
+        # Zachowaj filtr po POST
+        qs = f'?status={status_filter}' if status_filter else ''
+        return redirect(f"{request.path}{qs}")
 
-    # Liczniki do boxów
+    # Liczniki do boxów — zawsze po wszystkich
     overdue_count = 0
     active_count = 0
+    none_count = 0
     for task in tasks:
-        status = task.due_status
-        if status == 'overdue':
+        s = task.due_status
+        if s == 'overdue':
             overdue_count += 1
-        elif status == 'active':
+        elif s == 'active':
             active_count += 1
+        else:
+            none_count += 1
+
+    # Filtrowanie po statusie
+    if status_filter == 'overdue':
+        tasks = [t for t in tasks if t.due_status == 'overdue']
+    elif status_filter == 'active':
+        tasks = [t for t in tasks if t.due_status == 'active']
+    elif status_filter == 'none':
+        tasks = [t for t in tasks if t.due_status is None]
 
     # Grupowanie po kliencie
     grouped = {}
@@ -124,8 +138,11 @@ def all_tasks_index(request):
 
     return render(request, 'leads/tasks/all_tasks.html', {
         'grouped': grouped.values(),
-        'total_count': tasks.count(),
+        'total_count': LeadTask.objects.filter(is_done=False, lead__status='client').count(),
         'overdue_count': overdue_count,
         'active_count': active_count,
+        'none_count': none_count,
+        'filtered_count': len(tasks),
+        'status_filter': status_filter,
         'today': today,
     })

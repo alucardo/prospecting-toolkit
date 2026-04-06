@@ -4,33 +4,55 @@
 <div class="flex items-center justify-between mb-6">
     <div class="flex items-center gap-3">
         <h1 class="text-2xl font-bold">✅ Zadania do zrobienia</h1>
-        {% if total_count > 0 %}
-        <span class="badge badge-warning">{{ total_count }}</span>
+        {% if status_filter %}
+            <span class="badge badge-neutral">filtr aktywny</span>
+            <a href="{% url 'leads:all_tasks_index' %}" class="btn btn-ghost btn-xs">✕ Wyczyść filtr</a>
+        {% elif total_count == 0 %}
+            <span class="badge badge-success">Wszystko zrobione 🎉</span>
         {% else %}
-        <span class="badge badge-success">Wszystko zrobione 🎉</span>
+            <span class="badge badge-warning">{{ total_count }}</span>
         {% endif %}
     </div>
 </div>
 
-{# Boksy #}
+{# Boksy — klikalne filtry #}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-    <div class="stat bg-base-200 rounded-box py-3 px-4">
+    <a href="{% url 'leads:all_tasks_index' %}"
+       class="stat rounded-box py-3 px-4 cursor-pointer transition-all
+           {% if not status_filter %}bg-base-300 ring-2 ring-neutral{% else %}bg-base-200 hover:bg-base-300{% endif %}">
         <div class="stat-title text-xs">Wszystkich zadań</div>
         <div class="stat-value text-2xl">{{ total_count }}</div>
-    </div>
-    <div class="stat bg-error/10 rounded-box py-3 px-4">
+    </a>
+    <a href="?status=overdue"
+       class="stat rounded-box py-3 px-4 cursor-pointer transition-all
+           {% if status_filter == 'overdue' %}bg-error/20 ring-2 ring-error{% else %}bg-error/10 hover:bg-error/20{% endif %}">
         <div class="stat-title text-xs text-error">Po terminie</div>
         <div class="stat-value text-2xl text-error">{{ overdue_count }}</div>
-    </div>
-    <div class="stat bg-warning/10 rounded-box py-3 px-4">
+    </a>
+    <a href="?status=active"
+       class="stat rounded-box py-3 px-4 cursor-pointer transition-all
+           {% if status_filter == 'active' %}bg-warning/20 ring-2 ring-warning{% else %}bg-warning/10 hover:bg-warning/20{% endif %}">
         <div class="stat-title text-xs text-warning">W trakcie terminu</div>
         <div class="stat-value text-2xl text-warning">{{ active_count }}</div>
-    </div>
-    <div class="stat bg-base-200 rounded-box py-3 px-4">
+    </a>
+    <a href="?status=none"
+       class="stat rounded-box py-3 px-4 cursor-pointer transition-all
+           {% if status_filter == 'none' %}bg-base-300 ring-2 ring-neutral{% else %}bg-base-200 hover:bg-base-300{% endif %}">
         <div class="stat-title text-xs text-gray-400">Bez terminu</div>
-        <div class="stat-value text-2xl text-gray-400">{{ total_count|add:"-"|add:overdue_count }}</div>
-    </div>
+        <div class="stat-value text-2xl text-gray-400">{{ none_count }}</div>
+    </a>
 </div>
+
+{% if status_filter %}
+<p class="text-sm text-gray-400 mb-4">
+    Pokazuję {{ filtered_count }} zadań
+    {% if status_filter == 'overdue' %}po terminie
+    {% elif status_filter == 'active' %}w trakcie terminu
+    {% elif status_filter == 'none' %}bez terminu
+    {% endif %}
+    — <a href="{% url 'leads:all_tasks_index' %}" class="link">pokaż wszystkie</a>
+</p>
+{% endif %}
 
 {% if grouped %}
 <div class="flex flex-col gap-6">
@@ -93,6 +115,11 @@
         </div>
     </div>
     {% endfor %}
+</div>
+
+{% elif status_filter %}
+<div class="hero min-h-32 bg-base-200 rounded-box">
+    <p class="text-gray-500">Brak zadań z tym statusem 🎉</p>
 </div>
 
 {% else %}
