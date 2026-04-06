@@ -14,8 +14,14 @@ def lead_task_index(request, lead_pk):
 
         if action == 'add':
             title = request.POST.get('title', '').strip()
+            due_start = request.POST.get('due_date_start') or None
+            due_end = request.POST.get('due_date_end') or None
             if title:
-                LeadTask.objects.create(lead=lead, title=title)
+                LeadTask.objects.create(
+                    lead=lead, title=title,
+                    due_date_start=due_start,
+                    due_date_end=due_end,
+                )
 
         elif action == 'toggle':
             task_pk = request.POST.get('task_pk')
@@ -32,10 +38,14 @@ def lead_task_index(request, lead_pk):
         elif action == 'edit':
             task_pk = request.POST.get('task_pk')
             title = request.POST.get('title', '').strip()
+            due_start = request.POST.get('due_date_start') or None
+            due_end = request.POST.get('due_date_end') or None
             task = get_object_or_404(LeadTask, pk=task_pk, lead=lead)
             if title:
                 task.title = title
-                task.save(update_fields=['title'])
+                task.due_date_start = due_start
+                task.due_date_end = due_end
+                task.save(update_fields=['title', 'due_date_start', 'due_date_end'])
 
         return redirect('leads:lead_task_index', lead_pk=lead.pk)
 
@@ -60,8 +70,6 @@ def apply_blueprint(request, lead_pk, blueprint_pk):
     blueprint = get_object_or_404(TaskBlueprint, pk=blueprint_pk)
 
     if request.method == 'POST':
-        # Kopiowanie — tworzymy nowe LeadTask dla każdej pozycji blueprintu
-        # Bez sprawdzania duplikatów — tak jak ustaliłiśmy
         items = blueprint.items.order_by('order', 'id')
         for item in items:
             LeadTask.objects.create(lead=lead, title=item.title)
@@ -72,6 +80,8 @@ def apply_blueprint(request, lead_pk, blueprint_pk):
 @login_required
 def all_tasks_index(request):
     """Wszystkie nieukończone zadania wszystkich klientów."""
+    today = timezone.now().date()
+
     tasks = (
         LeadTask.objects
         .filter(is_done=False, lead__status='client')
@@ -94,6 +104,16 @@ def all_tasks_index(request):
 
         return redirect('leads:all_tasks_index')
 
+    # Liczniki do boxów
+    overdue_count = 0
+    active_count = 0
+    for task in tasks:
+        status = task.due_status
+        if status == 'overdue':
+            overdue_count += 1
+        elif status == 'active':
+            active_count += 1
+
     # Grupowanie po kliencie
     grouped = {}
     for task in tasks:
@@ -105,4 +125,7 @@ def all_tasks_index(request):
     return render(request, 'leads/tasks/all_tasks.html', {
         'grouped': grouped.values(),
         'total_count': tasks.count(),
+        'overdue_count': overdue_count,
+        'active_count': active_count,
+        'today': today,
     })

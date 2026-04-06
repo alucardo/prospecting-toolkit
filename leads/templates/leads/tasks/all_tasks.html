@@ -12,6 +12,26 @@
     </div>
 </div>
 
+{# Boksy #}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">Wszystkich zadań</div>
+        <div class="stat-value text-2xl">{{ total_count }}</div>
+    </div>
+    <div class="stat bg-error/10 rounded-box py-3 px-4">
+        <div class="stat-title text-xs text-error">Po terminie</div>
+        <div class="stat-value text-2xl text-error">{{ overdue_count }}</div>
+    </div>
+    <div class="stat bg-warning/10 rounded-box py-3 px-4">
+        <div class="stat-title text-xs text-warning">W trakcie terminu</div>
+        <div class="stat-value text-2xl text-warning">{{ active_count }}</div>
+    </div>
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs text-gray-400">Bez terminu</div>
+        <div class="stat-value text-2xl text-gray-400">{{ total_count|add:"-"|add:overdue_count }}</div>
+    </div>
+</div>
+
 {% if grouped %}
 <div class="flex flex-col gap-6">
     {% for group in grouped %}
@@ -31,8 +51,12 @@
 
             <div class="flex flex-col gap-2">
                 {% for task in group.tasks %}
-                <div class="flex items-start gap-3 p-2 rounded-lg bg-base-300">
-                    {# Checkbox — oznacz jako zrobione #}
+                <div class="flex items-start gap-3 p-2 rounded-lg
+                    {% if task.due_status == 'overdue' %}bg-error/10 border border-error/20
+                    {% elif task.due_status == 'active' %}bg-warning/10 border border-warning/20
+                    {% else %}bg-base-300{% endif %}">
+
+                    {# Checkbox #}
                     <form method="post" class="shrink-0 mt-0.5">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="toggle">
@@ -42,7 +66,19 @@
                             title="Oznacz jako wykonane"></button>
                     </form>
 
-                    <p class="flex-1 text-sm whitespace-pre-wrap">{{ task.title }}</p>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm whitespace-pre-wrap">{{ task.title }}</p>
+                        {% if task.due_date_end %}
+                        <div class="text-xs mt-0.5
+                            {% if task.due_status == 'overdue' %}text-error font-medium
+                            {% elif task.due_status == 'active' %}text-warning font-medium
+                            {% else %}text-gray-400{% endif %}">
+                            📅
+                            {% if task.due_date_start %}{{ task.due_date_start|date:"d.m.Y" }} — {% endif %}{{ task.due_date_end|date:"d.m.Y" }}
+                            {% if task.due_status == 'overdue' %} — po terminie{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
 
                     <form method="post" class="shrink-0"
                         onsubmit="return confirm('Usunąć zadanie?')">

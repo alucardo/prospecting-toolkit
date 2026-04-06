@@ -76,6 +76,18 @@ function applyBlueprint() {
                             class="textarea textarea-bordered w-full"
                             placeholder="Treść zadania..." required></textarea>
                     </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="form-control">
+                            <label class="label py-1"><span class="label-text text-xs">Termin od</span></label>
+                            <input type="date" name="due_date_start"
+                                class="input input-bordered input-sm w-full">
+                        </div>
+                        <div class="form-control">
+                            <label class="label py-1"><span class="label-text text-xs">Termin do</span></label>
+                            <input type="date" name="due_date_end"
+                                class="input input-bordered input-sm w-full">
+                        </div>
+                    </div>
                     <button type="submit" class="btn btn-primary btn-sm">Dodaj zadanie</button>
                 </form>
             </div>
@@ -103,6 +115,16 @@ function applyBlueprint() {
                         {# Treść #}
                         <div class="flex-1 min-w-0">
                             <p class="text-sm whitespace-pre-wrap">{{ task.title }}</p>
+                            {% if task.due_date_end %}
+                            <div class="text-xs mt-0.5
+                                {% if task.due_status == 'overdue' %}text-error font-medium
+                                {% elif task.due_status == 'active' %}text-warning font-medium
+                                {% else %}text-gray-400{% endif %}">
+                                📅
+                                {% if task.due_date_start %}{{ task.due_date_start|date:"d.m.Y" }} — {% endif %}{{ task.due_date_end|date:"d.m.Y" }}
+                                {% if task.due_status == 'overdue' %} — po terminie{% endif %}
+                            </div>
+                            {% endif %}
                             <div class="text-xs text-gray-400 mt-1">
                                 Dodano {{ task.created_at|date:"d.m.Y" }}
                             </div>
@@ -128,9 +150,25 @@ function applyBlueprint() {
                             {% csrf_token %}
                             <input type="hidden" name="action" value="edit">
                             <input type="hidden" name="task_pk" value="{{ task.pk }}">
-                            <textarea name="title" rows="2"
-                                class="textarea textarea-bordered textarea-sm flex-1">{{ task.title }}</textarea>
-                            <div class="flex flex-col gap-1">
+                            <div class="flex-1 flex flex-col gap-2">
+                                <textarea name="title" rows="2"
+                                    class="textarea textarea-bordered textarea-sm w-full">{{ task.title }}</textarea>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-xs text-gray-400">Termin od</label>
+                                        <input type="date" name="due_date_start"
+                                            class="input input-bordered input-xs w-full"
+                                            value="{{ task.due_date_start|date:'Y-m-d'|default:'' }}">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-400">Termin do</label>
+                                        <input type="date" name="due_date_end"
+                                            class="input input-bordered input-xs w-full"
+                                            value="{{ task.due_date_end|date:'Y-m-d'|default:'' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1 shrink-0">
                                 <button type="submit" class="btn btn-primary btn-xs">Zapisz</button>
                                 <button type="button" class="btn btn-ghost btn-xs"
                                     onclick="toggleEdit({{ task.pk }})">Anuluj</button>

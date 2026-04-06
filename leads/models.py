@@ -665,6 +665,8 @@ class LeadTask(models.Model):
     is_done = models.BooleanField(default=False, verbose_name='Wykonane')
     created_at = models.DateTimeField(auto_now_add=True)
     done_at = models.DateTimeField(null=True, blank=True)
+    due_date_start = models.DateField(null=True, blank=True, verbose_name='Termin od')
+    due_date_end = models.DateField(null=True, blank=True, verbose_name='Termin do')
 
     class Meta:
         ordering = ['is_done', '-created_at']
@@ -673,6 +675,21 @@ class LeadTask(models.Model):
 
     def __str__(self):
         return f"{self.lead.name} — {self.title}"
+
+    @property
+    def due_status(self):
+        """Zwraca 'overdue', 'active' lub None."""
+        from django.utils import timezone
+        if self.is_done or not self.due_date_end:
+            return None
+        today = timezone.now().date()
+        if today > self.due_date_end:
+            return 'overdue'
+        if self.due_date_start and today >= self.due_date_start:
+            return 'active'
+        if not self.due_date_start and today <= self.due_date_end:
+            return 'active'
+        return None
 
 
 class TaskBlueprint(models.Model):
