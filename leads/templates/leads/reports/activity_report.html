@@ -112,6 +112,21 @@
         font-size: 8pt;
         color: #999;
     }
+    /* Strona bez stałej wysokości — dla treści która może się rozlewać */
+    .page-auto {
+        width: 210mm;
+        min-height: 297mm;
+        position: relative;
+        page-break-before: always;
+        padding-bottom: 20mm;
+    }
+    .page-auto .page-content {
+        position: relative;
+        z-index: 1;
+    }
+    .activity-item {
+        page-break-inside: avoid;
+    }
 </style>
 </head>
 <body>
@@ -306,7 +321,7 @@
 
 {# ===== STRONA: DZIAŁANIA ===== #}
 {% if include_activities %}
-<div class="page">
+<div class="page-auto">
     {% include "leads/reports/_header.html" %}
     <div class="page-content">
         <h2>Wykonane działania</h2>
