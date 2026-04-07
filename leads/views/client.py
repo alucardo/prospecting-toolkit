@@ -131,6 +131,19 @@ def client_detail(request, pk):
     duration_month = act_month.aggregate(t=Sum('duration_minutes'))['t'] or 0
     duration_30d = act_30d.aggregate(t=Sum('duration_minutes'))['t'] or 0
 
+    # Domyślny okres raportu — cały poprzedni miesiąc
+    from datetime import date
+    import calendar
+    first_day_this_month = now_date.replace(day=1)
+    last_month_end = first_day_this_month - timezone.timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+
+    report_from = request.GET.get('report_from') or last_month_start.strftime('%Y-%m-%d')
+    report_to = request.GET.get('report_to') or last_month_end.strftime('%Y-%m-%d')
+    include_keywords = request.GET.get('include_keywords', '1') == '1'
+    include_metrics = request.GET.get('include_metrics', '1') == '1'
+    include_activities = request.GET.get('include_activities', '1') == '1'
+
     return render(request, 'leads/client/detail.html', {
         'lead': lead,
         'charts_json': json.dumps(charts, ensure_ascii=False),
@@ -139,6 +152,11 @@ def client_detail(request, pk):
         'activities_30d': activities_30d,
         'duration_month': format_duration(duration_month),
         'duration_30d': format_duration(duration_30d),
+        'report_from': report_from,
+        'report_to': report_to,
+        'include_keywords': include_keywords,
+        'include_metrics': include_metrics,
+        'include_activities': include_activities,
     })
 
 

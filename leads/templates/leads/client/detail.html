@@ -49,38 +49,42 @@
         </div>
     </div>
 
-    <!-- Status analizy -->
+    <!-- Raport z działań -->
     <div class="card bg-base-200">
         <div class="card-body py-4">
-            <h2 class="card-title text-sm text-gray-500 font-normal">ANALIZA WIZYTÓWKI</h2>
-            {% if analysis %}
-            <div class="flex flex-col gap-2 mt-1">
-                <div class="flex items-center gap-2 flex-wrap">
-                    {% if analysis.rating %}
-                    <span class="text-2xl font-bold {% if analysis.rating >= 4.5 %}text-success{% elif analysis.rating >= 4.0 %}text-warning{% else %}text-error{% endif %}">{{ analysis.rating }}</span>
-                    <span class="text-xs text-gray-400">/ 5.0</span>
-                    {% endif %}
-                    {% if analysis.reviews_count %}
-                    <span class="text-sm text-gray-500">{{ analysis.reviews_count }} opinii</span>
-                    {% endif %}
+            <h2 class="card-title text-sm text-gray-500 font-normal">RAPORT Z DZIAŁAŃ</h2>
+            <form method="get" action="" class="flex flex-col gap-2 mt-1">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-gray-400">Od</label>
+                    <input type="date" name="report_from"
+                        value="{{ report_from }}"
+                        class="input input-bordered input-xs w-full">
                 </div>
-                <div class="flex gap-2 flex-wrap">
-                    <a href="{% url 'leads:report_google_analysis_preview' lead.pk %}" target="_blank" class="btn btn-xs btn-outline">👁 Podgląd</a>
-                    <a href="{% url 'leads:report_google_analysis' lead.pk %}" class="btn btn-xs btn-primary">📄 PDF</a>
-                    <a href="{% url 'leads:audit_edit' lead.pk %}" class="btn btn-xs btn-ghost">✏️ Audyt</a>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-gray-400">Do</label>
+                    <input type="date" name="report_to"
+                        value="{{ report_to }}"
+                        class="input input-bordered input-xs w-full">
                 </div>
-            </div>
-            {% else %}
-            <div class="mt-2">
-                <p class="text-xs text-gray-400 mb-2">Brak danych z wizytówki</p>
-                {% if lead.google_maps_url %}
-                <form method="post" action="{% url 'leads:google_business_fetch' lead.pk %}">
-                    {% csrf_token %}
-                    <button class="btn btn-xs btn-outline">📥 Pobierz dane</button>
-                </form>
-                {% endif %}
-            </div>
-            {% endif %}
+                <div class="grid grid-cols-3 gap-1 mt-1">
+                    <label class="cursor-pointer flex items-center gap-2">
+                        <input type="checkbox" name="include_keywords" value="1" class="checkbox checkbox-xs"
+                            {% if include_keywords %}checked{% endif %}>
+                        <span class="text-xs">Słowa kluczowe</span>
+                    </label>
+                    <label class="cursor-pointer flex items-center gap-2">
+                        <input type="checkbox" name="include_metrics" value="1" class="checkbox checkbox-xs"
+                            {% if include_metrics %}checked{% endif %}>
+                        <span class="text-xs">Metryki GBP</span>
+                    </label>
+                    <label class="cursor-pointer flex items-center gap-2">
+                        <input type="checkbox" name="include_activities" value="1" class="checkbox checkbox-xs"
+                            {% if include_activities %}checked{% endif %}>
+                        <span class="text-xs">Działania</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-xs mt-1">Generuj raport</button>
+            </form>
         </div>
     </div>
 
