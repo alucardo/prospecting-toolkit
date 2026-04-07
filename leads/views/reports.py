@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 from pathlib import Path
 
@@ -10,6 +11,146 @@ from django.urls import reverse
 
 from leads.models import Lead, UserContact, VoivodeshipKeyword
 from leads.services.pdf_service import html_to_pdf
+
+
+def activity_report_preview(request, pk):
+    """Podgląd raportu miesięcznego z działań."""
+    from datetime import date, timedelta
+    from django.utils import timezone
+    from django.db.models import Sum
+    from leads.models import (
+        ClientActivityLog, LeadKeyword, KeywordRankCheck, GBPMetricsSnapshot
+    )
+
+    lead = get_object_or_404(Lead, pk=pk, status='client')
+
+    # Domyślny okres — poprzedni miesiąc
+    today = timezone.now().date()
+    first_this = today.replace(day=1)
+    last_prev = first_this - timedelta(days=1)
+    first_prev = last_prev.replace(day=1)
+
+    report_from = request.GET.get('report_from') or first_prev.strftime('%Y-%m-%d')
+    report_to = request.GET.get('report_to') or last_prev.strftime('%Y-%m-%d')
+    include_keywords = request.GET.get('include_keywords', '1') == '1'
+    include_metrics = request.GET.get('include_metrics', '1') == '1'
+    include_activities = request.GET.get('include_activities', '1') == '1'
+
+    date_from = date.fromisoformat(report_from)
+    date_to = date.fromisoformat(report_to)
+
+    # --- Działania ---
+    activities = []
+    if include_activities:
+        activities = list(
+            ClientActivityLog.objects
+            .filter(lead=lead, date__range=(date_from, date_to))
+            .order_by('date')
+        )
+        total_duration = sum(a.duration_minutes or 0 for a in activities)
+    else:
+        total_duration = 0
+
+    # --- Metryki GBP ---
+    metrics_data = None
+    if include_metrics:
+        # Znajdź snapshoty miesięczne w zakresie dat
+        snapshots = GBPMetricsSnapshot.objects.filter(
+            lead=lead,
+            day__isnull=True,
+            source='manual',
+        ).filter(
+            # miesiąc/rok snapshot musi zachodzić na wybrany zakres
+            year__gte=date_from.year,
+            year__lte=date_to.year,
+        )
+        # Dokładne filtrowanie na poziomie Pythona (rok+miesiąc w zakresie)
+        snapshots = [
+            s for s in snapshots
+            if (s.year, s.month) >= (date_from.year, date_from.month)
+            and (s.year, s.month) <= (date_to.year, date_to.month)
+        ]
+        if snapshots:
+            metrics_data = {
+                'calls': sum(s.calls or 0 for s in snapshots),
+                'profile_views': sum(s.profile_views or 0 for s in snapshots),
+                'direction_requests': sum(s.direction_requests or 0 for s in snapshots),
+                'website_visits': sum(s.website_visits or 0 for s in snapshots),
+                'months': snapshots,
+            }
+
+    # --- Słowa kluczowe ---
+    keywords_data = []
+    if include_keywords:
+        for kw in lead.keywords_list.all():
+            # Wszystkie checki w zakresie dat — do wykresu
+            checks_in_range = list(
+                kw.rank_checks
+                .filter(checked_at__date__range=(date_from, date_to))
+                .order_by('checked_at')
+                .values('position', 'checked_at')
+            )
+            if not checks_in_range:
+                continue
+
+            # Ostatnia pozycja w okresie
+            last_position = checks_in_range[-1]['position']
+
+            # Poprzedni check sprzed okresu — do trendu
+            prev_check = (
+                kw.rank_checks
+                .filter(checked_at__date__lt=date_from)
+                .order_by('-checked_at')
+                .values('position')
+                .first()
+            )
+            trend = None
+            if prev_check and last_position and prev_check['position']:
+                trend = prev_check['position'] - last_position  # dodatni = poprawa
+
+            keywords_data.append({
+                'phrase': kw.phrase,
+                'position': last_position,
+                'trend': trend,
+                'chart_labels': json.dumps([c['checked_at'].strftime('%d.%m') for c in checks_in_range]),
+                'chart_data': json.dumps([c['position'] for c in checks_in_range]),
+            })
+        keywords_data.sort(key=lambda x: (x['position'] or 999))
+
+    # --- Dane kontaktowe agenta ---
+    try:
+        contact = request.user.contact
+    except Exception:
+        contact = None
+
+    # Obrazki
+    page_bg_b64 = _get_page_bg_base64()
+    logo_b64 = _get_logo_base64()
+
+    MONTHS_PL = [
+        '', 'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+        'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+    ]
+    month_label = f"{MONTHS_PL[date_from.month]} {date_from.year}"
+    if (date_from.year, date_from.month) != (date_to.year, date_to.month):
+        month_label = f"{date_from.strftime('%d.%m.%Y')} — {date_to.strftime('%d.%m.%Y')}"
+
+    return render(request, 'leads/reports/activity_report.html', {
+        'lead': lead,
+        'contact': contact,
+        'date_from': date_from,
+        'date_to': date_to,
+        'month_label': month_label,
+        'include_keywords': include_keywords,
+        'include_metrics': include_metrics,
+        'include_activities': include_activities,
+        'activities': activities,
+        'total_duration': total_duration,
+        'metrics_data': metrics_data,
+        'keywords_data': keywords_data,
+        'page_bg_b64': page_bg_b64,
+        'logo_b64': logo_b64,
+    })
 
 
 def _get_cover_image_base64() -> str:

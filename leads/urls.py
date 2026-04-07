@@ -48,6 +48,7 @@ urlpatterns = [
     path('leads/<int:pk>/reports/google-analysis/preview/', views.reports.google_analysis_preview, name='report_google_analysis_preview'),
     path('leads/<int:pk>/reports/google-analysis/status/', views.reports.pdf_status, name='pdf_status'),
     path('leads/<int:pk>/audit/edit/', views.reports.audit_edit, name='audit_edit'),
+    path('klienci/<int:pk>/reports/activity/', views.reports.activity_report_preview, name='activity_report_preview'),
     path('profile/', views.user_contact.user_contact_edit, name='user_contact_edit'),
 
     # Klienci
