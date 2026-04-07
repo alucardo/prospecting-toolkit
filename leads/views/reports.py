@@ -118,10 +118,15 @@ def activity_report_preview(request, pk):
         keywords_data.sort(key=lambda x: (x['position'] or 999))
 
     # --- Dane kontaktowe agenta ---
+    contact = None
+    contact_photo_b64 = None
     try:
         contact = request.user.contact
+        if contact.photo:
+            contact_photo_b64 = base64.b64encode(contact.photo.read()).decode('utf-8')
+            contact.photo.seek(0)
     except Exception:
-        contact = None
+        pass
 
     # Obrazki
     page_bg_b64 = _get_page_bg_base64()
@@ -150,6 +155,7 @@ def activity_report_preview(request, pk):
         'keywords_data': keywords_data,
         'page_bg_b64': page_bg_b64,
         'logo_b64': logo_b64,
+        'contact_photo_b64': contact_photo_b64,
     })
 
 

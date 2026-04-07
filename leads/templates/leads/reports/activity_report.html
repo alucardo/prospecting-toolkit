@@ -316,14 +316,6 @@
                 <div class="summary-value">{{ activities|length }}</div>
                 <div class="summary-label">Działań łącznie</div>
             </div>
-            {% if total_duration > 0 %}
-            <div class="summary-item">
-                <div class="summary-value">
-                    {% if total_duration >= 60 %}{% widthratio total_duration 60 1 %}h{% else %}{{ total_duration }} min{% endif %}
-                </div>
-                <div class="summary-label">Łączny czas</div>
-            </div>
-            {% endif %}
             <div class="summary-item">
                 <div class="summary-value">{{ date_from|date:"d.m" }} — {{ date_to|date:"d.m.Y" }}</div>
                 <div class="summary-label">Okres raportu</div>
@@ -334,9 +326,6 @@
             <div class="activity-title">{{ activity.title }}</div>
             {% if activity.description %}
             <div class="activity-desc">{{ activity.description }}</div>
-            {% endif %}
-            {% if activity.duration_minutes %}
-            <div class="activity-meta">⏱ {{ activity.duration_label }}</div>
             {% endif %}
         </div>
         {% endfor %}
@@ -351,6 +340,45 @@
     </div>
 </div>
 {% endif %}
+
+{# ===== STRONA KOŃCOWA ===== #}
+<div class="page">
+    {% include "leads/reports/_header.html" %}
+    <div class="page-content">
+        <h2>Masz pytania?</h2>
+        <p style="margin-top:-8px; font-size:12pt; font-weight:400; color:#555;">Jesteśmy do Twojej dyspozycji</p>
+
+        {% if contact %}
+        <div style="display:flex; align-items:center; gap:32px; margin-top:48px;">
+            {% if contact_photo_b64 %}
+            <div style="flex-shrink:0;">
+                <img src="data:image/jpeg;base64,{{ contact_photo_b64 }}"
+                     style="width:180px; max-height:260px; object-fit:contain; border-radius:8px;">
+            </div>
+            {% endif %}
+            <div>
+                <p style="font-size:18pt; font-weight:900; color:#1a1a1a; margin-bottom:4px;">{{ contact.full_name }}</p>
+                <p style="font-size:11pt; color:#b8922a; margin-bottom:24px;">{{ contact.position }}</p>
+                <p style="font-size:12pt; color:#1a1a1a; margin-bottom:10px;">
+                    <span style="color:#b8922a; font-weight:700;">Tel:</span> {{ contact.phone }}
+                </p>
+                <p style="font-size:12pt; color:#1a1a1a;">
+                    <span style="color:#b8922a; font-weight:700;">Mail:</span> {{ contact.email }}
+                </p>
+            </div>
+        </div>
+        {% else %}
+        <div style="margin-top:48px;">
+            <p style="font-size:12pt; color:#1a1a1a;">BSmarti<br>www.bsmarti.pl</p>
+        </div>
+        {% endif %}
+    </div>
+    <div class="report-footer">
+        <span>{{ lead.name }}</span>
+        <span>{{ month_label }}</span>
+        <span>bsmarti.pl</span>
+    </div>
+</div>
 
 </body>
 </html>
