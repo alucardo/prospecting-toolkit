@@ -559,7 +559,22 @@ class AppSettings(models.Model):
     openai_api_key = models.CharField(max_length=255, blank=True)
     dataforseo_login = models.CharField(max_length=255, blank=True)
     dataforseo_password = models.CharField(max_length=255, blank=True)
-    google_refresh_token = models.TextField(blank=True)  # OAuth2 refresh token do GBP API
+    google_refresh_token = models.TextField(blank=True)
+
+    # SMTP — wysyłanie
+    smtp_host = models.CharField(max_length=255, blank=True, verbose_name='SMTP Host')
+    smtp_port = models.IntegerField(default=587, verbose_name='SMTP Port')
+    smtp_username = models.CharField(max_length=255, blank=True, verbose_name='SMTP Login')
+    smtp_password = models.CharField(max_length=255, blank=True, verbose_name='SMTP Hasło')
+    smtp_use_tls = models.BooleanField(default=True, verbose_name='SMTP TLS')
+    smtp_from_email = models.CharField(max_length=255, blank=True, verbose_name='Adres nadawcy')
+
+    # IMAP — odbieranie
+    imap_host = models.CharField(max_length=255, blank=True, verbose_name='IMAP Host')
+    imap_port = models.IntegerField(default=993, verbose_name='IMAP Port')
+    imap_username = models.CharField(max_length=255, blank=True, verbose_name='IMAP Login')
+    imap_password = models.CharField(max_length=255, blank=True, verbose_name='IMAP Hasło')
+    imap_use_ssl = models.BooleanField(default=True, verbose_name='IMAP SSL')
 
     class Meta:
         verbose_name = 'Ustawienia aplikacji'
