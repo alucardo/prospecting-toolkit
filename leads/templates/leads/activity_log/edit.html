@@ -13,6 +13,14 @@
             <form method="post" class="flex flex-col gap-3">
                 {% csrf_token %}
                 {% for field in form %}
+                {% if field.field.widget.input_type == 'checkbox' %}
+                <div class="form-control">
+                    <label class="cursor-pointer flex items-center gap-2">
+                        {{ field }}
+                        <span class="label-text">{{ field.label }}</span>
+                    </label>
+                </div>
+                {% else %}
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">{{ field.label }}{% if field.field.required %} *{% endif %}</span>
@@ -22,6 +30,7 @@
                     <div class="text-error text-sm mt-1">{{ field.errors }}</div>
                     {% endif %}
                 </div>
+                {% endif %}
                 {% endfor %}
                 <div class="flex gap-2 mt-2">
                     <button type="submit" class="btn btn-primary flex-1">Zapisz</button>

@@ -17,6 +17,14 @@
                 <form method="post" class="flex flex-col gap-3">
                     {% csrf_token %}
                     {% for field in form %}
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                    <div class="form-control">
+                        <label class="cursor-pointer flex items-center gap-2">
+                            {{ field }}
+                            <span class="label-text">{{ field.label }}</span>
+                        </label>
+                    </div>
+                    {% else %}
                     <div class="form-control">
                         <label class="label">
                             <span class="label-text">{{ field.label }}{% if field.field.required %} *{% endif %}</span>
@@ -26,6 +34,7 @@
                         <div class="text-error text-sm mt-1">{{ field.errors }}</div>
                         {% endif %}
                     </div>
+                    {% endif %}
                     {% endfor %}
                     <button type="submit" class="btn btn-primary btn-sm mt-1">Dodaj wpis</button>
                 </form>
@@ -50,11 +59,12 @@
         {% if logs %}
         <div class="flex flex-col gap-2">
             {% for log in logs %}
-            <div class="card bg-base-200">
+            <div class="card {% if log.is_highlighted %}bg-warning/10 border border-warning/30{% else %}bg-base-200{% endif %}">
                 <div class="card-body py-3">
                     <div class="flex justify-between items-start gap-4">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
+                                {% if log.is_highlighted %}<span class="text-warning" title="Wyróżniony">⭐</span>{% endif %}
                                 <span class="font-medium text-sm">{{ log.title }}</span>
                             </div>
                             {% if log.description %}

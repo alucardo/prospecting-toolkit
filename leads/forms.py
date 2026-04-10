@@ -275,7 +275,7 @@ class ClientActivityLogForm(forms.ModelForm):
 
     class Meta:
         model = ClientActivityLog
-        fields = ['title', 'description', 'date', 'duration_minutes']
+        fields = ['title', 'description', 'date', 'duration_minutes', 'is_highlighted']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
@@ -289,6 +289,9 @@ class ClientActivityLogForm(forms.ModelForm):
             'date': forms.DateInput(attrs={
                 'class': 'input input-bordered w-full',
                 'type': 'date',
+            }),
+            'is_highlighted': forms.CheckboxInput(attrs={
+                'class': 'checkbox',
             }),
         }
 

@@ -533,6 +533,7 @@ class ClientActivityLog(models.Model):
         null=True, blank=True,
         verbose_name='Czas trwania',
     )
+    is_highlighted = models.BooleanField(default=False, verbose_name='Wyróżniony')
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
