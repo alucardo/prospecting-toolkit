@@ -9,14 +9,14 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    # Sprawdzanie pozycji fraz — poniedziałek i czwartek o 1:00 w nocy
+    # Sprawdzanie pozycji fraz — poniedziałek i czwartek o 2:00 w nocy
     'check-rankings-monday': {
         'task': 'leads.tasks_analysis.check_all_clients_rankings',
-        'schedule': crontab(hour=1, minute=0, day_of_week='monday'),
+        'schedule': crontab(hour=2, minute=0, day_of_week='monday'),
     },
     'check-rankings-thursday': {
         'task': 'leads.tasks_analysis.check_all_clients_rankings',
-        'schedule': crontab(hour=1, minute=0, day_of_week='thursday'),
+        'schedule': crontab(hour=2, minute=0, day_of_week='thursday'),
     },
     # Snapshot miesięczny — 1. dnia każdego miesiąca o 2:00 w nocy
     'monthly-snapshot': {
