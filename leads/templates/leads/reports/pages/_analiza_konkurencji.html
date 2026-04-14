@@ -36,7 +36,7 @@
                     <span class="position-bad">poza TOP 20</span>
                   {% elif last_check.position > 20 %}
                     <span class="position-bad">{{ last_check.position }} (poza TOP 20)</span>
-                  {% elif last_check.position > 10 %}
+                  {% elif last_check.position > 3 %}
                     <span class="position-bad">{{ last_check.position }}</span>
                   {% else %}
                     <span class="position-good">{{ last_check.position }}</span>
