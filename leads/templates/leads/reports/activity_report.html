@@ -59,6 +59,13 @@
         margin-bottom: 10px;
         background: #fafafa;
     }
+    .activity-item-highlighted {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        border-left: 4px solid #b8922a;
+        background: #fdf8ee;
+        box-shadow: inset 0 0 0 1px #e8d5a0;
+    }
     .activity-title {
         font-size: 10pt;
         font-weight: 700;
@@ -343,7 +350,10 @@
             </div>
         </div>
         {% for activity in activities %}
-        <div class="activity-item">
+        <div class="activity-item{% if activity.is_highlighted %} activity-item-highlighted{% endif %}">
+            {% if activity.is_highlighted %}
+            <div style="font-size:8pt; color:#b8922a; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">⭐ Wyróżnione</div>
+            {% endif %}
             <div class="activity-title">{{ activity.title }}</div>
             {% if activity.description %}
             <div class="activity-desc">{{ activity.description }}</div>
