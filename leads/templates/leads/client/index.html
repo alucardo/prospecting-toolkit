@@ -84,7 +84,9 @@
 
                 <td class="text-center text-sm">
                     {% if row.duration_month %}
-                    <span class="font-medium">{{ row.duration_month }}</span>
+                    <div class="tooltip" data-tip="{% if row.last_activity_date %}Ostatnie działanie: {{ row.last_activity_date|date:'d.m.Y' }}{% else %}Brak działań{% endif %}">
+                        <span class="font-medium cursor-default">{{ row.duration_month }}</span>
+                    </div>
                     {% else %}
                     <span class="text-gray-300">—</span>
                     {% endif %}
@@ -92,7 +94,9 @@
 
                 <td class="text-center text-sm">
                     {% if row.duration_30d %}
-                    <span class="font-medium">{{ row.duration_30d }}</span>
+                    <div class="tooltip" data-tip="{% if row.last_activity_date %}Ostatnie działanie: {{ row.last_activity_date|date:'d.m.Y' }}{% else %}Brak działań{% endif %}">
+                        <span class="font-medium cursor-default">{{ row.duration_30d }}</span>
+                    </div>
                     {% else %}
                     <span class="text-gray-300">—</span>
                     {% endif %}

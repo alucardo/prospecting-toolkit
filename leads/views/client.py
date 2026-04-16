@@ -57,6 +57,16 @@ def client_index(request):
     )
     duration_30d = {row['lead_id']: row['total'] for row in duration_30d_qs}
 
+    # Data ostatniego działania dla każdego klienta
+    from django.db.models import Max
+    last_activity_qs = (
+        ClientActivityLog.objects
+        .filter(lead__in=clients)
+        .values('lead_id')
+        .annotate(last_date=Max('date'))
+    )
+    last_activity = {row['lead_id']: row['last_date'] for row in last_activity_qs}
+
     data = []
     for client in clients:
         data.append({
@@ -66,6 +76,7 @@ def client_index(request):
             'activities_30d': activity_counts_30d.get(client.pk, 0),
             'duration_month': format_duration(duration_month.get(client.pk, 0)),
             'duration_30d': format_duration(duration_30d.get(client.pk, 0)),
+            'last_activity_date': last_activity.get(client.pk),
         })
 
     # Sumy globalne dla wszystkich klientów
