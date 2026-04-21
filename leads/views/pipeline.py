@@ -156,9 +156,20 @@ def lead_pipeline_add(request, lead_pk):
         return redirect('leads:lead_detail', pk=lead.pk)
 
     pipeline_id = request.POST.get('pipeline') or request.GET.get('pipeline')
-    pipeline = get_object_or_404(Pipeline, pk=pipeline_id) if pipeline_id else None
+    if pipeline_id:
+        pipeline = get_object_or_404(Pipeline, pk=pipeline_id)
+    else:
+        # Użyj domyślnego pipeline jeśli istnieje
+        pipeline = Pipeline.objects.filter(is_default=True).first()
 
-    form = LeadPipelineEntryForm(pipeline=pipeline, user=request.user)
+    # Pierwszy krok domyślnego pipeline
+    default_step = pipeline.steps.order_by('order').first() if pipeline else None
+
+    form = LeadPipelineEntryForm(
+        pipeline=pipeline,
+        user=request.user,
+        initial={'pipeline': pipeline, 'current_step': default_step} if pipeline else {},
+    )
     pipelines = Pipeline.objects.all()
 
     if request.method == 'POST':

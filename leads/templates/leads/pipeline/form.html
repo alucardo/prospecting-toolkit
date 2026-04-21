@@ -24,6 +24,10 @@
                         {{ form.show_on_dashboard }}
                         <label class="label-text">Pokazuj na dashboardzie</label>
                     </div>
+                    <div class="flex items-center gap-3">
+                        {{ form.is_default }}
+                        <label class="label-text">Domyślny pipeline <span class="text-gray-400 text-xs">(tylko jeden może być domyślny)</span></label>
+                    </div>
                     <button type="submit" class="btn btn-primary">Zapisz</button>
                 </div>
             </form>

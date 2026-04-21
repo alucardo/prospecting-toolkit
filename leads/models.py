@@ -470,7 +470,14 @@ class Pipeline(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     show_on_dashboard = models.BooleanField(default=False)
+    is_default = models.BooleanField(default=False, verbose_name='Domyślny')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Tylko jeden pipeline może być domyślny
+        if self.is_default:
+            Pipeline.objects.exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
