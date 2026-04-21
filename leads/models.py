@@ -70,6 +70,7 @@ class Lead(models.Model):
     STATUS_CALL_LATER = 'call_later'
     STATUS_NOT_INTERESTED = 'not_interested'
     STATUS_INTERESTED = 'interested'
+    STATUS_LEFT_CONTACT = 'left_contact'
     STATUS_REJECTED = 'rejected'
     STATUS_CLIENT = 'client'
     STATUS_CLOSE = 'close'
@@ -82,6 +83,7 @@ class Lead(models.Model):
         (STATUS_CALL_LATER, 'Zadzwonić później'),
         (STATUS_NOT_INTERESTED, 'Nie zainteresowany'),
         (STATUS_INTERESTED, 'Zainteresowany'),
+        (STATUS_LEFT_CONTACT, 'Zostawiony kontakt'),
         (STATUS_CLIENT, 'Klient'),
         (STATUS_REJECTED, 'Odrzucony'),
         (STATUS_CLOSE, 'Zamknięte'),
@@ -154,6 +156,7 @@ class CallLog(models.Model):
     STATUS_NOT_INTERESTED = 'not_interested'
     STATUS_INTERESTED = 'interested'
     STATUS_EMAIL_SENT = 'email_sent'
+    STATUS_LEFT_CONTACT = 'left_contact'
 
     STATUS_CHOICES = [
         (STATUS_NO_ANSWER, 'Nie odebrano'),
@@ -162,6 +165,7 @@ class CallLog(models.Model):
         (STATUS_NOT_INTERESTED, 'Nie zainteresowany'),
         (STATUS_INTERESTED, 'Zainteresowany'),
         (STATUS_EMAIL_SENT, 'Wysłano email'),
+        (STATUS_LEFT_CONTACT, 'Zostawiony kontakt'),
     ]
 
     lead = models.ForeignKey(

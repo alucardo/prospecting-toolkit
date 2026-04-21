@@ -30,6 +30,7 @@ def update_lead_status(sender, instance, created, **kwargs):
         'not_interested': 'not_interested',
         'interested': 'interested',
         'email_sent': 'call_later',
+        'left_contact': 'left_contact',
     }
 
     new_status = STATUS_MAP.get(instance.status)
