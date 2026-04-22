@@ -7,7 +7,7 @@ from ..models import Lead, City, LeadStatusHistory, VoivodeshipKeyword
 from ..forms import LeadForm, LeadNoteForm, LeadContactForm
 
 
-DEFAULT_EXCLUDED_STATUSES = {'rejected', 'close', 'not_interested', 'client', 'complete_profile'}
+DEFAULT_EXCLUDED_STATUSES = {'rejected', 'close', 'not_interested', 'client', 'complete_profile', 'left_contact'}
 
 @login_required
 def lead_index(request):
