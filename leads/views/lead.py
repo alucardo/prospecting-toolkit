@@ -114,9 +114,16 @@ def lead_detail(request, pk):
 
     # Dodaj wolumen bezposrednio do obiektow fraz (unikamy template trickow)
     keywords_with_volume = []
+    keywords_with_position = []
     for kw in lead.keywords_list.all().prefetch_related('rank_checks'):
-        kw.monthly_searches = keyword_volumes.get(kw.phrase)  # None jesli brak
+        kw.monthly_searches = keyword_volumes.get(kw.phrase)
         keywords_with_volume.append(kw)
+        last_check = kw.rank_checks.first()
+        keywords_with_position.append({
+            'pk': kw.pk,
+            'phrase': kw.phrase,
+            'position': last_check.position if last_check else None,
+        })
 
     # Następny krok w pipeline
     next_pipeline_step = None
@@ -135,6 +142,7 @@ def lead_detail(request, pk):
         'full_history': full_history,
         'contact_form': contact_form,
         'keywords_with_volume': keywords_with_volume,
+        'keywords_with_position': keywords_with_position,
         'next_pipeline_step': next_pipeline_step,
     }
     return render(request, 'leads/lead/detail.html', context)

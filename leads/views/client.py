@@ -195,3 +195,33 @@ def client_check_rankings(request, pk):
     if request.method == 'POST':
         check_keyword_rankings.delay(lead.pk, force=True)
     return redirect('leads:client_detail', pk=pk)
+
+
+@login_required
+def keyword_rank_manual(request, pk):
+    """Zapisuje ręczną pozycję dla frazy kluczowej leada."""
+    from ..models import LeadKeyword, KeywordRankCheck
+    lead = get_object_or_404(Lead, pk=pk)
+
+    if request.method == 'POST':
+        keyword_pk = request.POST.get('keyword_pk')
+        position_raw = request.POST.get('position', '').strip()
+
+        kw = get_object_or_404(LeadKeyword, pk=keyword_pk, lead=lead)
+
+        if position_raw == '':
+            position = None
+        else:
+            try:
+                position = int(position_raw)
+                if position < 1:
+                    position = None
+            except ValueError:
+                position = None
+
+        KeywordRankCheck.objects.create(
+            keyword=kw,
+            position=position,
+        )
+
+    return redirect('leads:lead_detail', pk=pk)

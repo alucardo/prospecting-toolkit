@@ -57,6 +57,9 @@ urlpatterns = [
     path('klienci/<int:pk>/snapshot/', views.client.client_snapshot_trigger, name='client_snapshot_trigger'),
     path('klienci/<int:pk>/check-rankings/', views.client.client_check_rankings, name='client_check_rankings'),
 
+    # Reczna edycja pozycji frazy (dla wszystkich leadow)
+    path('leads/<int:pk>/rank-manual/', views.client.keyword_rank_manual, name='keyword_rank_manual'),
+
     # Frazy kluczowe województw
     path('frazy/', views.voivodeship_keywords.voivodeship_keyword_index, name='voivodeship_keyword_index'),
     path('frazy/<int:pk>/', views.voivodeship_keywords.voivodeship_keyword_detail, name='voivodeship_keyword_detail'),

@@ -884,4 +884,34 @@ document.addEventListener('DOMContentLoaded', function () {
 {% endif %}
 {% endwith %}
 
+{% if keywords_with_position %}
+<div class="mt-6">
+    <details class="group">
+        <summary class="cursor-pointer text-sm font-medium text-gray-500 hover:text-gray-700 select-none flex items-center gap-2">
+            <span class="group-open:rotate-90 inline-block transition-transform">▶</span>
+            Ręczna edycja pozycji
+        </summary>
+        <div class="mt-3 card bg-base-200">
+            <div class="card-body py-4">
+                <p class="text-xs text-gray-400 mb-3">Zostanie dodany nowy wpis do historii pozycji. Przy następnym automatycznym sprawdzeniu zostanie nadpisany.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {% for kw in keywords_with_position %}
+                    <form method="post" action="{% url 'leads:keyword_rank_manual' lead.pk %}" class="flex items-center gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="keyword_pk" value="{{ kw.pk }}">
+                        <span class="text-xs text-gray-600 flex-1 min-w-0 truncate" title="{{ kw.phrase }}">{{ kw.phrase }}</span>
+                        <input type="number" name="position" min="1" max="100"
+                            value="{{ kw.position|default:'' }}"
+                            placeholder="poza TOP"
+                            class="input input-bordered input-xs w-24 text-center">
+                        <button type="submit" class="btn btn-xs btn-primary shrink-0">Zapisz</button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </details>
+</div>
+{% endif %}
+
 {% endblock %}
