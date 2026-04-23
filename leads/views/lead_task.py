@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.utils import timezone
 from ..models import Lead, LeadTask, TaskBlueprint
 
@@ -16,11 +17,13 @@ def lead_task_index(request, lead_pk):
             title = request.POST.get('title', '').strip()
             due_start = request.POST.get('due_date_start') or None
             due_end = request.POST.get('due_date_end') or None
+            assigned_to_id = request.POST.get('assigned_to') or None
             if title:
                 LeadTask.objects.create(
                     lead=lead, title=title,
                     due_date_start=due_start,
                     due_date_end=due_end,
+                    assigned_to_id=assigned_to_id,
                 )
 
         elif action == 'toggle':
@@ -40,18 +43,21 @@ def lead_task_index(request, lead_pk):
             title = request.POST.get('title', '').strip()
             due_start = request.POST.get('due_date_start') or None
             due_end = request.POST.get('due_date_end') or None
+            assigned_to_id = request.POST.get('assigned_to') or None
             task = get_object_or_404(LeadTask, pk=task_pk, lead=lead)
             if title:
                 task.title = title
                 task.due_date_start = due_start
                 task.due_date_end = due_end
-                task.save(update_fields=['title', 'due_date_start', 'due_date_end'])
+                task.assigned_to_id = assigned_to_id
+                task.save(update_fields=['title', 'due_date_start', 'due_date_end', 'assigned_to'])
 
         return redirect('leads:lead_task_index', lead_pk=lead.pk)
 
     pending = tasks.filter(is_done=False)
     done = tasks.filter(is_done=True)
     blueprints = TaskBlueprint.objects.prefetch_related('items').all()
+    users = User.objects.filter(is_active=True).order_by('first_name', 'username')
 
     return render(request, 'leads/tasks/index.html', {
         'lead': lead,
@@ -60,6 +66,7 @@ def lead_task_index(request, lead_pk):
         'pending_count': pending.count(),
         'done_count': done.count(),
         'blueprints': blueprints,
+        'users': users,
     })
 
 
@@ -81,12 +88,13 @@ def apply_blueprint(request, lead_pk, blueprint_pk):
 def all_tasks_index(request):
     """Wszystkie nieukończone zadania wszystkich klientów."""
     today = timezone.now().date()
-    status_filter = request.GET.get('status', '')  # overdue | active | none | ''
+    status_filter = request.GET.get('status', '')
+    user_filter = request.GET.get('user', '')  # pk usera lub 'none'
 
     tasks = (
         LeadTask.objects
         .filter(is_done=False, lead__status='client')
-        .select_related('lead', 'lead__city')
+        .select_related('lead', 'lead__city', 'assigned_to')
         .order_by('lead__name', '-created_at')
     )
 
@@ -99,12 +107,16 @@ def all_tasks_index(request):
             task.is_done = True
             task.done_at = timezone.now()
             task.save(update_fields=['is_done', 'done_at'])
-
         elif action == 'delete':
             task.delete()
 
-        # Zachowaj filtr po POST
-        qs = f'?status={status_filter}' if status_filter else ''
+        # Zachowaj filtry po POST
+        params = []
+        if status_filter:
+            params.append(f'status={status_filter}')
+        if user_filter:
+            params.append(f'user={user_filter}')
+        qs = '?' + '&'.join(params) if params else ''
         return redirect(f"{request.path}{qs}")
 
     # Liczniki do boxów — zawsze po wszystkich
@@ -120,13 +132,25 @@ def all_tasks_index(request):
         else:
             none_count += 1
 
-    # Filtrowanie po statusie
+    # Filtrowanie po statusie terminu
     if status_filter == 'overdue':
         tasks = [t for t in tasks if t.due_status == 'overdue']
     elif status_filter == 'active':
         tasks = [t for t in tasks if t.due_status == 'active']
     elif status_filter == 'none':
         tasks = [t for t in tasks if t.due_status is None]
+    else:
+        tasks = list(tasks)
+
+    # Filtrowanie po osobie
+    if user_filter == 'none':
+        tasks = [t for t in tasks if t.assigned_to_id is None]
+    elif user_filter:
+        try:
+            uid = int(user_filter)
+            tasks = [t for t in tasks if t.assigned_to_id == uid]
+        except ValueError:
+            pass
 
     # Grupowanie po kliencie
     grouped = {}
@@ -136,6 +160,8 @@ def all_tasks_index(request):
             grouped[lead.pk] = {'lead': lead, 'tasks': []}
         grouped[lead.pk]['tasks'].append(task)
 
+    users = User.objects.filter(is_active=True).order_by('first_name', 'username')
+
     return render(request, 'leads/tasks/all_tasks.html', {
         'grouped': grouped.values(),
         'total_count': LeadTask.objects.filter(is_done=False, lead__status='client').count(),
@@ -144,5 +170,7 @@ def all_tasks_index(request):
         'none_count': none_count,
         'filtered_count': len(tasks),
         'status_filter': status_filter,
+        'user_filter': user_filter,
+        'users': users,
         'today': today,
     })

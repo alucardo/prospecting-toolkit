@@ -694,6 +694,13 @@ class LeadTask(models.Model):
     done_at = models.DateTimeField(null=True, blank=True)
     due_date_start = models.DateField(null=True, blank=True, verbose_name='Termin od')
     due_date_end = models.DateField(null=True, blank=True, verbose_name='Termin do')
+    assigned_to = models.ForeignKey(
+        User,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_tasks',
+        verbose_name='Przypisany do',
+    )
 
     class Meta:
         ordering = ['is_done', '-created_at']
