@@ -19,6 +19,42 @@ def task_toggle_ajax(request, task_pk):
 
 
 @login_required
+def task_add_ajax(request):
+    """AJAX — tworzy nowe zadanie dla klienta."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+
+    lead_pk = request.POST.get('lead_pk')
+    title = request.POST.get('title', '').strip()
+    due_start = request.POST.get('due_date_start') or None
+    due_end = request.POST.get('due_date_end') or None
+    assigned_to_id = request.POST.get('assigned_to') or None
+
+    if not title or not lead_pk:
+        return JsonResponse({'error': 'Brak tytułu lub klienta'}, status=400)
+
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+
+    task = LeadTask.objects.create(
+        lead=lead,
+        title=title,
+        due_date_start=due_start,
+        due_date_end=due_end,
+        assigned_to_id=assigned_to_id,
+    )
+
+    return JsonResponse({
+        'ok': True,
+        'task_pk': task.pk,
+        'lead_pk': lead.pk,
+        'lead_name': lead.name,
+        'title': task.title,
+        'assigned_to': task.assigned_to.get_full_name() or task.assigned_to.username if task.assigned_to else None,
+        'due_date_end': task.due_date_end.strftime('%d.%m.%Y') if task.due_date_end else None,
+    })
+
+
+@login_required
 def lead_task_index(request, lead_pk):
     lead = get_object_or_404(Lead, pk=lead_pk, status='client')
     tasks = lead.tasks.all()

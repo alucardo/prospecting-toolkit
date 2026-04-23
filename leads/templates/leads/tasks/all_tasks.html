@@ -72,7 +72,7 @@
 {% if grouped %}
 <div class="flex flex-col gap-6">
     {% for group in grouped %}
-    <div class="card bg-base-200 task-group">
+    <div class="card bg-base-200 task-group" data-lead-pk="{{ group.lead.pk }}">
         <div class="card-body py-4">
             <div class="flex items-center justify-between mb-3">
                 <a href="{% url 'leads:client_detail' group.lead.pk %}"
@@ -81,12 +81,19 @@
                 </a>
                 <div class="flex items-center gap-2">
                     <span class="badge badge-ghost badge-sm">{{ group.tasks|length }} zadań</span>
+                    <button type="button"
+                        class="btn btn-xs btn-primary add-task-btn"
+                        data-lead-pk="{{ group.lead.pk }}"
+                        data-lead-name="{{ group.lead.name }}"
+                        title="Dodaj zadanie">
+                        + Zadanie
+                    </button>
                     <a href="{% url 'leads:lead_task_index' group.lead.pk %}"
-                       class="btn btn-ghost btn-xs">Wszystkie zadania →</a>
+                       class="btn btn-ghost btn-xs">Wszystkie →</a>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 task-list">
                 {% for task in group.tasks %}
                 <div class="flex items-start gap-3 p-2 rounded-lg
                     {% if task.due_status == 'overdue' %}bg-error/10 border border-error/20
@@ -145,34 +152,160 @@
 </div>
 {% endif %}
 
+{# ===== MODAL ===== #}
+<dialog id="add-task-modal" class="modal">
+    <div class="modal-box max-w-md">
+        <h3 class="font-bold text-lg mb-1" id="modal-title">Nowe zadanie</h3>
+        <p class="text-sm text-gray-400 mb-4" id="modal-lead-name"></p>
+
+        <form id="add-task-form" class="flex flex-col gap-3">
+            <input type="hidden" id="modal-lead-pk" name="lead_pk">
+
+            <div class="form-control">
+                <textarea id="modal-title-input" name="title" rows="3"
+                    class="textarea textarea-bordered w-full"
+                    placeholder="Treść zadania..." required></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div class="form-control">
+                    <label class="label py-1"><span class="label-text text-xs">Termin od</span></label>
+                    <input type="date" name="due_date_start"
+                        class="input input-bordered input-sm w-full">
+                </div>
+                <div class="form-control">
+                    <label class="label py-1"><span class="label-text text-xs">Termin do</span></label>
+                    <input type="date" name="due_date_end"
+                        class="input input-bordered input-sm w-full">
+                </div>
+            </div>
+
+            <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs">Przypisz do (opcjonalnie)</span></label>
+                <select name="assigned_to" class="select select-bordered select-sm w-full">
+                    <option value="">— brak —</option>
+                    {% for u in users %}
+                    <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="modal-error" class="text-error text-sm hidden"></div>
+
+            <div class="modal-action mt-2">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('add-task-modal').close()">Anuluj</button>
+                <button type="submit" class="btn btn-primary" id="modal-submit-btn">Dodaj zadanie</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+
 <script>
 const CSRF = '{{ csrf_token }}';
 const TOGGLE_URL = '{% url "leads:task_toggle_ajax" 0 %}'.replace('/0/', '/');
+const ADD_URL = '{% url "leads:task_add_ajax" %}';
 
+// ===== Otwórz modal =====
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.add-task-btn');
+    if (!btn) return;
+    const modal = document.getElementById('add-task-modal');
+    document.getElementById('modal-lead-pk').value = btn.dataset.leadPk;
+    document.getElementById('modal-lead-name').textContent = btn.dataset.leadName;
+    document.getElementById('add-task-form').reset();
+    document.getElementById('modal-error').classList.add('hidden');
+    document.getElementById('modal-title-input').focus();
+    modal.showModal();
+});
+
+// ===== Wyślij formularz AJAX =====
+document.getElementById('add-task-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('modal-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Zapisuję...';
+
+    const data = new FormData(this);
+
+    fetch(ADD_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+        body: data,
+    })
+    .then(r => r.json())
+    .then(resp => {
+        if (!resp.ok) {
+            document.getElementById('modal-error').textContent = resp.error || 'Błąd zapisu';
+            document.getElementById('modal-error').classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Dodaj zadanie';
+            return;
+        }
+        document.getElementById('add-task-modal').close();
+        // Wstrzyknij nowe zadanie na listę bez przeladowania
+        const leadPk = resp.lead_pk;
+        const taskGroups = document.querySelectorAll('.task-group');
+        let targetList = null;
+        taskGroups.forEach(g => {
+            if (g.dataset.leadPk == leadPk) {
+                targetList = g.querySelector('.task-list');
+            }
+        });
+        if (targetList) {
+            const row = buildTaskRow(resp);
+            targetList.prepend(row);
+        }
+    })
+    .catch(() => {
+        document.getElementById('modal-error').textContent = 'Błąd połączenia';
+        document.getElementById('modal-error').classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Dodaj zadanie';
+    });
+});
+
+function buildTaskRow(resp) {
+    const row = document.createElement('div');
+    row.className = 'flex items-start gap-3 p-2 rounded-lg bg-base-300';
+    row.style.opacity = '0';
+    row.style.transition = 'opacity 0.3s';
+
+    let meta = '';
+    if (resp.assigned_to) meta += `<span class="text-xs text-gray-400">👤 ${resp.assigned_to}</span>`;
+    if (resp.due_date_end) meta += `<span class="text-xs text-gray-400">📅 ${resp.due_date_end}</span>`;
+
+    row.innerHTML = `
+        <button type="button"
+            class="task-toggle-btn shrink-0 mt-0.5 w-5 h-5 rounded border-2 border-gray-400 hover:border-success hover:bg-success/20 transition-colors"
+            data-task-pk="${resp.task_pk}"
+            title="Oznacz jako wykonane"></button>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm whitespace-pre-wrap">${resp.title}</p>
+            ${meta ? `<div class="flex gap-2 mt-0.5">${meta}</div>` : ''}
+        </div>
+    `;
+    requestAnimationFrame(() => { row.style.opacity = '1'; });
+    return row;
+}
+
+// ===== Toggle AJAX =====
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('.task-toggle-btn');
     if (!btn) return;
 
-    const taskPk = btn.dataset.taskPk;
-    const row = btn.closest('[data-task-row]');
-
-    // Optymistyczne UI — natychmiast zielony
     btn.classList.remove('border-gray-400');
     btn.classList.add('border-success', 'bg-success', 'text-white');
     btn.innerHTML = '✓';
     btn.disabled = true;
 
-    fetch(TOGGLE_URL + taskPk + '/', {
+    fetch(TOGGLE_URL + btn.dataset.taskPk + '/', {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': CSRF,
-            'X-Requested-With': 'XMLHttpRequest',
-        },
+        headers: { 'X-CSRFToken': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
     })
     .then(r => r.json())
     .then(data => {
         if (data.ok) {
-            // Animacja — znikanie wiersza
             const card = btn.closest('.flex.items-start');
             if (card) {
                 card.style.transition = 'opacity 0.4s, transform 0.4s';
@@ -180,10 +313,8 @@ document.addEventListener('click', function(e) {
                 card.style.transform = 'translateX(20px)';
                 setTimeout(() => {
                     card.remove();
-                    // Usuń pustych grup
                     document.querySelectorAll('.task-group').forEach(g => {
-                        const items = g.querySelectorAll('.flex.items-start');
-                        if (items.length === 0) {
+                        if (g.querySelectorAll('.flex.items-start').length === 0) {
                             g.style.transition = 'opacity 0.3s';
                             g.style.opacity = '0';
                             setTimeout(() => g.remove(), 300);
@@ -192,7 +323,6 @@ document.addEventListener('click', function(e) {
                 }, 400);
             }
         } else {
-            // Cofnij jeśli błąd
             btn.classList.add('border-gray-400');
             btn.classList.remove('border-success', 'bg-success', 'text-white');
             btn.innerHTML = '';
