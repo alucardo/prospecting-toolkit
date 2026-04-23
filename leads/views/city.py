@@ -11,10 +11,12 @@ from .lead import DEFAULT_EXCLUDED_STATUSES
 
 @login_required
 def city_index(request):
+    from django.contrib.auth.models import User
     potential_statuses = [v for v, _ in Lead.STATUS_CHOICES if v not in DEFAULT_EXCLUDED_STATUSES]
     search = request.GET.get('search', '').strip()
+    user_filter = request.GET.get('user', '')
 
-    cities = City.objects.annotate(
+    cities = City.objects.select_related('voivodeship', 'assigned_to').annotate(
         leads_potential=Count('leads', filter=Q(leads__status__in=potential_statuses)),
         leads_refused=Count('leads', filter=Q(leads__status='not_interested')),
         leads_clients=Count('leads', filter=Q(leads__status='client')),
@@ -23,6 +25,13 @@ def city_index(request):
     if search:
         cities = cities.filter(name__icontains=search)
 
+    if user_filter == 'none':
+        cities = cities.filter(assigned_to__isnull=True)
+    elif user_filter:
+        cities = cities.filter(assigned_to__pk=user_filter)
+
+    users = User.objects.filter(is_active=True).order_by('first_name', 'username')
+
     paginator = Paginator(cities, 25)
     page = paginator.get_page(request.GET.get('page'))
 
@@ -30,6 +39,8 @@ def city_index(request):
         'cities': page,
         'total_count': paginator.count,
         'search': search,
+        'users': users,
+        'user_filter': user_filter,
     }
     return render(request, 'leads/city/index.html', context)
 

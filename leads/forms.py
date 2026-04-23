@@ -45,7 +45,7 @@ class CallLogForm(forms.ModelForm):
 class CityForm(forms.ModelForm):
     class Meta:
         model = City
-        fields = ['name', 'voivodeship']
+        fields = ['name', 'voivodeship', 'assigned_to']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'input input-bordered w-full',
@@ -54,13 +54,20 @@ class CityForm(forms.ModelForm):
             'voivodeship': forms.Select(attrs={
                 'class': 'select select-bordered w-full',
             }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'select select-bordered w-full',
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        from django.contrib.auth.models import User
         self.fields['voivodeship'].queryset = Voivodeship.objects.all()
         self.fields['voivodeship'].empty_label = '— wybierz województwo —'
         self.fields['voivodeship'].required = False
+        self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'username')
+        self.fields['assigned_to'].empty_label = '— brak —'
+        self.fields['assigned_to'].required = False
 
 class ImportFileForm(forms.ModelForm):
     class Meta:

@@ -26,6 +26,13 @@ class City(models.Model):
     name = models.CharField(max_length=255)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    assigned_to = models.ForeignKey(
+        User,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_cities',
+        verbose_name='Przypisany handlowiec',
+    )
 
     def __str__(self):
         return self.name
