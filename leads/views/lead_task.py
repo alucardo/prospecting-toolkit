@@ -1,8 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.http import JsonResponse
 from django.utils import timezone
 from ..models import Lead, LeadTask, TaskBlueprint
+
+
+@login_required
+def task_toggle_ajax(request, task_pk):
+    """AJAX — oznacza zadanie jako wykonane."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+    task = get_object_or_404(LeadTask, pk=task_pk, lead__status='client')
+    task.is_done = True
+    task.done_at = timezone.now()
+    task.save(update_fields=['is_done', 'done_at'])
+    return JsonResponse({'ok': True, 'task_pk': task_pk})
 
 
 @login_required

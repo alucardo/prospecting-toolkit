@@ -89,6 +89,7 @@ urlpatterns = [
 
     # Zadania
     path('zadania/', views.lead_task.all_tasks_index, name='all_tasks_index'),
+    path('zadania/toggle/<int:task_pk>/', views.lead_task.task_toggle_ajax, name='task_toggle_ajax'),
     path('klienci/<int:lead_pk>/zadania/', views.lead_task.lead_task_index, name='lead_task_index'),
     path('klienci/<int:lead_pk>/zadania/zastosuj/<int:blueprint_pk>/', views.lead_task.apply_blueprint, name='apply_blueprint'),
 

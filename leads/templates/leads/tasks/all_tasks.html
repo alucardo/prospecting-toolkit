@@ -72,7 +72,7 @@
 {% if grouped %}
 <div class="flex flex-col gap-6">
     {% for group in grouped %}
-    <div class="card bg-base-200">
+    <div class="card bg-base-200 task-group">
         <div class="card-body py-4">
             <div class="flex items-center justify-between mb-3">
                 <a href="{% url 'leads:client_detail' group.lead.pk %}"
@@ -93,15 +93,11 @@
                     {% elif task.due_status == 'active' %}bg-warning/10 border border-warning/20
                     {% else %}bg-base-300{% endif %}">
 
-                    {# Checkbox #}
-                    <form method="post" class="shrink-0 mt-0.5">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="toggle">
-                        <input type="hidden" name="task_pk" value="{{ task.pk }}">
-                        <button type="submit"
-                            class="w-5 h-5 rounded border-2 border-gray-400 hover:border-success hover:bg-success/20 transition-colors"
-                            title="Oznacz jako wykonane"></button>
-                    </form>
+                    {# Checkbox AJAX #}
+                    <button type="button"
+                        class="task-toggle-btn shrink-0 mt-0.5 w-5 h-5 rounded border-2 border-gray-400 hover:border-success hover:bg-success/20 transition-colors"
+                        data-task-pk="{{ task.pk }}"
+                        title="Oznacz jako wykonane"></button>
 
                     <div class="flex-1 min-w-0">
                         <p class="text-sm whitespace-pre-wrap">{{ task.title }}</p>
@@ -148,5 +144,68 @@
     </div>
 </div>
 {% endif %}
+
+<script>
+const CSRF = '{{ csrf_token }}';
+const TOGGLE_URL = '{% url "leads:task_toggle_ajax" 0 %}'.replace('/0/', '/');
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.task-toggle-btn');
+    if (!btn) return;
+
+    const taskPk = btn.dataset.taskPk;
+    const row = btn.closest('[data-task-row]');
+
+    // Optymistyczne UI — natychmiast zielony
+    btn.classList.remove('border-gray-400');
+    btn.classList.add('border-success', 'bg-success', 'text-white');
+    btn.innerHTML = '✓';
+    btn.disabled = true;
+
+    fetch(TOGGLE_URL + taskPk + '/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': CSRF,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            // Animacja — znikanie wiersza
+            const card = btn.closest('.flex.items-start');
+            if (card) {
+                card.style.transition = 'opacity 0.4s, transform 0.4s';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                setTimeout(() => {
+                    card.remove();
+                    // Usuń pustych grup
+                    document.querySelectorAll('.task-group').forEach(g => {
+                        const items = g.querySelectorAll('.flex.items-start');
+                        if (items.length === 0) {
+                            g.style.transition = 'opacity 0.3s';
+                            g.style.opacity = '0';
+                            setTimeout(() => g.remove(), 300);
+                        }
+                    });
+                }, 400);
+            }
+        } else {
+            // Cofnij jeśli błąd
+            btn.classList.add('border-gray-400');
+            btn.classList.remove('border-success', 'bg-success', 'text-white');
+            btn.innerHTML = '';
+            btn.disabled = false;
+        }
+    })
+    .catch(() => {
+        btn.classList.add('border-gray-400');
+        btn.classList.remove('border-success', 'bg-success', 'text-white');
+        btn.innerHTML = '';
+        btn.disabled = false;
+    });
+});
+</script>
 
 {% endblock %}
