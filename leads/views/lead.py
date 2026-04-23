@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count, Q
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.paginator import Paginator
@@ -182,6 +182,19 @@ def lead_delete(request, pk):
 
 
 from ..tasks import scrape_lead_email, scrape_leads_emails_bulk
+
+
+@login_required
+def lead_quick_note(request, pk):
+    """AJAX — zapisuje szybką notatkę do leada."""
+    from django.http import JsonResponse
+    lead = get_object_or_404(Lead, pk=pk)
+    if request.method == 'POST':
+        note = request.POST.get('quick_note', '').strip()
+        lead.quick_note = note
+        lead.save(update_fields=['quick_note'])
+        return JsonResponse({'ok': True, 'quick_note': lead.quick_note})
+    return JsonResponse({'error': 'method not allowed'}, status=405)
 
 
 @login_required

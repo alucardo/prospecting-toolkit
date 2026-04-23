@@ -129,6 +129,7 @@ class Lead(models.Model):
         verbose_name='GBP location name',
         help_text='Format: locations/123456789 — identyfikator wizytyówki w Google Business Profile'
     )
+    quick_note = models.CharField(max_length=500, blank=True, verbose_name='Szybka notatka')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

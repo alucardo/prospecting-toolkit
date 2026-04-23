@@ -71,10 +71,9 @@
                         <th>Nazwa</th>
                         <th>Miasto</th>
                         <th>Telefon</th>
-                        <th>Email</th>
-                        <th>Strona WWW</th>
-                        <th>Źródło</th>
+                        <th>WWW</th>
                         <th>Status</th>
+                        <th>Notatka</th>
                         <th>Kontakty</th>
                     </tr>
                 </thead>
@@ -85,9 +84,7 @@
                         <td><a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-primary">{{ lead.name }}</a></td>
                         <td><a href="{% url 'leads:city_detail' lead.city.pk %}" class="link link-primary">{{ lead.city }}</a></td>
                         <td>{{ lead.phone }}</td>
-                        <td>{{ lead.email }}</td>
                         <td>{% if lead.website %}<a href="{{ lead.website }}" target="_blank" class="link link-primary">WWW</a>{% endif %}</td>
-                        <td><span class="badge badge-neutral">{{ lead.source }}</span></td>
                         <td>
                             <span class="badge
                                 {% if lead.status == 'interested' %}badge-success
@@ -101,6 +98,25 @@
                                 {% else %}badge-ghost{% endif %}">
                                     {{ lead.get_status_display }}
                     </span>
+                        </td>
+                        <td class="max-w-xs">
+                            <span
+                                class="quick-note-display text-xs text-gray-500 cursor-pointer hover:text-gray-800 block truncate"
+                                data-lead-pk="{{ lead.pk }}"
+                                title="Kliknij by edytować{% if lead.quick_note %}: {{ lead.quick_note }}{% endif %}">
+                                {% if lead.quick_note %}{{ lead.quick_note }}{% else %}<span class="text-gray-300">+ notatka</span>{% endif %}
+                            </span>
+                            <div class="quick-note-edit hidden flex gap-1" data-lead-pk="{{ lead.pk }}">
+                                <input
+                                    type="text"
+                                    class="quick-note-input input input-xs input-bordered flex-1"
+                                    data-lead-pk="{{ lead.pk }}"
+                                    value="{{ lead.quick_note }}"
+                                    maxlength="500"
+                                    placeholder="Wpisz notatkę...">
+                                <button type="button" class="quick-note-save btn btn-xs btn-success" data-lead-pk="{{ lead.pk }}">&#10003;</button>
+                                <button type="button" class="quick-note-cancel btn btn-xs btn-ghost" data-lead-pk="{{ lead.pk }}">&#10005;</button>
+                            </div>
                         </td>
                         <td>{{ lead.call_count }}</td>
                     </tr>
@@ -138,6 +154,66 @@
     <script>
         document.getElementById('select_all').addEventListener('change', function() {
             document.querySelectorAll('input[name="selected_leads"]').forEach(cb => cb.checked = this.checked);
+        });
+
+        const CSRF = '{{ csrf_token }}';
+
+        function showEdit(pk) {
+            document.querySelector(`.quick-note-display[data-lead-pk="${pk}"]`).classList.add('hidden');
+            const edit = document.querySelector(`.quick-note-edit[data-lead-pk="${pk}"]`);
+            edit.classList.remove('hidden');
+            edit.querySelector('.quick-note-input').focus();
+        }
+
+        function hideEdit(pk) {
+            document.querySelector(`.quick-note-display[data-lead-pk="${pk}"]`).classList.remove('hidden');
+            document.querySelector(`.quick-note-edit[data-lead-pk="${pk}"]`).classList.add('hidden');
+        }
+
+        function saveNote(pk) {
+            const input = document.querySelector(`.quick-note-input[data-lead-pk="${pk}"]`);
+            const display = document.querySelector(`.quick-note-display[data-lead-pk="${pk}"]`);
+            const val = input.value.trim();
+
+            fetch(`/leads/${pk}/quick-note/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `quick_note=${encodeURIComponent(val)}`,
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    hideEdit(pk);
+                    if (val) {
+                        display.innerHTML = val;
+                        display.title = 'Kliknij by edytować: ' + val;
+                    } else {
+                        display.innerHTML = '<span class="text-gray-300">+ notatka</span>';
+                        display.title = 'Kliknij by edytować';
+                    }
+                }
+            });
+        }
+
+        // Kliknij na tekst — pokaż edytor
+        document.querySelectorAll('.quick-note-display').forEach(el => {
+            el.addEventListener('click', () => showEdit(el.dataset.leadPk));
+        });
+
+        // Przyciski zapisz / anuluj
+        document.querySelectorAll('.quick-note-save').forEach(btn => {
+            btn.addEventListener('click', () => saveNote(btn.dataset.leadPk));
+        });
+        document.querySelectorAll('.quick-note-cancel').forEach(btn => {
+            btn.addEventListener('click', () => hideEdit(btn.dataset.leadPk));
+        });
+
+        // Enter — zapisz, Escape — anuluj
+        document.querySelectorAll('.quick-note-input').forEach(input => {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); saveNote(input.dataset.leadPk); }
+                if (e.key === 'Escape') { hideEdit(input.dataset.leadPk); }
+            });
         });
     </script>
 {% else %}
