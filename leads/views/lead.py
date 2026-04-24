@@ -62,6 +62,33 @@ def lead_index(request):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
 
+    # Jedno zapytanie dla przypomnień — tylko leady z bieżącej strony
+    from django.utils import timezone
+    from ..models import CallLog
+    lead_pks = [lead.pk for lead in page]
+    reminders_qs = (
+        CallLog.objects
+        .filter(
+            lead_id__in=lead_pks,
+            is_reminder_active=True,
+            next_contact_date__isnull=False,
+        )
+        .order_by('lead_id', 'next_contact_date')
+        .values('lead_id', 'next_contact_date')
+    )
+    # Bierzemy najwcześniejszy reminder per lead
+    next_contact_map = {}
+    for row in reminders_qs:
+        lid = row['lead_id']
+        if lid not in next_contact_map:
+            next_contact_map[lid] = row['next_contact_date']
+
+    now = timezone.now()
+
+    # Doklejamy next_contact_date bezposrednio do obiektu — zero N+1
+    for lead in page:
+        lead.next_contact = next_contact_map.get(lead.pk)
+
     context = {
         'leads': page,
         'total_count': paginator.count,
@@ -72,6 +99,8 @@ def lead_index(request):
         'status_choices': Lead.STATUS_CHOICES,
         'email_filter': email_filter,
         'default_excluded_statuses': DEFAULT_EXCLUDED_STATUSES,
+        'next_contact_map': next_contact_map,
+        'now': now,
     }
     return render(request, 'leads/lead/index.html', context)
 

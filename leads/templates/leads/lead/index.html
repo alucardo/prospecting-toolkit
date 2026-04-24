@@ -97,7 +97,13 @@
                                 {% elif lead.status == 'complete_profile' %}badge-info
                                 {% else %}badge-ghost{% endif %}">
                                     {{ lead.get_status_display }}
-                    </span>
+                            </span>
+                            {% if lead.next_contact %}
+                            <div class="tooltip tooltip-left"
+                                data-tip="Następny kontakt: {{ lead.next_contact|date:'d.m.Y H:i' }}{% if lead.next_contact < now %} — po terminie!{% endif %}">
+                                <span class="{% if lead.next_contact < now %}text-error{% else %}text-warning{% endif %} ml-1 cursor-default">&#9200;</span>
+                            </div>
+                            {% endif %}
                         </td>
                         <td class="max-w-xs">
                             <span
