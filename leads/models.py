@@ -130,6 +130,12 @@ class Lead(models.Model):
         help_text='Format: locations/123456789 — identyfikator wizytyówki w Google Business Profile'
     )
     quick_note = models.CharField(max_length=500, blank=True, verbose_name='Szybka notatka')
+    categories = models.ManyToManyField(
+        'LeadCategory',
+        blank=True,
+        related_name='leads',
+        verbose_name='Kategorie',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -779,6 +785,20 @@ def format_duration(minutes):
     elif h:
         return f"{h}h"
     return f"{minutes} min"
+
+
+class LeadCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name='Nazwa')
+    color = models.CharField(max_length=7, default='#6366f1', verbose_name='Kolor')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Kategoria leada'
+        verbose_name_plural = 'Kategorie leadów'
+
+    def __str__(self):
+        return self.name
 
 
 class GBPMetricsSnapshot(models.Model):

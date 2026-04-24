@@ -63,7 +63,7 @@
                         <a href="https://www.google.com/search?q={{ query|urlencode }}" target="_blank" class="link text-gray-400 text-xs">&#128269; Szukaj w Google: {{ lead.name }} {{ lead.city }}</a>
                         {% endwith %}
                     </div>
-                    <!-- Frazy kluczowe -->
+                    <!-- Kategorie -->
                     <div class="mt-3">
                         {% if keywords_with_volume %}
                         <table class="w-full text-xs mb-2">
@@ -156,6 +156,50 @@
                         <button type="submit" class="btn btn-outline btn-sm w-full">🔍 Szukaj email na stronie</button>
                     </form>
                 </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Kategorie -->
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="card-title text-base">🏷️ Kategorie</h2>
+                    {% if all_categories %}
+                    <div class="dropdown dropdown-end">
+                        <div tabindex="0" role="button" class="btn btn-xs btn-primary">+ Dodaj</div>
+                        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-1 shadow mt-1">
+                            {% for cat in all_categories %}
+                            <li>
+                                <button type="button" class="cat-toggle-btn flex items-center gap-2"
+                                    data-lead-pk="{{ lead.pk }}" data-cat-pk="{{ cat.pk }}">
+                                    <span class="w-3 h-3 rounded-full shrink-0"
+                                        style="background-color:{{ cat.color }};"></span>
+                                    {{ cat.name }}
+                                    {% if lead.categories.all|dictsort:'pk'|last %}
+                                    {% endif %}
+                                </button>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    {% for cat in lead.categories.all %}
+                    <span class="badge gap-1 cursor-default"
+                        style="background-color:{{ cat.color }}20; border: 1px solid {{ cat.color }}; color:{{ cat.color }};">
+                        {{ cat.name }}
+                        <button type="button" class="cat-toggle-btn hover:opacity-60"
+                            data-lead-pk="{{ lead.pk }}" data-cat-pk="{{ cat.pk }}"
+                            title="Usuń">&times;</button>
+                    </span>
+                    {% empty %}
+                    <span class="text-sm text-gray-400">Brak kategorii</span>
+                    {% endfor %}
+                </div>
+                {% if not all_categories %}
+                <p class="text-xs text-gray-400 mt-1">Najpierw <a href="{% url 'leads:category_index' %}" class="link">utwórz kategorie</a> w panelu.</p>
                 {% endif %}
             </div>
         </div>
@@ -918,5 +962,22 @@ document.addEventListener('DOMContentLoaded', function () {
     </details>
 </div>
 {% endif %}
+
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+document.querySelectorAll('.cat-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const leadPk = this.dataset.leadPk;
+        const catPk = this.dataset.catPk;
+        fetch(`/leads/${leadPk}/kategorie/set/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `category_pk=${catPk}`,
+        })
+        .then(r => r.json())
+        .then(data => { if (data.ok) location.reload(); });
+    });
+});
+</script>
 
 {% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">🏷️ Kategorie leadów</h1>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    {# Formularz dodawania #}
+    <div>
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <h2 class="card-title text-base">+ Nowa kategoria</h2>
+                <form method="post" class="flex flex-col gap-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-control">
+                        <label class="label py-1"><span class="label-text text-sm">Nazwa *</span></label>
+                        <input type="text" name="name" class="input input-bordered input-sm w-full"
+                            placeholder="np. Restauracje" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label py-1"><span class="label-text text-sm">Kolor</span></label>
+                        <input type="color" name="color" value="#6366f1"
+                            class="h-9 w-full rounded cursor-pointer border border-base-300">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Dodaj</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# Lista kategorii #}
+    <div class="md:col-span-2">
+        {% if categories %}
+        <div class="flex flex-col gap-2">
+            {% for cat in categories %}
+            <div class="card bg-base-200">
+                <div class="card-body py-3">
+                    <div class="flex items-center gap-3">
+                        <span class="w-4 h-4 rounded-full shrink-0"
+                            style="background-color: {{ cat.color }};"></span>
+                        <span class="font-medium flex-1">{{ cat.name }}</span>
+                        <span class="badge badge-ghost badge-sm">{{ cat.lead_count }} leadów</span>
+                        <button class="btn btn-ghost btn-xs"
+                            onclick="toggleEdit({{ cat.pk }})">✏️</button>
+                        <form method="post"
+                            onsubmit="return confirm('Usunąć kategorię {{ cat.name }}?')">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="pk" value="{{ cat.pk }}">
+                            <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                        </form>
+                    </div>
+                    {# Edycja inline #}
+                    <div id="edit-{{ cat.pk }}" class="hidden mt-2">
+                        <form method="post" class="flex gap-2 items-end">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="edit">
+                            <input type="hidden" name="pk" value="{{ cat.pk }}">
+                            <div class="flex-1">
+                                <input type="text" name="name"
+                                    value="{{ cat.name }}"
+                                    class="input input-bordered input-sm w-full">
+                            </div>
+                            <input type="color" name="color" value="{{ cat.color }}"
+                                class="h-9 w-12 rounded cursor-pointer border border-base-300 shrink-0">
+                            <button type="submit" class="btn btn-primary btn-xs">Zapisz</button>
+                            <button type="button" class="btn btn-ghost btn-xs"
+                                onclick="toggleEdit({{ cat.pk }})">Anuluj</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="hero min-h-32 bg-base-200 rounded-box">
+            <p class="text-gray-400 text-sm">Brak kategorii — dodaj pierwszą z formularza</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleEdit(pk) {
+    document.getElementById('edit-' + pk).classList.toggle('hidden');
+}
+</script>
+{% endblock %}

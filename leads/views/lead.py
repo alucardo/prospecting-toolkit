@@ -162,6 +162,9 @@ def lead_detail(request, pk):
             order__gt=entry.current_step.order
         ).order_by('order').first()
 
+    from ..models import LeadCategory
+    all_categories = LeadCategory.objects.all()
+
     context = {
         'lead': lead,
         'call_logs': call_logs,
@@ -173,6 +176,7 @@ def lead_detail(request, pk):
         'keywords_with_volume': keywords_with_volume,
         'keywords_with_position': keywords_with_position,
         'next_pipeline_step': next_pipeline_step,
+        'all_categories': all_categories,
     }
     return render(request, 'leads/lead/detail.html', context)
 

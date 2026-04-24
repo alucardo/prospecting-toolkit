@@ -105,7 +105,9 @@ urlpatterns = [
     # Metryki GBP
     path('klienci/<int:lead_pk>/metryki/', views.gbp_metrics.gbp_metrics_index, name='gbp_metrics_index'),
 
-    # NAP klienta
+    # Kategorie
+    path('kategorie/', views.category.category_index, name='category_index'),
+    path('leads/<int:lead_pk>/kategorie/set/', views.category.lead_category_set, name='lead_category_set'),
     path('klienci/<int:lead_pk>/nap/', views.lead_nap.lead_nap_index, name='lead_nap_index'),
     path('klienci/<int:lead_pk>/nap/<int:directory_pk>/set/', views.lead_nap.lead_nap_set, name='lead_nap_set'),
 
