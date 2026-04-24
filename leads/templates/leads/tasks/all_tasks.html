@@ -233,7 +233,12 @@ document.getElementById('add-task-form').addEventListener('submit', function(e) 
         headers: { 'X-CSRFToken': CSRF },
         body: data,
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) {
+            return r.text().then(text => { throw new Error(`Serwer zwrócił ${r.status}: ${text.substring(0, 100)}`); });
+        }
+        return r.json();
+    })
     .then(resp => {
         if (!resp.ok) {
             document.getElementById('modal-error').textContent = resp.error || 'Błąd zapisu';
@@ -242,8 +247,9 @@ document.getElementById('add-task-form').addEventListener('submit', function(e) 
             btn.textContent = 'Dodaj zadanie';
             return;
         }
+        btn.disabled = false;
+        btn.textContent = 'Dodaj zadanie';
         document.getElementById('add-task-modal').close();
-        // Wstrzyknij nowe zadanie na listę bez przeladowania
         const leadPk = resp.lead_pk;
         const taskGroups = document.querySelectorAll('.task-group');
         let targetList = null;
@@ -257,8 +263,9 @@ document.getElementById('add-task-form').addEventListener('submit', function(e) 
             targetList.prepend(row);
         }
     })
-    .catch(() => {
-        document.getElementById('modal-error').textContent = 'Błąd połączenia';
+    .catch(err => {
+        console.error('Task add error:', err);
+        document.getElementById('modal-error').textContent = 'Błąd: ' + (err.message || 'Nieznany problem');
         document.getElementById('modal-error').classList.remove('hidden');
         btn.disabled = false;
         btn.textContent = 'Dodaj zadanie';
