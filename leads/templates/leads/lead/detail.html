@@ -58,6 +58,11 @@
                         {% endwith %}
                         {% endif %}
                     </div>
+                    <div>
+                        {% with query=lead.name|add:" "|add:lead.city.name %}
+                        <a href="https://www.google.com/search?q={{ query|urlencode }}" target="_blank" class="link text-gray-400 text-xs">&#128269; Szukaj w Google: {{ lead.name }} {{ lead.city }}</a>
+                        {% endwith %}
+                    </div>
                     <!-- Frazy kluczowe -->
                     <div class="mt-3">
                         {% if keywords_with_volume %}
