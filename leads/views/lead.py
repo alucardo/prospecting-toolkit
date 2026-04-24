@@ -56,7 +56,7 @@ def lead_index(request):
             Q(similarity__gt=0.1)
         ).order_by('-similarity')
 
-    cities = City.objects.all()
+    cities = City.objects.all().order_by('name')
 
     paginator = Paginator(leads, 20)
     page_number = request.GET.get('page')
