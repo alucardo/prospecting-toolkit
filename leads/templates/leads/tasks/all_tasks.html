@@ -111,13 +111,15 @@
                         {% if task.assigned_to %}
                         <div class="text-xs text-gray-400 mt-0.5">👤 {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</div>
                         {% endif %}
-                        {% if task.due_date_end %}
+                        {% if task.due_date_start or task.due_date_end %}
                         <div class="text-xs mt-0.5
                             {% if task.due_status == 'overdue' %}text-error font-medium
                             {% elif task.due_status == 'active' %}text-warning font-medium
                             {% else %}text-gray-400{% endif %}">
                             📅
-                            {% if task.due_date_start %}{{ task.due_date_start|date:"d.m.Y" }} — {% endif %}{{ task.due_date_end|date:"d.m.Y" }}
+                            {% if task.due_date_start %}{{ task.due_date_start|date:"d.m.Y" }}{% endif %}
+                            {% if task.due_date_start and task.due_date_end %} — {% endif %}
+                            {% if task.due_date_end %}{{ task.due_date_end|date:"d.m.Y" }}{% endif %}
                             {% if task.due_status == 'overdue' %} — po terminie{% endif %}
                         </div>
                         {% endif %}
