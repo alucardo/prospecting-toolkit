@@ -1,8 +1,51 @@
 import calendar
+import json
+from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from ..models import Lead, GBPMetricsSnapshot
+from ..models import Lead, GBPMetricsSnapshot, AppSettings
+
+
+@login_required
+def gbp_metrics_fetch_test(request, lead_pk):
+    """Krok 1: pobiera dane za wczoraj z API i pokazuje surowy wynik."""
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+    error = None
+    raw_result = None
+    parsed = None
+
+    # Sprawdź warunki wstępne
+    if not lead.gbp_location_name:
+        error = 'Brak GBP Location Name dla tego klienta. Uzupełnij pole w edycji leada.'
+    else:
+        settings = AppSettings.get()
+        if not settings.google_refresh_token:
+            error = 'Brak Google Refresh Token. Autoryzuj konto Google w Ustawieniach.'
+
+    if not error and request.method == 'POST':
+        try:
+            from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance
+            yesterday = (timezone.now() - timedelta(days=1)).date()
+
+            access_token = get_access_token(settings.google_refresh_token)
+            raw_result = get_performance_metrics(
+                access_token,
+                lead.gbp_location_name,
+                yesterday,
+                yesterday,
+            )
+            parsed = parse_performance(raw_result)
+        except Exception as e:
+            error = str(e)
+
+    return render(request, 'leads/gbp_metrics/fetch_test.html', {
+        'lead': lead,
+        'error': error,
+        'raw_result': json.dumps(raw_result, indent=2, ensure_ascii=False) if raw_result else None,
+        'parsed': parsed,
+        'yesterday': (timezone.now() - timedelta(days=1)).date(),
+    })
 
 
 @login_required

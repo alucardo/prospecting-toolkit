@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="btn btn-ghost btn-sm">← Metryki</a>
+    <h1 class="text-2xl font-bold">🧪 Test API GBP</h1>
+    <span class="text-gray-400 text-sm">{{ lead.name }}</span>
+</div>
+
+{# Warunki wstępne #}
+<div class="card bg-base-200 mb-6">
+    <div class="card-body py-4">
+        <h2 class="card-title text-base mb-3">Warunki wstępne</h2>
+        <div class="flex flex-col gap-2 text-sm">
+            <div class="flex items-center gap-2">
+                {% if lead.gbp_location_name %}
+                <span class="badge badge-success badge-sm">✓</span>
+                <span>GBP Location Name: <code class="bg-base-300 px-1 rounded">{{ lead.gbp_location_name }}</code></span>
+                {% else %}
+                <span class="badge badge-error badge-sm">✕</span>
+                <span>Brak GBP Location Name —
+                    <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">uzupełnij w edycji leada</a>
+                </span>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-2">
+                {% if not error or 'Token' not in error %}
+                <span class="badge badge-success badge-sm">✓</span>
+                <span>Google Refresh Token ustawiony</span>
+                {% else %}
+                <span class="badge badge-error badge-sm">✕</span>
+                <span>Brak Google Refresh Token —
+                    <a href="{% url 'leads:settings' %}" class="link">autoryzuj w Ustawieniach</a>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error mb-6">
+    <span>❌ {{ error }}</span>
+</div>
+{% endif %}
+
+{# Przycisk testu #}
+{% if not error or parsed %}
+<form method="post" class="mb-6">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">
+        🔍 Pobierz dane za wczoraj ({{ yesterday|date:"d.m.Y" }})
+    </button>
+</form>
+{% endif %}
+
+{# Wynik #}
+{% if parsed %}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">📞 Telefony</div>
+        <div class="stat-value text-2xl">{{ parsed.CALL_CLICKS|default:0 }}</div>
+    </div>
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">👁 Wyświetlenia</div>
+        <div class="stat-value text-2xl">{{ parsed.impressions_total|default:0 }}</div>
+    </div>
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">🗺 Trasy</div>
+        <div class="stat-value text-2xl">{{ parsed.DIRECTION_REQUESTS|default:0 }}</div>
+    </div>
+    <div class="stat bg-base-200 rounded-box py-3 px-4">
+        <div class="stat-title text-xs">🌐 Witryna</div>
+        <div class="stat-value text-2xl">{{ parsed.WEBSITE_CLICKS|default:0 }}</div>
+    </div>
+</div>
+
+<div class="alert alert-success mb-4">
+    <span>✅ API działa! Dane za {{ yesterday|date:"d.m.Y" }} pobrane pomyślnie. Następny krok: zapis do bazy.</span>
+</div>
+{% endif %}
+
+{# Surowa odpowiedź API #}
+{% if raw_result %}
+<details class="mt-4">
+    <summary class="cursor-pointer text-sm text-gray-400 hover:text-gray-600">Surowa odpowiedź API (JSON)</summary>
+    <pre class="bg-base-200 rounded-box p-4 mt-2 text-xs overflow-auto max-h-96">{{ raw_result }}</pre>
+</details>
+{% endif %}
+
+{% endblock %}
