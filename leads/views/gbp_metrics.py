@@ -26,7 +26,8 @@ def gbp_metrics_fetch_test(request, lead_pk):
     if not error and request.method == 'POST':
         try:
             from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance
-            yesterday = (timezone.now() - timedelta(days=1)).date()
+            # Pobieramy sprzed 7 dni — Google ma opóźnienie 2-5 dni w przetwarzaniu
+            test_date = (timezone.now() - timedelta(days=7)).date()
 
             settings = AppSettings.get()
             access_token = get_access_token(settings.google_refresh_token)
@@ -45,8 +46,8 @@ def gbp_metrics_fetch_test(request, lead_pk):
             raw_result = get_performance_metrics(
                 access_token,
                 location_name,
-                yesterday,
-                yesterday,
+                test_date,
+                test_date,
             )
             parsed = parse_performance(raw_result)
         except Exception as e:
@@ -71,7 +72,7 @@ def gbp_metrics_fetch_test(request, lead_pk):
         'error_trace': error_trace if 'error_trace' in dir() else None,
         'raw_result': json.dumps(raw_result, indent=2, ensure_ascii=False) if raw_result else None,
         'parsed': parsed,
-        'yesterday': (timezone.now() - timedelta(days=1)).date(),
+        'yesterday': (timezone.now() - timedelta(days=7)).date(),
         'location_name_used': location_name if 'location_name' in dir() else lead.gbp_location_name,
         'api_url_preview': f'https://businessprofileperformance.googleapis.com/v1/{location_name}:fetchMultiDailyMetricsTimeSeries' if 'location_name' in dir() else None,
     })
