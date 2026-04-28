@@ -117,7 +117,8 @@ def get_performance_metrics(access_token, location_name, date_from, date_to):
         headers={**_auth_headers(access_token), 'Content-Type': 'application/json'},
         json=payload,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        raise Exception(f'HTTP {resp.status_code}: {resp.text}')
     return resp.json()
 
 
