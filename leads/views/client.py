@@ -120,9 +120,8 @@ def client_detail(request, pk):
 
         charts.append({
             'phrase': kw.phrase,
-            'labels': [c['checked_at'].strftime('%d.%m.%Y') for c in checks],
+            'labels': [timezone.localtime(c['checked_at']).strftime('%d.%m.%Y') for c in checks],
             'data': [c['position'] for c in checks],
-            # Trend: pierwsza vs ostatnia znana pozycja
             'trend': _calc_trend(checks),
         })
 
