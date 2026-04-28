@@ -22,7 +22,7 @@ def dashboard(request):
     calls_week_total = CallLog.objects.filter(called_at__date__gte=week_start).count()
     calls_month_total = CallLog.objects.filter(called_at__date__gte=month_start).count()
 
-    effective = Q(status__in=['talked', 'interested', 'not_interested'])
+    effective = Q(status__in=['talked', 'interested', 'not_interested', 'left_contact'])
     effective_today = CallLog.objects.filter(effective, called_at__date=today, user=request.user).count()
     effective_week = CallLog.objects.filter(effective, called_at__date__gte=week_start, user=request.user).count()
     effective_month = CallLog.objects.filter(effective, called_at__date__gte=month_start, user=request.user).count()
