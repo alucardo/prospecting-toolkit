@@ -9,6 +9,7 @@
     <a href="{% url 'leads:lead_nap_index' lead.pk %}" class="btn btn-ghost btn-sm">📍 NAP</a>
     <a href="{% url 'leads:lead_task_index' lead.pk %}" class="btn btn-ghost btn-sm">✅ Zadania</a>
     <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="btn btn-ghost btn-sm">📊 Metryki</a>
+    <a href="{% url 'leads:client_notes_index' lead.pk %}" class="btn btn-ghost btn-sm">📝 Notatki</a>
 </div>
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
