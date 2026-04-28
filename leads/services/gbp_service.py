@@ -86,31 +86,28 @@ def get_performance_metrics(access_token, location_name, date_from, date_to):
     location_name format: 'locations/123456789'
     date_from / date_to: datetime.date
     """
+    # fetchMultiDailyMetricsTimeSeries obsługuje tylko metryki wrażenia
+    # CALL_CLICKS, DIRECTION_REQUESTS, WEBSITE_CLICKS są przez getDailyMetricsTimeSeries
     metrics = [
         'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
         'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
         'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
         'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
         'CALL_CLICKS',
-        'DIRECTION_REQUESTS',
         'WEBSITE_CLICKS',
     ]
 
-    params = {
-        'dailyRange.startDate.year': date_from.year,
-        'dailyRange.startDate.month': date_from.month,
-        'dailyRange.startDate.day': date_from.day,
-        'dailyRange.endDate.year': date_to.year,
-        'dailyRange.endDate.month': date_to.month,
-        'dailyRange.endDate.day': date_to.day,
-    }
-    for m in metrics:
-        params.setdefault('dailyMetrics', [])
-    # query string: dailyMetrics=X&dailyMetrics=Y
     from urllib.parse import urlencode
-    qs = urlencode(
-        list(params.items()) + [('dailyMetrics', m) for m in metrics]
-    )
+    date_params = [
+        ('dailyRange.startDate.year', date_from.year),
+        ('dailyRange.startDate.month', date_from.month),
+        ('dailyRange.startDate.day', date_from.day),
+        ('dailyRange.endDate.year', date_to.year),
+        ('dailyRange.endDate.month', date_to.month),
+        ('dailyRange.endDate.day', date_to.day),
+    ]
+    metric_params = [('dailyMetrics', m) for m in metrics]
+    qs = urlencode(date_params + metric_params)
 
     resp = requests.get(
         f'{GBP_PERF_BASE}/{location_name}:fetchMultiDailyMetricsTimeSeries?{qs}',
