@@ -28,23 +28,38 @@ def gbp_metrics_fetch_test(request, lead_pk):
             from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance
             yesterday = (timezone.now() - timedelta(days=1)).date()
 
+            settings = AppSettings.get()
             access_token = get_access_token(settings.google_refresh_token)
+
+            # Normalizuj location_name — jeśli zawiera ścieżkę accounts/.../locations/... to wytnij samo locations/...
+            location_name = lead.gbp_location_name.strip()
+            if '/locations/' in location_name and location_name.startswith('accounts/'):
+                location_name = 'locations/' + location_name.split('/locations/')[-1]
+
             raw_result = get_performance_metrics(
                 access_token,
-                lead.gbp_location_name,
+                location_name,
                 yesterday,
                 yesterday,
             )
             parsed = parse_performance(raw_result)
         except Exception as e:
-            error = str(e)
+            import traceback
+            error = f'{e}'
+            error_trace = traceback.format_exc()
+    else:
+        error_trace = None
+        location_name = lead.gbp_location_name
 
     return render(request, 'leads/gbp_metrics/fetch_test.html', {
         'lead': lead,
         'error': error,
+        'error_trace': error_trace if 'error_trace' in dir() else None,
         'raw_result': json.dumps(raw_result, indent=2, ensure_ascii=False) if raw_result else None,
         'parsed': parsed,
         'yesterday': (timezone.now() - timedelta(days=1)).date(),
+        'location_name_used': location_name if 'location_name' in dir() else lead.gbp_location_name,
+        'api_url_preview': f'https://businessprofileperformance.googleapis.com/v1/{location_name}:fetchMultiDailyMetricsTimeSeries' if 'location_name' in dir() else None,
     })
 
 

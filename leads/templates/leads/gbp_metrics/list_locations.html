@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <h1 class="text-2xl font-bold">📍 Lokalizacje Google Business Profile</h1>
+</div>
+
+<div class="alert alert-info mb-6 text-sm">
+    <span>
+        To są wszystkie lokalizacje dostępne dla autoryzowanego konta Google.
+        Skopiuj wartość z kolumny <strong>Location Name</strong> i wklej ją w polu
+        <strong>"GBP location name"</strong> w edycji leada.
+    </span>
+</div>
+
+{% if error %}
+<div class="alert alert-error mb-6">
+    <span>❌ {{ error }}</span>
+</div>
+{% endif %}
+
+{% if locations %}
+<div class="card bg-base-200">
+    <div class="card-body p-0">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Nazwa firmy</th>
+                    <th>Location Name (skopiuj to)</th>
+                    <th>Adres</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loc in locations %}
+                <tr class="hover">
+                    <td class="font-medium">{{ loc.title|default:"—" }}</td>
+                    <td>
+                        <code class="bg-base-300 px-2 py-0.5 rounded text-sm select-all cursor-pointer"
+                            onclick="navigator.clipboard.writeText('{{ loc.name }}'); this.textContent='✓ Skopiowano'; setTimeout(()=>this.textContent='{{ loc.name }}', 2000)">
+                            {{ loc.name }}
+                        </code>
+                    </td>
+                    <td class="text-sm text-gray-500">
+                        {% if loc.storefrontAddress %}
+                            {{ loc.storefrontAddress.addressLines.0|default:"" }}
+                            {{ loc.storefrontAddress.locality|default:"" }}
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<p class="text-xs text-gray-400 mt-3">{{ locations|length }} lokalizacji znalezionych</p>
+
+{% elif not error %}
+<div class="hero min-h-32 bg-base-200 rounded-box">
+    <p class="text-gray-400">Brak lokalizacji — sprawdź czy konto Google ma przypisane wizytówki.</p>
+</div>
+{% endif %}
+
+{% endblock %}

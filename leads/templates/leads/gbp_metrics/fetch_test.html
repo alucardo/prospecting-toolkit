@@ -20,6 +20,7 @@
                 <span class="badge badge-error badge-sm">✕</span>
                 <span>Brak GBP Location Name —
                     <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">uzupełnij w edycji leada</a>
+                    (znajdź właściwe ID na <a href="{% url 'leads:gbp_locations' %}" class="link" target="_blank">liście lokalizacji GBP</a>)
                 </span>
                 {% endif %}
             </div>
@@ -42,16 +43,32 @@
 <div class="alert alert-error mb-6">
     <span>❌ {{ error }}</span>
 </div>
+{% if error_trace %}
+<details class="mb-4">
+    <summary class="cursor-pointer text-sm text-gray-400">Szczegóły błędu</summary>
+    <pre class="bg-base-200 rounded p-3 mt-2 text-xs overflow-auto">{{ error_trace }}</pre>
+</details>
+{% endif %}
 {% endif %}
 
 {# Przycisk testu #}
 {% if not error or parsed %}
-<form method="post" class="mb-6">
+<form method="post" class="mb-4">
     {% csrf_token %}
     <button type="submit" class="btn btn-primary">
         🔍 Pobierz dane za wczoraj ({{ yesterday|date:"d.m.Y" }})
     </button>
 </form>
+{% endif %}
+
+{# Informacja diagnostyczna — jaki URL zostanie użyty #}
+{% if api_url_preview %}
+<div class="alert alert-info mb-4 text-xs">
+    <div>
+        <div class="font-medium mb-1">URL API który zostanie wywołany:</div>
+        <code class="break-all">{{ api_url_preview }}</code>
+    </div>
+</div>
 {% endif %}
 
 {# Wynik #}
