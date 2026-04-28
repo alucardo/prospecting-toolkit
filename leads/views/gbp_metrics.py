@@ -50,11 +50,11 @@ def gbp_metrics_fetch_test(request, lead_pk):
             )
             parsed = parse_performance(raw_result)
         except Exception as e:
+            import traceback
             import requests as req_lib
             if isinstance(e, req_lib.HTTPError) and e.response is not None:
                 error = f'HTTP {e.response.status_code}: {e.response.text[:500]}'
             else:
-                import traceback
                 error = str(e)
             error_trace = traceback.format_exc()
     else:
