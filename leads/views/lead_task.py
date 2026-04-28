@@ -24,34 +24,43 @@ def task_add_ajax(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'method not allowed'}, status=405)
 
-    lead_pk = request.POST.get('lead_pk')
-    title = request.POST.get('title', '').strip()
-    due_start = request.POST.get('due_date_start') or None
-    due_end = request.POST.get('due_date_end') or None
-    assigned_to_id = request.POST.get('assigned_to') or None
+    try:
+        lead_pk = request.POST.get('lead_pk')
+        title = request.POST.get('title', '').strip()
+        due_start = request.POST.get('due_date_start') or None
+        due_end = request.POST.get('due_date_end') or None
+        assigned_to_id = request.POST.get('assigned_to') or None
 
-    if not title or not lead_pk:
-        return JsonResponse({'error': 'Brak tytułu lub klienta'}, status=400)
+        if not title or not lead_pk:
+            return JsonResponse({'error': 'Brak tytułu lub klienta'}, status=400)
 
-    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+        lead = get_object_or_404(Lead, pk=lead_pk, status='client')
 
-    task = LeadTask.objects.create(
-        lead=lead,
-        title=title,
-        due_date_start=due_start,
-        due_date_end=due_end,
-        assigned_to_id=assigned_to_id,
-    )
+        task = LeadTask.objects.create(
+            lead=lead,
+            title=title,
+            due_date_start=due_start,
+            due_date_end=due_end,
+            assigned_to_id=assigned_to_id,
+        )
 
-    return JsonResponse({
-        'ok': True,
-        'task_pk': task.pk,
-        'lead_pk': lead.pk,
-        'lead_name': lead.name,
-        'title': task.title,
-        'assigned_to': task.assigned_to.get_full_name() or task.assigned_to.username if task.assigned_to else None,
-        'due_date_end': task.due_date_end.strftime('%d.%m.%Y') if task.due_date_end else None,
-    })
+        assigned_name = None
+        if task.assigned_to:
+            assigned_name = task.assigned_to.get_full_name() or task.assigned_to.username
+
+        return JsonResponse({
+            'ok': True,
+            'task_pk': task.pk,
+            'lead_pk': lead.pk,
+            'lead_name': lead.name,
+            'title': task.title,
+            'assigned_to': assigned_name,
+            'due_date_end': task.due_date_end.strftime('%d.%m.%Y') if task.due_date_end else None,
+        })
+
+    except Exception as e:
+        import traceback
+        return JsonResponse({'error': str(e), 'trace': traceback.format_exc()}, status=500)
 
 
 @login_required
