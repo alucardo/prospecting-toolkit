@@ -96,26 +96,25 @@ def get_performance_metrics(access_token, location_name, date_from, date_to):
         'WEBSITE_CLICKS',
     ]
 
-    payload = {
-        'dailyRange': {
-            'startDate': {
-                'year': date_from.year,
-                'month': date_from.month,
-                'day': date_from.day,
-            },
-            'endDate': {
-                'year': date_to.year,
-                'month': date_to.month,
-                'day': date_to.day,
-            },
-        },
-        'metrics': [{'metric': m} for m in metrics],
+    params = {
+        'dailyRange.startDate.year': date_from.year,
+        'dailyRange.startDate.month': date_from.month,
+        'dailyRange.startDate.day': date_from.day,
+        'dailyRange.endDate.year': date_to.year,
+        'dailyRange.endDate.month': date_to.month,
+        'dailyRange.endDate.day': date_to.day,
     }
+    for m in metrics:
+        params.setdefault('dailyMetrics', [])
+    # query string: dailyMetrics=X&dailyMetrics=Y
+    from urllib.parse import urlencode
+    qs = urlencode(
+        list(params.items()) + [('dailyMetrics', m) for m in metrics]
+    )
 
-    resp = requests.post(
-        f'{GBP_PERF_BASE}/{location_name}:fetchMultiDailyMetricsTimeSeries',
-        headers={**_auth_headers(access_token), 'Content-Type': 'application/json'},
-        json=payload,
+    resp = requests.get(
+        f'{GBP_PERF_BASE}/{location_name}:fetchMultiDailyMetricsTimeSeries?{qs}',
+        headers=_auth_headers(access_token),
     )
     if not resp.ok:
         raise Exception(f'HTTP {resp.status_code}: {resp.text}')
