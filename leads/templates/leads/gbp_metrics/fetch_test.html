@@ -68,26 +68,48 @@
     <span>ℹ️ Test pobiera dane za <strong>{{ test_date|date:"d.m.Y" }}</strong> (7 dni wstecz) — Google przetwarza dane z 2-5 dniowym opóźnieniem.</span>
 </div>
 
-{# Przycisk pobierania #}
+{# Przyciski #}
 {% if not error %}
-<div class="flex gap-3 mb-4">
+<div class="flex flex-wrap gap-3 mb-4">
     <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="fetch">
-        <button type="submit" class="btn btn-outline">
-            🔍 Pobierz dane za {{ test_date|date:"d.m.Y" }}
+        <button type="submit" class="btn btn-outline btn-sm">
+            🔍 Test jednego dnia ({{ test_date|date:"d.m.Y" }})
         </button>
     </form>
 
-    {% if parsed %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="fetch_30">
+        <button type="submit" class="btn btn-primary">
+            📅 Pobierz i zapisz ostatnie 30 dni
+        </button>
+    </form>
+
+    {% if parsed and saved_count is None %}
     <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="save">
-        <button type="submit" class="btn btn-primary">
-            💾 Zapisz do bazy
+        <button type="submit" class="btn btn-success btn-sm">
+            💾 Zapisz ten dzień
         </button>
     </form>
     {% endif %}
+</div>
+{% endif %}
+
+{% if saved_count is not None %}
+<div class="alert {% if saved_count > 0 %}alert-success{% else %}alert-info{% endif %} mb-4">
+    <span>
+        {% if saved_count > 0 %}
+            ✅ Zapisano <strong>{{ saved_count }}</strong> nowych dni.
+            {% if skipped_count > 0 %}Pominięto {{ skipped_count }} (już były w bazie).{% endif %}
+        {% else %}
+            ℹ️ Wszystkie dni są już w bazie ({{ skipped_count }}) — API nie zostało odpytane.
+        {% endif %}
+        <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="link ml-2">Przejdź do Metryk →</a>
+    </span>
 </div>
 {% endif %}
 
