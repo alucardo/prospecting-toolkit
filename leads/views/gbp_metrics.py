@@ -31,10 +31,16 @@ def gbp_metrics_fetch_test(request, lead_pk):
             settings = AppSettings.get()
             access_token = get_access_token(settings.google_refresh_token)
 
-            # Normalizuj location_name — jeśli zawiera ścieżkę accounts/.../locations/... to wytnij samo locations/...
-            location_name = lead.gbp_location_name.strip()
-            if '/locations/' in location_name and location_name.startswith('accounts/'):
-                location_name = 'locations/' + location_name.split('/locations/')[-1]
+            stored = lead.gbp_location_name.strip()
+
+            # Wytnij samo locations/ID z pełnej ścieżki accounts/.../locations/...
+            if '/locations/' in stored and stored.startswith('accounts/'):
+                location_name = 'locations/' + stored.split('/locations/')[-1]
+            elif stored.startswith('locations/'):
+                location_name = stored
+            else:
+                # Sam numer — dodaj prefix
+                location_name = 'locations/' + stored
 
             raw_result = get_performance_metrics(
                 access_token,
@@ -44,12 +50,20 @@ def gbp_metrics_fetch_test(request, lead_pk):
             )
             parsed = parse_performance(raw_result)
         except Exception as e:
-            import traceback
-            error = f'{e}'
+            import requests as req_lib
+            if isinstance(e, req_lib.HTTPError) and e.response is not None:
+                error = f'HTTP {e.response.status_code}: {e.response.text[:500]}'
+            else:
+                import traceback
+                error = str(e)
             error_trace = traceback.format_exc()
     else:
         error_trace = None
-        location_name = lead.gbp_location_name
+        stored = lead.gbp_location_name.strip()
+        if '/locations/' in stored:
+            location_name = 'locations/' + stored.split('/locations/')[-1]
+        else:
+            location_name = stored
 
     return render(request, 'leads/gbp_metrics/fetch_test.html', {
         'lead': lead,
