@@ -25,71 +25,85 @@ def gbp_metrics_fetch_test(request, lead_pk):
 
     if not error and request.method == 'POST':
         action = request.POST.get('action', 'fetch')
-        try:
-            from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance
-            test_date = (timezone.now() - timedelta(days=7)).date()
+        test_date = (timezone.now() - timedelta(days=7)).date()
 
-            settings = AppSettings.get()
-            access_token = get_access_token(settings.google_refresh_token)
-
-            stored = lead.gbp_location_name.strip()
-            if '/locations/' in stored and stored.startswith('accounts/'):
-                location_name = 'locations/' + stored.split('/locations/')[-1]
-            elif stored.startswith('locations/'):
-                location_name = stored
-            else:
-                location_name = 'locations/' + stored
-
-            raw_result = get_performance_metrics(
-                access_token,
-                location_name,
-                test_date,
-                test_date,
-            )
-            parsed = parse_performance(raw_result)
-
-            if action == 'save' and parsed:
-                profile_views = parsed.get('impressions_total', 0)
-                calls = parsed.get('CALL_CLICKS', 0)
-                website_visits = parsed.get('WEBSITE_CLICKS', 0)
-
-                obj, created = GBPMetricsSnapshot.objects.get_or_create(
-                    lead=lead,
-                    year=test_date.year,
-                    month=test_date.month,
-                    day=test_date.day,
-                    source=GBPMetricsSnapshot.SOURCE_API,
-                    defaults={
-                        'profile_views': profile_views,
-                        'calls': calls,
-                        'website_visits': website_visits,
-                        'direction_requests': None,
-                    },
-                )
-                saved = True
-                already_existed = not created
-            else:
-                saved = False
-
-        except Exception as e:
-            import traceback
-            import requests as req_lib
-            if isinstance(e, req_lib.HTTPError) and e.response is not None:
-                error = f'HTTP {e.response.status_code}: {e.response.text[:500]}'
-            else:
-                error = str(e)
-            error_trace = traceback.format_exc()
-            saved = False
-            already_existed = False
-    else:
-        error_trace = None
-        saved = False
-        already_existed = False
+        # Sprawdź czy wpis już jest w bazie — jeśli tak, nie odpytuj API
         stored = lead.gbp_location_name.strip()
-        if '/locations/' in stored:
+        if '/locations/' in stored and stored.startswith('accounts/'):
             location_name = 'locations/' + stored.split('/locations/')[-1]
-        else:
+        elif stored.startswith('locations/'):
             location_name = stored
+        else:
+            location_name = 'locations/' + stored
+
+        existing = GBPMetricsSnapshot.objects.filter(
+            lead=lead,
+            year=test_date.year,
+            month=test_date.month,
+            day=test_date.day,
+            source=GBPMetricsSnapshot.SOURCE_API,
+        ).first()
+
+        if existing:
+            # Dane są już w bazie — pokaż je bez odpytywania API
+            parsed = {
+                'CALL_CLICKS': existing.calls or 0,
+                'impressions_total': existing.profile_views or 0,
+                'impressions_maps': 0,
+                'impressions_search': 0,
+                'WEBSITE_CLICKS': existing.website_visits or 0,
+            }
+            raw_result = None
+            saved = True
+            already_existed = True
+            error_trace = None
+        else:
+            try:
+                from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance
+
+                settings = AppSettings.get()
+                access_token = get_access_token(settings.google_refresh_token)
+
+                raw_result = get_performance_metrics(
+                    access_token,
+                    location_name,
+                    test_date,
+                    test_date,
+                )
+                parsed = parse_performance(raw_result)
+
+                if action == 'save' and parsed:
+                    profile_views = parsed.get('impressions_total', 0)
+                    calls = parsed.get('CALL_CLICKS', 0)
+                    website_visits = parsed.get('WEBSITE_CLICKS', 0)
+
+                    GBPMetricsSnapshot.objects.create(
+                        lead=lead,
+                        year=test_date.year,
+                        month=test_date.month,
+                        day=test_date.day,
+                        source=GBPMetricsSnapshot.SOURCE_API,
+                        profile_views=profile_views,
+                        calls=calls,
+                        website_visits=website_visits,
+                        direction_requests=None,
+                    )
+                    saved = True
+                    already_existed = False
+                else:
+                    saved = False
+                    already_existed = False
+
+            except Exception as e:
+                import traceback
+                import requests as req_lib
+                if isinstance(e, req_lib.HTTPError) and e.response is not None:
+                    error = f'HTTP {e.response.status_code}: {e.response.text[:500]}'
+                else:
+                    error = str(e)
+                error_trace = traceback.format_exc()
+                saved = False
+                already_existed = False
 
     return render(request, 'leads/gbp_metrics/fetch_test.html', {
         'lead': lead,
