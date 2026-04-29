@@ -67,6 +67,78 @@
 <div class="divider">Wpisy ręczne miesięczne</div>
 {% endif %}
 
+{# ===== WYKRESY MIESIĘCZNE Z API ===== #}
+{% if chart_data %}
+<div class="mb-8" id="charts-section">
+    <h2 class="text-lg font-bold mb-4">📈 Trendy miesięczne (z API)</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">📞 Telefony</h3>
+                <canvas id="chart-calls" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">👁 Wyświetlenia profilu</h3>
+                <canvas id="chart-views" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">🌐 Odwiedziny witryny</h3>
+                <canvas id="chart-website" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    const data = {{ chart_data|safe }};
+    if (!data.labels.length) return;
+
+    const defaults = {
+        type: 'line',
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { ticks: { font: { size: 10 } } }
+            }
+        }
+    };
+
+    new Chart(document.getElementById('chart-calls'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.calls, borderColor: '#6366f1',
+                backgroundColor: 'rgba(99,102,241,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
+    new Chart(document.getElementById('chart-views'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.profile_views, borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
+    new Chart(document.getElementById('chart-website'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.website_visits, borderColor: '#10b981',
+                backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
+})();
+</script>
+{% endif %}
+
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
     {# Formularz dodawania #}

@@ -118,12 +118,47 @@ def get_performance_metrics(access_token, location_name, date_from, date_to):
     return resp.json()
 
 
+def compute_monthly_snapshot(lead, year, month):
+    """
+    Sumuje dzienne wpisy API dla danego miesiąca i zapisuje/aktualizuje
+    rekord miesięczny (day=None, source='api').
+    Zwraca (snapshot, created) lub None jeśli brak danych dziennych.
+    """
+    from leads.models import GBPMetricsSnapshot
+    from django.db.models import Sum
+
+    daily = GBPMetricsSnapshot.objects.filter(
+        lead=lead,
+        year=year,
+        month=month,
+        day__isnull=False,
+        source=GBPMetricsSnapshot.SOURCE_API,
+    ).aggregate(
+        calls=Sum('calls'),
+        profile_views=Sum('profile_views'),
+        website_visits=Sum('website_visits'),
+    )
+
+    if all(v is None for v in daily.values()):
+        return None
+
+    snapshot, created = GBPMetricsSnapshot.objects.update_or_create(
+        lead=lead,
+        year=year,
+        month=month,
+        day=None,
+        source=GBPMetricsSnapshot.SOURCE_API,
+        defaults={
+            'calls': daily['calls'] or 0,
+            'profile_views': daily['profile_views'] or 0,
+            'website_visits': daily['website_visits'] or 0,
+            'direction_requests': None,
+        },
+    )
+    return snapshot, created
+
+
 def parse_performance(raw):
-    """
-    Parsuje odpowiedź z fetchMultiDailyMetricsTimeSeries.
-    Zwraca słownik: {metric_name: total, ...} + dane dzienne.
-    """
-    result = {}
     daily = {}
 
     for series in raw.get('multiDailyMetricTimeSeries', []):

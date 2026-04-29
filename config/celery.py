@@ -23,6 +23,11 @@ app.conf.beat_schedule = {
         'task': 'leads.tasks_analysis.monthly_snapshot_all_clients',
         'schedule': crontab(hour=2, minute=0, day_of_month='1'),
     },
+    # Metryki GBP — codziennie o 3:00 w nocy
+    'fetch-gbp-metrics-daily': {
+        'task': 'leads.tasks.fetch_gbp_metrics_all',
+        'schedule': crontab(hour=3, minute=0),
+    },
 }
 
 app.conf.timezone = 'Europe/Warsaw'

@@ -1,11 +1,141 @@
 import os
 import tempfile
 import base64
+import logging
 from celery import shared_task
 from .models import Lead, SearchQuery, UserContact, Voivodeship, VoivodeshipKeyword
 from .services.email_scraper import scrape_email
 from .services.apify import fetch_and_save_leads
 from .services.pdf_service import html_to_pdf
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task
+def fetch_gbp_metrics_all():
+    """
+    Nocny task — pobiera dane GBP dla wszystkich klientów
+    i aktualizuje sumy miesięczne.
+    """
+    from datetime import date, timedelta
+    from django.utils import timezone
+    from django.db.models import Sum
+    from .models import GBPMetricsSnapshot, AppSettings
+    from .services.gbp_service import (
+        get_access_token, get_performance_metrics,
+        parse_performance, compute_monthly_snapshot,
+    )
+
+    settings = AppSettings.get()
+    if not settings.google_refresh_token:
+        logger.warning('[GBP metrics] Brak Google Refresh Token — pomijam')
+        return
+
+    try:
+        access_token = get_access_token(settings.google_refresh_token)
+    except Exception as e:
+        logger.error(f'[GBP metrics] Błąd access token: {e}')
+        return
+
+    # Klienci z przypisanym GBP location
+    clients = Lead.objects.filter(
+        status='client',
+        gbp_location_name__isnull=False,
+    ).exclude(gbp_location_name='')
+
+    today = timezone.now().date()
+    date_to = today - timedelta(days=5)   # bufor na opóźnienie Google
+    date_from = today - timedelta(days=35)
+
+    logger.info(f'[GBP metrics] Start dla {clients.count()} klientów, zakres {date_from}–{date_to}')
+
+    for lead in clients:
+        try:
+            # Normalizacja location_name
+            stored = lead.gbp_location_name.strip()
+            if '/locations/' in stored and stored.startswith('accounts/'):
+                location_name = 'locations/' + stored.split('/locations/')[-1]
+            elif stored.startswith('locations/'):
+                location_name = stored
+            else:
+                location_name = 'locations/' + stored
+
+            # Sprawdź jakich dni brakuje
+            existing_days = set(
+                GBPMetricsSnapshot.objects
+                .filter(
+                    lead=lead,
+                    source=GBPMetricsSnapshot.SOURCE_API,
+                    day__isnull=False,
+                    year__gte=date_from.year,
+                )
+                .values_list('year', 'month', 'day')
+            )
+
+            all_days = set()
+            d = date_from
+            while d <= date_to:
+                all_days.add((d.year, d.month, d.day))
+                d += timedelta(days=1)
+
+            missing = all_days - existing_days
+            if not missing:
+                logger.info(f'[GBP metrics] {lead.name} — wszystkie dni są w bazie, pomijam API')
+            else:
+                raw = get_performance_metrics(access_token, location_name, date_from, date_to)
+                parsed = parse_performance(raw)
+                daily_data = parsed.get('daily', {})
+
+                saved = 0
+                for date_str, metrics in daily_data.items():
+                    try:
+                        d = date.fromisoformat(date_str)
+                    except ValueError:
+                        continue
+
+                    if (d.year, d.month, d.day) in existing_days:
+                        continue
+
+                    impressions = sum(
+                        metrics.get(m, 0) for m in [
+                            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+                            'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+                            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+                            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+                        ]
+                    )
+                    GBPMetricsSnapshot.objects.create(
+                        lead=lead,
+                        year=d.year, month=d.month, day=d.day,
+                        source=GBPMetricsSnapshot.SOURCE_API,
+                        profile_views=impressions,
+                        calls=metrics.get('CALL_CLICKS', 0),
+                        website_visits=metrics.get('WEBSITE_CLICKS', 0),
+                        direction_requests=None,
+                    )
+                    saved += 1
+
+                logger.info(f'[GBP metrics] {lead.name} — zapisano {saved} nowych dni')
+
+            # Aktualizuj sumy miesięczne dla miesięcy w zakresie
+            months_in_range = set()
+            d = date_from
+            while d <= date_to:
+                months_in_range.add((d.year, d.month))
+                d += timedelta(days=1)
+
+            for year, month in months_in_range:
+                result = compute_monthly_snapshot(lead, year, month)
+                if result:
+                    snap, created = result
+                    action = 'utworzono' if created else 'zaktualizowano'
+                    logger.info(f'[GBP metrics] {lead.name} — {action} sumę {month:02d}/{year}')
+
+        except Exception as e:
+            logger.error(f'[GBP metrics] Błąd dla {lead.name}: {e}')
+            continue
+
+    logger.info('[GBP metrics] Zakończono')
 
 
 @shared_task

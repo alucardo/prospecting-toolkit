@@ -129,10 +129,20 @@ def gbp_metrics_fetch_test(request, lead_pk):
                         )
                         saved_count += 1
 
-                    saved = True
-                    already_existed = False
-                    parsed = None
-                    error_trace = None
+                # Aktualizuj sumy miesięczne po zapisaniu nowych dni
+                from ..services.gbp_service import compute_monthly_snapshot
+                months_in_range = set()
+                d = date_from
+                while d <= date_to:
+                    months_in_range.add((d.year, d.month))
+                    d += timedelta(days=1)
+                for year, month in months_in_range:
+                    compute_monthly_snapshot(lead, year, month)
+
+                saved = True
+                already_existed = False
+                parsed = None
+                error_trace = None
 
                 except Exception as e:
                     import traceback
@@ -306,11 +316,29 @@ def gbp_metrics_index(request, lead_pk):
         for y, m in months
     ]
 
+    # Miesięczne dane z API do wykresów — ostatnie 12 miesięcy
+    monthly_api = (
+        lead.gbp_metrics
+        .filter(source=GBPMetricsSnapshot.SOURCE_API, day__isnull=True)
+        .order_by('year', 'month')
+    )
+
+    MONTHS_PL = ['', 'Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze',
+                 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru']
+
+    chart_data = {
+        'labels': [f"{MONTHS_PL[s.month]} {s.year}" for s in monthly_api],
+        'calls': [s.calls or 0 for s in monthly_api],
+        'profile_views': [s.profile_views or 0 for s in monthly_api],
+        'website_visits': [s.website_visits or 0 for s in monthly_api],
+    }
+
     return render(request, 'leads/gbp_metrics/index.html', {
         'lead': lead,
         'snapshots': snapshots,
         'daily_snapshots': daily_snapshots,
         'daily_totals': daily_totals,
+        'chart_data': json.dumps(chart_data),
         'months_choices': months_choices,
         'current_year': now.year,
         'current_month': now.month,
