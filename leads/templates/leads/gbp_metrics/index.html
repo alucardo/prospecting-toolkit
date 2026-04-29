@@ -4,8 +4,68 @@
 <div class="flex items-center gap-4 mb-6">
     <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost btn-sm">← {{ lead.name }}</a>
     <h1 class="text-2xl font-bold">📊 Metryki GBP</h1>
-    <a href="{% url 'leads:gbp_metrics_fetch_test' lead.pk %}" class="btn btn-outline btn-sm ml-auto">🧪 Test API</a>
+    <a href="{% url 'leads:gbp_metrics_fetch_test' lead.pk %}" class="btn btn-outline btn-sm ml-auto">🧪 Pobierz z API</a>
 </div>
+
+{# ===== DANE Z API — DZIENNE ===== #}
+{% if daily_snapshots %}
+<div class="mb-8">
+    <h2 class="text-lg font-bold mb-3">🔄 Dane z API (ostatnie {{ daily_totals.count }} dni)</h2>
+
+    {# Boksy z sumami #}
+    <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">📞 Telefony — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.calls }}</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">👁 Wyświetlenia — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.profile_views }}</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">🌐 Witryna — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.website_visits }}</div>
+        </div>
+    </div>
+
+    {# Tabela dzienna #}
+    <div class="card bg-base-200">
+        <div class="card-body p-0">
+            <table class="table table-xs">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th class="text-center">📞 Telefony</th>
+                        <th class="text-center">👁 Wyświetlenia</th>
+                        <th class="text-center">🌐 Witryna</th>
+                        <th class="w-10"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for snap in daily_snapshots %}
+                    <tr class="hover">
+                        <td class="font-medium">{{ snap.day|stringformat:"02d" }}.{{ snap.month|stringformat:"02d" }}.{{ snap.year }}</td>
+                        <td class="text-center">{{ snap.calls|default:"—" }}</td>
+                        <td class="text-center">{{ snap.profile_views|default:"—" }}</td>
+                        <td class="text-center">{{ snap.website_visits|default:"—" }}</td>
+                        <td>
+                            <form method="post" onsubmit="return confirm('Usunąć ten wpis?')">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="pk" value="{{ snap.pk }}">
+                                <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="divider">Wpisy ręczne miesięczne</div>
+{% endif %}
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 

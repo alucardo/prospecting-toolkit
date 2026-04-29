@@ -14,6 +14,12 @@ def gbp_metrics_fetch_test(request, lead_pk):
     error = None
     raw_result = None
     parsed = None
+    saved = False
+    already_existed = False
+    saved_count = None
+    skipped_count = None
+    error_trace = None
+    location_name = lead.gbp_location_name
 
     # Sprawdź warunki wstępne
     if not lead.gbp_location_name:
@@ -217,16 +223,16 @@ def gbp_metrics_fetch_test(request, lead_pk):
     return render(request, 'leads/gbp_metrics/fetch_test.html', {
         'lead': lead,
         'error': error,
-        'error_trace': error_trace if 'error_trace' in dir() else None,
+        'error_trace': error_trace,
         'raw_result': json.dumps(raw_result, indent=2, ensure_ascii=False) if raw_result else None,
         'parsed': parsed,
         'saved': saved,
-        'already_existed': already_existed if 'already_existed' in dir() else False,
-        'saved_count': saved_count if 'saved_count' in dir() else None,
-        'skipped_count': skipped_count if 'skipped_count' in dir() else None,
+        'already_existed': already_existed,
+        'saved_count': saved_count,
+        'skipped_count': skipped_count,
         'test_date': (timezone.now() - timedelta(days=7)).date(),
-        'location_name_used': location_name if 'location_name' in dir() else lead.gbp_location_name,
-        'api_url_preview': f'https://businessprofileperformance.googleapis.com/v1/{location_name}:fetchMultiDailyMetricsTimeSeries' if 'location_name' in dir() else None,
+        'location_name_used': location_name,
+        'api_url_preview': f'https://businessprofileperformance.googleapis.com/v1/{location_name}:fetchMultiDailyMetricsTimeSeries',
     })
 
 
@@ -266,8 +272,32 @@ def gbp_metrics_index(request, lead_pk):
 
         return redirect('leads:gbp_metrics_index', lead_pk=lead.pk)
 
-    # Tylko ręczne wpisy miesięczne (day=NULL) — dzienne pojawią się z API
+    # Tylko ręczne wpisy miesięczne (day=NULL)
     snapshots = lead.gbp_metrics.filter(day__isnull=True, source=GBPMetricsSnapshot.SOURCE_MANUAL)
+
+    # Dane dzienne z API — ostatnie 30 dni
+    from datetime import date
+    today = timezone.now().date()
+    thirty_days_ago = today - timedelta(days=35)  # bufor na opóźnienie
+    daily_snapshots = (
+        lead.gbp_metrics
+        .filter(source=GBPMetricsSnapshot.SOURCE_API, day__isnull=False)
+        .filter(year__gte=thirty_days_ago.year)
+        .order_by('-year', '-month', '-day')
+    )
+    # Filtruj po dacie w Pythonie (prosto)
+    daily_snapshots = [
+        s for s in daily_snapshots
+        if date(s.year, s.month, s.day) >= thirty_days_ago
+    ]
+
+    # Sumy z ostatnich 30 dni
+    daily_totals = {
+        'calls': sum(s.calls or 0 for s in daily_snapshots),
+        'profile_views': sum(s.profile_views or 0 for s in daily_snapshots),
+        'website_visits': sum(s.website_visits or 0 for s in daily_snapshots),
+        'count': len(daily_snapshots),
+    }
 
     # Miesiące do selecta — bieżący rok i rok poprzedni
     months = [(y, m) for y in [now.year, now.year - 1] for m in range(1, 13)]
@@ -279,6 +309,8 @@ def gbp_metrics_index(request, lead_pk):
     return render(request, 'leads/gbp_metrics/index.html', {
         'lead': lead,
         'snapshots': snapshots,
+        'daily_snapshots': daily_snapshots,
+        'daily_totals': daily_totals,
         'months_choices': months_choices,
         'current_year': now.year,
         'current_month': now.month,
