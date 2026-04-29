@@ -81,7 +81,7 @@ def gbp_metrics_fetch_test(request, lead_pk):
                 error_trace = None
             else:
                 try:
-                    from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance
+                    from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance, compute_monthly_snapshot
                     settings = AppSettings.get()
                     access_token = get_access_token(settings.google_refresh_token)
 
@@ -106,7 +106,7 @@ def gbp_metrics_fetch_test(request, lead_pk):
 
                         key = (d.year, d.month, d.day)
                         if key in existing_days:
-                            continue  # pomijamy — jest już w bazie
+                            continue
 
                         impressions = sum(
                             metrics.get(m, 0) for m in [
@@ -129,20 +129,19 @@ def gbp_metrics_fetch_test(request, lead_pk):
                         )
                         saved_count += 1
 
-                # Aktualizuj sumy miesięczne po zapisaniu nowych dni
-                from ..services.gbp_service import compute_monthly_snapshot
-                months_in_range = set()
-                d = date_from
-                while d <= date_to:
-                    months_in_range.add((d.year, d.month))
-                    d += timedelta(days=1)
-                for year, month in months_in_range:
-                    compute_monthly_snapshot(lead, year, month)
+                    # Aktualizuj sumy miesięczne po zapisaniu nowych dni
+                    months_in_range = set()
+                    d = date_from
+                    while d <= date_to:
+                        months_in_range.add((d.year, d.month))
+                        d += timedelta(days=1)
+                    for year, month in months_in_range:
+                        compute_monthly_snapshot(lead, year, month)
 
-                saved = True
-                already_existed = False
-                parsed = None
-                error_trace = None
+                    saved = True
+                    already_existed = False
+                    parsed = None
+                    error_trace = None
 
                 except Exception as e:
                     import traceback
