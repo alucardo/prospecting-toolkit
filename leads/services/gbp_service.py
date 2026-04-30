@@ -159,6 +159,7 @@ def compute_monthly_snapshot(lead, year, month):
 
 
 def parse_performance(raw):
+    result = {}
     daily = {}
 
     for series in raw.get('multiDailyMetricTimeSeries', []):
