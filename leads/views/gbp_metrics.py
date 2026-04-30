@@ -9,7 +9,6 @@ from ..models import Lead, GBPMetricsSnapshot, AppSettings
 
 @login_required
 def gbp_metrics_fetch_test(request, lead_pk):
-    """Krok 1: pobiera dane za wczoraj z API i pokazuje surowy wynik."""
     lead = get_object_or_404(Lead, pk=lead_pk, status='client')
     error = None
     raw_result = None
@@ -20,8 +19,23 @@ def gbp_metrics_fetch_test(request, lead_pk):
     skipped_count = None
     error_trace = None
     location_name = lead.gbp_location_name
+    now = timezone.now()
 
-    # Sprawdź warunki wstępne
+    # Domyślne wartości formularza
+    default_year = now.year
+    default_month = now.month - 1 if now.month > 1 else 12
+    if default_month == 12:
+        default_year -= 1
+
+    # Opcje miesięcy do selecta
+    MONTHS_PL = ['', 'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+                 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
+    month_choices = [
+        (y, m, f"{MONTHS_PL[m]} {y}")
+        for y in [now.year, now.year - 1]
+        for m in range(1, 13)
+    ]
+
     if not lead.gbp_location_name:
         error = 'Brak GBP Location Name dla tego klienta. Uzupełnij pole w edycji leada.'
     else:
@@ -30,8 +44,7 @@ def gbp_metrics_fetch_test(request, lead_pk):
             error = 'Brak Google Refresh Token. Autoryzuj konto Google w Ustawieniach.'
 
     if not error and request.method == 'POST':
-        action = request.POST.get('action', 'fetch')
-        test_date = (timezone.now() - timedelta(days=7)).date()
+        action = request.POST.get('action', 'fetch_30')
 
         # Normalizacja location_name
         stored = lead.gbp_location_name.strip()
@@ -42,192 +55,109 @@ def gbp_metrics_fetch_test(request, lead_pk):
         else:
             location_name = 'locations/' + stored
 
+        # Wyznacz zakres dat
+        from datetime import date as date_cls
+        import calendar as cal_mod
+
         if action == 'fetch_30':
-            # Pobierz ostatnie 30 dni z wyłączeniem okresu bez danych (ostatnie 5 dni)
-            date_to = (timezone.now() - timedelta(days=5)).date()
+            date_to = (now - timedelta(days=5)).date()
             date_from = date_to - timedelta(days=29)
-
-            # Znajdź dni które już są w bazie
-            existing_days = set(
-                GBPMetricsSnapshot.objects
-                .filter(
-                    lead=lead,
-                    source=GBPMetricsSnapshot.SOURCE_API,
-                    day__isnull=False,
-                    year__gte=date_from.year,
-                )
-                .filter(
-                    day__isnull=False,
-                )
-                .values_list('year', 'month', 'day')
-            )
-
-            # Wszystkie dni w zakresie
-            all_days = set()
-            d = date_from
-            while d <= date_to:
-                all_days.add((d.year, d.month, d.day))
-                d += timedelta(days=1)
-
-            missing_days = all_days - existing_days
-
-            if not missing_days:
-                saved = True
-                already_existed = True
-                parsed = None
-                raw_result = None
-                saved_count = 0
-                skipped_count = len(all_days)
-                error_trace = None
-            else:
-                try:
-                    from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance, compute_monthly_snapshot
-                    settings = AppSettings.get()
-                    access_token = get_access_token(settings.google_refresh_token)
-
-                    raw_result = get_performance_metrics(
-                        access_token,
-                        location_name,
-                        date_from,
-                        date_to,
-                    )
-                    parsed_full = parse_performance(raw_result)
-                    daily_data = parsed_full.get('daily', {})
-
-                    saved_count = 0
-                    skipped_count = len(existing_days)
-
-                    for date_str, metrics in daily_data.items():
-                        try:
-                            from datetime import date as date_cls
-                            d = date_cls.fromisoformat(date_str)
-                        except ValueError:
-                            continue
-
-                        key = (d.year, d.month, d.day)
-                        if key in existing_days:
-                            continue
-
-                        impressions = sum(
-                            metrics.get(m, 0) for m in [
-                                'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
-                                'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
-                                'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
-                                'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
-                            ]
-                        )
-                        GBPMetricsSnapshot.objects.create(
-                            lead=lead,
-                            year=d.year,
-                            month=d.month,
-                            day=d.day,
-                            source=GBPMetricsSnapshot.SOURCE_API,
-                            profile_views=impressions,
-                            calls=metrics.get('CALL_CLICKS', 0),
-                            website_visits=metrics.get('WEBSITE_CLICKS', 0),
-                            direction_requests=None,
-                        )
-                        saved_count += 1
-
-                    # Aktualizuj sumy miesięczne po zapisaniu nowych dni
-                    months_in_range = set()
-                    d = date_from
-                    while d <= date_to:
-                        months_in_range.add((d.year, d.month))
-                        d += timedelta(days=1)
-                    for year, month in months_in_range:
-                        compute_monthly_snapshot(lead, year, month)
-
-                    saved = True
-                    already_existed = False
-                    parsed = None
-                    error_trace = None
-
-                except Exception as e:
-                    import traceback
-                    import requests as req_lib
-                    if isinstance(e, req_lib.HTTPError) and e.response is not None:
-                        error = f'HTTP {e.response.status_code}: {e.response.text[:500]}'
-                    else:
-                        error = str(e)
-                    error_trace = traceback.format_exc()
-                    saved = False
-                    already_existed = False
-                    saved_count = 0
-                    skipped_count = 0
-
+        elif action == 'fetch_month':
+            year = int(request.POST.get('month_year', default_year))
+            month = int(request.POST.get('month_month', default_month))
+            date_from = date_cls(year, month, 1)
+            last_day = cal_mod.monthrange(year, month)[1]
+            date_to = min(date_cls(year, month, last_day), (now - timedelta(days=5)).date())
         else:
-            saved_count = None
-            skipped_count = None
+            date_from = date_to = (now - timedelta(days=7)).date()
 
-            # Sprawdź czy wpis już jest w bazie — jeśli tak, nie odpytuj API
-            existing = GBPMetricsSnapshot.objects.filter(
+        # Znajdź dni które już są w bazie
+        existing_days = set(
+            GBPMetricsSnapshot.objects
+            .filter(
                 lead=lead,
-                year=test_date.year,
-                month=test_date.month,
-                day=test_date.day,
                 source=GBPMetricsSnapshot.SOURCE_API,
-            ).first()
+                day__isnull=False,
+                year__gte=date_from.year,
+            )
+            .values_list('year', 'month', 'day')
+        )
 
-            if existing:
-                parsed = {
-                    'CALL_CLICKS': existing.calls or 0,
-                    'impressions_total': existing.profile_views or 0,
-                    'impressions_maps': 0,
-                    'impressions_search': 0,
-                    'WEBSITE_CLICKS': existing.website_visits or 0,
-                }
-                raw_result = None
-                saved = True
-                already_existed = True
-                error_trace = None
-            else:
-                try:
-                    from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance
+        all_days = set()
+        d = date_from
+        while d <= date_to:
+            all_days.add((d.year, d.month, d.day))
+            d += timedelta(days=1)
 
-                    settings = AppSettings.get()
-                    access_token = get_access_token(settings.google_refresh_token)
+        missing_days = all_days - existing_days
 
-                    raw_result = get_performance_metrics(
-                        access_token,
-                        location_name,
-                        test_date,
-                        test_date,
+        if not missing_days:
+            saved = True
+            already_existed = True
+            saved_count = 0
+            skipped_count = len(all_days)
+            error_trace = None
+        else:
+            try:
+                from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance, compute_monthly_snapshot
+                settings = AppSettings.get()
+                access_token = get_access_token(settings.google_refresh_token)
+
+                raw_result = get_performance_metrics(access_token, location_name, date_from, date_to)
+                parsed_full = parse_performance(raw_result)
+                daily_data = parsed_full.get('daily', {})
+
+                saved_count = 0
+                skipped_count = len(existing_days)
+
+                for date_str, metrics in daily_data.items():
+                    try:
+                        d = date_cls.fromisoformat(date_str)
+                    except ValueError:
+                        continue
+
+                    if (d.year, d.month, d.day) in existing_days:
+                        continue
+
+                    impressions = sum(
+                        metrics.get(m, 0) for m in [
+                            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+                            'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+                            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+                            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+                        ]
                     )
-                    parsed = parse_performance(raw_result)
+                    GBPMetricsSnapshot.objects.create(
+                        lead=lead,
+                        year=d.year, month=d.month, day=d.day,
+                        source=GBPMetricsSnapshot.SOURCE_API,
+                        profile_views=impressions,
+                        calls=metrics.get('CALL_CLICKS', 0),
+                        website_visits=metrics.get('WEBSITE_CLICKS', 0),
+                        direction_requests=None,
+                    )
+                    saved_count += 1
 
-                    if action == 'save' and parsed:
-                        profile_views = parsed.get('impressions_total', 0)
-                        calls = parsed.get('CALL_CLICKS', 0)
-                        website_visits = parsed.get('WEBSITE_CLICKS', 0)
+                # Aktualizuj sumy miesięczne
+                months_in_range = set()
+                d = date_from
+                while d <= date_to:
+                    months_in_range.add((d.year, d.month))
+                    d += timedelta(days=1)
+                for year, month in months_in_range:
+                    compute_monthly_snapshot(lead, year, month)
 
-                        GBPMetricsSnapshot.objects.create(
-                            lead=lead,
-                            year=test_date.year,
-                            month=test_date.month,
-                            day=test_date.day,
-                            source=GBPMetricsSnapshot.SOURCE_API,
-                            profile_views=profile_views,
-                            calls=calls,
-                            website_visits=website_visits,
-                            direction_requests=None,
-                        )
-                        saved = True
-                        already_existed = False
-                    else:
-                        saved = False
-                        already_existed = False
+                saved = True
+                already_existed = False
+                error_trace = None
 
-                except Exception as e:
-                    import traceback
-                    import requests as req_lib
-                    if isinstance(e, req_lib.HTTPError) and e.response is not None:
-                        error = f'HTTP {e.response.status_code}: {e.response.text[:500]}'
-                    else:
-                        error = str(e)
-                    error_trace = traceback.format_exc()
-                    saved = False
-                    already_existed = False
+            except Exception as e:
+                import traceback
+                error = str(e)
+                error_trace = traceback.format_exc()
+                saved = False
+                saved_count = 0
+                skipped_count = 0
 
     return render(request, 'leads/gbp_metrics/fetch_test.html', {
         'lead': lead,
@@ -239,9 +169,39 @@ def gbp_metrics_fetch_test(request, lead_pk):
         'already_existed': already_existed,
         'saved_count': saved_count,
         'skipped_count': skipped_count,
-        'test_date': (timezone.now() - timedelta(days=7)).date(),
         'location_name_used': location_name,
+        'month_choices': month_choices,
+        'default_year': default_year,
+        'default_month': default_month,
         'api_url_preview': f'https://businessprofileperformance.googleapis.com/v1/{location_name}:fetchMultiDailyMetricsTimeSeries',
+    })
+
+
+@login_required
+def gbp_metrics_daily(request, lead_pk):
+    """Lista wszystkich dziennych wpisów z API z paginacją."""
+    from django.core.paginator import Paginator
+    from datetime import date
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+
+    daily_qs = (
+        lead.gbp_metrics
+        .filter(source=GBPMetricsSnapshot.SOURCE_API, day__isnull=False)
+        .order_by('-year', '-month', '-day')
+    )
+
+    if request.method == 'POST' and request.POST.get('action') == 'delete':
+        pk = request.POST.get('pk')
+        GBPMetricsSnapshot.objects.filter(pk=pk, lead=lead).delete()
+        return redirect('leads:gbp_metrics_daily', lead_pk=lead.pk)
+
+    paginator = Paginator(daily_qs, 31)
+    page = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'leads/gbp_metrics/daily.html', {
+        'lead': lead,
+        'page': page,
+        'total_count': paginator.count,
     })
 
 

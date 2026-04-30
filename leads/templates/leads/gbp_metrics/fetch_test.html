@@ -3,14 +3,14 @@
 {% block content %}
 <div class="flex items-center gap-4 mb-6">
     <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="btn btn-ghost btn-sm">← Metryki</a>
-    <h1 class="text-2xl font-bold">🧪 Test API GBP</h1>
+    <h1 class="text-2xl font-bold">🧪 Pobierz dane GBP</h1>
     <span class="text-gray-400 text-sm">{{ lead.name }}</span>
 </div>
 
 {# Warunki wstępne #}
 <div class="card bg-base-200 mb-6">
     <div class="card-body py-4">
-        <h2 class="card-title text-base mb-3">Warunki wstępne</h2>
+        <h2 class="card-title text-base mb-2">Warunki wstępne</h2>
         <div class="flex flex-col gap-2 text-sm">
             <div class="flex items-center gap-2">
                 {% if lead.gbp_location_name %}
@@ -20,7 +20,7 @@
                 <span class="badge badge-error badge-sm">✕</span>
                 <span>Brak GBP Location Name —
                     <a href="{% url 'leads:lead_edit' lead.pk %}" class="link">uzupełnij w edycji leada</a>
-                    (znajdź właściwe ID na <a href="{% url 'leads:gbp_locations' %}" class="link" target="_blank">liście lokalizacji GBP</a>)
+                    (znajdź ID na <a href="{% url 'leads:gbp_locations' %}" class="link" target="_blank">liście lokalizacji</a>)
                 </span>
                 {% endif %}
             </div>
@@ -51,105 +51,86 @@
 {% endif %}
 {% endif %}
 
-{% if saved %}
-{% if already_existed %}
-<div class="alert alert-warning mb-4">
-    <span>⚠️ Wpis za {{ test_date|date:"d.m.Y" }} już istnieje w bazie — nie nadpisano. Jeśli chcesz zaktulizować dane, usuń stary wpis w <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="link">Metrykach</a>.</span>
-</div>
-{% else %}
-<div class="alert alert-success mb-4">
-    <span>✅ Zapisano do bazy! Wpis dzienny za {{ test_date|date:"d.m.Y" }} jest teraz w <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="link">Metrykach</a>.</span>
-</div>
-{% endif %}
-{% endif %}
-
-{# Informacja o dacie #}
-<div class="alert alert-info mb-4 text-sm">
-    <span>ℹ️ Test pobiera dane za <strong>{{ test_date|date:"d.m.Y" }}</strong> (7 dni wstecz) — Google przetwarza dane z 2-5 dniowym opóźnieniem.</span>
-</div>
-
-{# Przyciski #}
-{% if not error %}
-<div class="flex flex-wrap gap-3 mb-4">
-    <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="fetch">
-        <button type="submit" class="btn btn-outline btn-sm">
-            🔍 Test jednego dnia ({{ test_date|date:"d.m.Y" }})
-        </button>
-    </form>
-
-    <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="fetch_30">
-        <button type="submit" class="btn btn-primary">
-            📅 Pobierz i zapisz ostatnie 30 dni
-        </button>
-    </form>
-
-    {% if parsed and saved_count is None %}
-    <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="save">
-        <button type="submit" class="btn btn-success btn-sm">
-            💾 Zapisz ten dzień
-        </button>
-    </form>
-    {% endif %}
-</div>
-{% endif %}
-
 {% if saved_count is not None %}
-<div class="alert {% if saved_count > 0 %}alert-success{% else %}alert-info{% endif %} mb-4">
+<div class="alert {% if saved_count > 0 %}alert-success{% elif already_existed %}alert-info{% else %}alert-warning{% endif %} mb-4">
     <span>
         {% if saved_count > 0 %}
             ✅ Zapisano <strong>{{ saved_count }}</strong> nowych dni.
             {% if skipped_count > 0 %}Pominięto {{ skipped_count }} (już były w bazie).{% endif %}
-        {% else %}
-            ℹ️ Wszystkie dni są już w bazie ({{ skipped_count }}) — API nie zostało odpytane.
+        {% elif already_existed %}
+            ℹ️ Wszystkie dni w wybranym zakresie są już w bazie — API nie zostało odpytane.
         {% endif %}
         <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="link ml-2">Przejdź do Metryk →</a>
     </span>
 </div>
 {% endif %}
 
-{# Informacja diagnostyczna #}
+{# Formularze pobierania #}
+{% if not error or saved_count is not None %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+    {# Ostatnie 30 dni #}
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="card-title text-base">📅 Ostatnie 30 dni</h2>
+            <p class="text-sm text-gray-400">Pobiera dane od ~35 do ~5 dni wstecz (bufor na opóźnienie Google).</p>
+            <form method="post" class="mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="fetch_30">
+                <button type="submit" class="btn btn-primary w-full">
+                    📥 Pobierz i zapisz ostatnie 30 dni
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {# Wybrany miesiąc #}
+    <div class="card bg-base-200">
+        <div class="card-body py-4">
+            <h2 class="card-title text-base">🗓 Wybrany miesiąc</h2>
+            <p class="text-sm text-gray-400">Pobiera wszystkie dostępne dane z wybranego miesiąca.</p>
+            <form method="post" class="mt-3 flex gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="fetch_month">
+                <select name="month_month" class="select select-bordered select-sm flex-1">
+                    {% for y, m, label in month_choices %}
+                    <option value="{{ m }}"
+                        data-year="{{ y }}"
+                        {% if m == default_month and y == default_year %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="month_year" id="month_year_input" value="{{ default_year }}">
+                <button type="submit" class="btn btn-primary btn-sm shrink-0">
+                    📥 Pobierz
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
 {% if api_url_preview %}
 <div class="text-xs text-gray-400 mb-4">
     URL: <code class="break-all">{{ api_url_preview }}</code>
 </div>
 {% endif %}
 
-{# Wynik #}
-{% if parsed %}
-<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-    <div class="stat bg-base-200 rounded-box py-3 px-4">
-        <div class="stat-title text-xs">📞 Telefony (CALL_CLICKS)</div>
-        <div class="stat-value text-2xl">{{ parsed.CALL_CLICKS|default:0 }}</div>
-    </div>
-    <div class="stat bg-base-200 rounded-box py-3 px-4">
-        <div class="stat-title text-xs">👁 Wyświetlenia łącznie</div>
-        <div class="stat-value text-2xl">{{ parsed.impressions_total|default:0 }}</div>
-        <div class="stat-desc">Maps: {{ parsed.impressions_maps|default:0 }} / Search: {{ parsed.impressions_search|default:0 }}</div>
-    </div>
-    <div class="stat bg-base-200 rounded-box py-3 px-4">
-        <div class="stat-title text-xs">🗺 Trasy (DIRECTION_REQUESTS)</div>
-        <div class="stat-value text-2xl text-gray-400">—</div>
-        <div class="stat-desc">osobny endpoint</div>
-    </div>
-    <div class="stat bg-base-200 rounded-box py-3 px-4">
-        <div class="stat-title text-xs">🌐 Witryna (WEBSITE_CLICKS)</div>
-        <div class="stat-value text-2xl">{{ parsed.WEBSITE_CLICKS|default:0 }}</div>
-    </div>
-</div>
-{% endif %}
-
-{# Surowa odpowiedź #}
 {% if raw_result %}
-<details class="mt-4">
+<details>
     <summary class="cursor-pointer text-sm text-gray-400 hover:text-gray-600">Surowa odpowiedź API (JSON)</summary>
     <pre class="bg-base-200 rounded-box p-4 mt-2 text-xs overflow-auto max-h-96">{{ raw_result }}</pre>
 </details>
 {% endif %}
+
+<script>
+// Aktualizuj ukryte pole roku gdy zmienia się select miesiąca
+document.querySelector('select[name="month_month"]').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    document.getElementById('month_year_input').value = opt.dataset.year;
+});
+</script>
 
 {% endblock %}

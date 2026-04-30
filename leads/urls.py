@@ -104,6 +104,7 @@ urlpatterns = [
 
     # Metryki GBP
     path('klienci/<int:lead_pk>/metryki/', views.gbp_metrics.gbp_metrics_index, name='gbp_metrics_index'),
+    path('klienci/<int:lead_pk>/metryki/dzienne/', views.gbp_metrics.gbp_metrics_daily, name='gbp_metrics_daily'),
     path('klienci/<int:lead_pk>/metryki/test-api/', views.gbp_metrics.gbp_metrics_fetch_test, name='gbp_metrics_fetch_test'),
     path('klienci/<int:lead_pk>/notatki/', views.client_notes.client_notes_index, name='client_notes_index'),
 
