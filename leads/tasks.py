@@ -125,11 +125,14 @@ def fetch_gbp_metrics_all():
                 d += timedelta(days=1)
 
             for year, month in months_in_range:
-                result = compute_monthly_snapshot(lead, year, month)
-                if result:
-                    snap, created = result
-                    action = 'utworzono' if created else 'zaktualizowano'
-                    logger.info(f'[GBP metrics] {lead.name} — {action} sumę {month:02d}/{year}')
+                try:
+                    result = compute_monthly_snapshot(lead, year, month)
+                    if result:
+                        snap, created = result
+                        action = 'utworzono' if created else 'zaktualizowano'
+                        logger.info(f'[GBP metrics] {lead.name} — {action} sumę {month:02d}/{year}')
+                except Exception as month_err:
+                    logger.warning(f'[GBP metrics] {lead.name} — błąd sumy {month:02d}/{year}: {month_err}')
 
         except Exception as e:
             logger.error(f'[GBP metrics] Błąd dla {lead.name}: {e}')
