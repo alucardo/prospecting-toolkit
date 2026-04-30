@@ -104,16 +104,27 @@ CELERY_TIMEZONE = 'Europe/Warsaw'
 CELERY_ENABLE_UTC = True
 
 CELERY_BEAT_SCHEDULE = {
-    # Co poniedzialek o 1:00 w nocy (czas warszawski) sprawdz pozycje wszystkich klientow
-    'check-all-clients-rankings-weekly': {
+    # Sprawdzanie pozycji fraz — poniedziałek i czwartek o 2:00 w nocy
+    'check-rankings-monday': {
         'task': 'leads.tasks_analysis.check_all_clients_rankings',
-        'schedule': crontab(day_of_week='monday', hour='1', minute='0'),
+        'schedule': crontab(day_of_week='monday', hour='2', minute='0'),
         'options': {'expires': 3600},
     },
-    # 1. dnia kazdego miesiaca o 1:00 w nocy (czas warszawski) zrob snapshot
+    'check-rankings-thursday': {
+        'task': 'leads.tasks_analysis.check_all_clients_rankings',
+        'schedule': crontab(day_of_week='thursday', hour='2', minute='0'),
+        'options': {'expires': 3600},
+    },
+    # Snapshot miesięczny — 1. dnia każdego miesiąca o 2:00 w nocy
     'monthly-snapshot-all-clients': {
         'task': 'leads.tasks_analysis.monthly_snapshot_all_clients',
-        'schedule': crontab(day_of_month='1', hour='1', minute='0'),
+        'schedule': crontab(day_of_month='1', hour='2', minute='0'),
+        'options': {'expires': 3600},
+    },
+    # Metryki GBP — codziennie o 3:00 w nocy
+    'fetch-gbp-metrics-daily': {
+        'task': 'leads.tasks.fetch_gbp_metrics_all',
+        'schedule': crontab(hour='3', minute='0'),
         'options': {'expires': 3600},
     },
 }
