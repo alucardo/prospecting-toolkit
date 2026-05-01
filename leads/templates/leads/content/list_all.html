@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">📝 Content</h1>
+        <span class="badge badge-ghost">{{ total_count }}</span>
+    </div>
+</div>
+
+{# Filtry #}
+<div class="card bg-base-200 mb-6">
+    <div class="card-body py-4">
+        <form method="get" class="flex flex-col gap-4">
+
+            {# Kanał #}
+            <div class="form-control">
+                <label class="label py-1"><span class="label-text text-sm">Kanał</span></label>
+                <div class="flex gap-2 flex-wrap">
+                    <a href="?{% for s in status_filters %}status={{ s }}&{% endfor %}"
+                       class="btn btn-xs {% if not channel_filter %}btn-neutral{% else %}btn-ghost{% endif %}">
+                        Wszystkie
+                    </a>
+                    {% for val, label in channel_choices %}
+                    <a href="?channel={{ val }}&{% for s in status_filters %}status={{ s }}&{% endfor %}"
+                       class="btn btn-xs {% if channel_filter == val %}btn-neutral{% else %}btn-ghost{% endif %}">
+                        {{ label }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# Statusy (multi-select) #}
+            <div class="form-control">
+                <label class="label py-1"><span class="label-text text-sm">Status (wielokrotny wybór)</span></label>
+                <div class="flex gap-2 flex-wrap">
+                    {% for val, label in status_choices %}
+                    <a href="?{% if channel_filter %}channel={{ channel_filter }}&{% endif %}{% for s in status_filters %}{% if s != val %}status={{ s }}&{% endif %}{% endfor %}{% if val not in status_filters %}status={{ val }}&{% endif %}"
+                       class="btn btn-xs {% if val in status_filters %}btn-neutral{% else %}btn-ghost{% endif %}">
+                        {{ label }}
+                    </a>
+                    {% endfor %}
+                    {% if status_filters %}
+                    <a href="?{% if channel_filter %}channel={{ channel_filter }}{% endif %}"
+                       class="btn btn-xs btn-ghost text-gray-400">✕ Wyczyść</a>
+                    {% endif %}
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{# Lista postów #}
+{% if page %}
+<div class="card bg-base-200">
+    <div class="card-body p-0">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Klient</th>
+                    <th>Tytuł / treść</th>
+                    <th>Kanał</th>
+                    <th>Status</th>
+                    <th>Data publikacji</th>
+                    <th>Ostatnia zmiana</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in page %}
+                {% with cv=post.current_ver %}
+                <tr class="hover cursor-pointer" onclick="window.location='{% url 'leads:content_detail' post.lead.pk post.pk %}'">
+                    <td>
+                        <a href="{% url 'leads:client_detail' post.lead.pk %}" class="font-medium link link-hover"
+                           onclick="event.stopPropagation()">
+                            {{ post.lead.name }}
+                        </a>
+                        {% if post.lead.city %}
+                        <div class="text-xs text-gray-400">{{ post.lead.city }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="max-w-xs">
+                        {% if cv %}
+                        <div class="font-medium text-sm truncate">{{ cv.title|default:"(bez tytułu)" }}</div>
+                        <div class="text-xs text-gray-400 truncate">{{ cv.body|truncatechars:80 }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-ghost badge-sm">{{ post.get_channel_display }}</span>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ post.get_post_type_display }}</div>
+                    </td>
+                    <td>
+                        <span class="badge {{ post.status_badge }} badge-sm">{{ post.get_status_display }}</span>
+                        {% if post.versions.count > 1 %}
+                        <div class="text-xs text-gray-400 mt-0.5">v{{ post.versions.count }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="text-sm">
+                        {% if post.published_at %}
+                        {{ post.published_at|date:"d.m.Y" }}
+                        {% else %}
+                        <span class="text-gray-300">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-xs text-gray-400">{{ post.updated_at|date:"d.m.Y" }}</td>
+                </tr>
+                {% endwith %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# Paginacja #}
+{% if page.has_other_pages %}
+<div class="flex justify-center mt-4 gap-1">
+    {% if page.has_previous %}
+    <a href="?{% if channel_filter %}channel={{ channel_filter }}&{% endif %}{% for s in status_filters %}status={{ s }}&{% endfor %}page={{ page.previous_page_number }}" class="btn btn-sm btn-ghost">←</a>
+    {% endif %}
+    {% for num in page.paginator.page_range %}
+    {% if page.number == num %}
+    <span class="btn btn-sm btn-primary">{{ num }}</span>
+    {% elif num > page.number|add:"-3" and num < page.number|add:"3" %}
+    <a href="?{% if channel_filter %}channel={{ channel_filter }}&{% endif %}{% for s in status_filters %}status={{ s }}&{% endfor %}page={{ num }}" class="btn btn-sm btn-ghost">{{ num }}</a>
+    {% endif %}
+    {% endfor %}
+    {% if page.has_next %}
+    <a href="?{% if channel_filter %}channel={{ channel_filter }}&{% endif %}{% for s in status_filters %}status={{ s }}&{% endfor %}page={{ page.next_page_number }}" class="btn btn-sm btn-ghost">→</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <p class="text-gray-500">Brak postów spełniających kryteria</p>
+</div>
+{% endif %}
+
+{% endblock %}

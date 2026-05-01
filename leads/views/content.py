@@ -5,6 +5,46 @@ from ..models import Lead, ContentPost, ContentPostVersion
 
 
 @login_required
+def content_list_all(request):
+    """Globalna lista wszystkich postów content."""
+    from django.core.paginator import Paginator
+
+    posts = (
+        ContentPost.objects
+        .select_related('lead', 'lead__city')
+        .prefetch_related('versions')
+        .filter(lead__status='client')
+        .order_by('-updated_at')
+    )
+
+    # Filtr po kanale
+    channel_filter = request.GET.get('channel', '')
+    if channel_filter:
+        posts = posts.filter(channel=channel_filter)
+
+    # Filtr po statusach (wielokrotny)
+    status_filters = request.GET.getlist('status')
+    if status_filters:
+        posts = posts.filter(status__in=status_filters)
+
+    # Dołącz aktualną wersję
+    for post in posts:
+        post.current_ver = post.versions.filter(is_current=True).first()
+
+    paginator = Paginator(posts, 25)
+    page = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'leads/content/list_all.html', {
+        'page': page,
+        'total_count': paginator.count,
+        'channel_choices': ContentPost.CHANNEL_CHOICES,
+        'status_choices': ContentPost.STATUS_CHOICES,
+        'channel_filter': channel_filter,
+        'status_filters': status_filters,
+    })
+
+
+@login_required
 def content_version_preview(request, lead_pk, post_pk, version_pk):
     lead = get_object_or_404(Lead, pk=lead_pk, status='client')
     post = get_object_or_404(ContentPost, pk=post_pk, lead=lead)
