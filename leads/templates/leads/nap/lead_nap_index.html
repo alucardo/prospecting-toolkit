@@ -48,7 +48,6 @@
             <thead>
                 <tr>
                     <th>Katalog</th>
-                    <th>Tagi</th>
                     <th class="w-44 text-center">Status</th>
                     <th class="w-56">Notatka</th>
                     <th class="w-32 text-right">Akcja</th>
@@ -66,14 +65,6 @@
                         <a href="{{ dir.url }}" target="_blank" rel="noopener"
                            class="font-medium link link-hover">{{ dir.name }}</a>
                         <div class="text-xs text-gray-400 font-mono truncate max-w-xs">{{ dir.url|truncatechars:45 }}</div>
-                    </td>
-
-                    <td>
-                        <div class="flex flex-wrap gap-1">
-                            {% for tag in dir.tags.all %}
-                            <span class="badge badge-outline badge-xs">{{ tag.name }}</span>
-                            {% endfor %}
-                        </div>
                     </td>
 
                     <td class="text-center">

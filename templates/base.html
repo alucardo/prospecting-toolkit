@@ -15,21 +15,21 @@
             <a href="{% url 'leads:dashboard' %}" class="btn btn-ghost btn-sm">Dashboard</a>
             <a href="{% url 'leads:lead_index' %}" class="btn btn-ghost btn-sm">Leady</a>
             <a href="{% url 'leads:city_index' %}" class="btn btn-ghost btn-sm">Miasta</a>
-            <a href="{% url 'leads:pipeline_index' %}" class="btn btn-ghost btn-sm">Pipelines</a>
-            <a href="{% url 'leads:voivodeship_keyword_index' %}" class="btn btn-ghost btn-sm">Frazy</a>
             <a href="{% url 'leads:client_index' %}" class="btn btn-ghost btn-sm">Klienci</a>
             <a href="{% url 'leads:all_tasks_index' %}" class="btn btn-ghost btn-sm">Zadania</a>
 
             <div class="dropdown dropdown-bottom">
                 <label tabindex="0" class="btn btn-ghost btn-sm">Narzędzia ▾</label>
                 <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box shadow w-48 mt-1 z-50">
+                    <li class="menu-title text-xs">Leady</li>
+                    <li><a href="{% url 'leads:pipeline_index' %}">Pipelines</a></li>
+                    <li><a href="{% url 'leads:voivodeship_keyword_index' %}">Frazy</a></li>
+                    <li><a href="{% url 'leads:category_index' %}">Kategorie leadów</a></li>
                     <li class="menu-title text-xs">NAP</li>
                     <li><a href="{% url 'leads:nap_directory_index' %}">Katalogi NAP</a></li>
                     <li><a href="{% url 'leads:nap_tag_index' %}">Tagi katalogów</a></li>
                     <li class="menu-title text-xs">Zadania</li>
                     <li><a href="{% url 'leads:blueprint_index' %}">Szablony zadań</a></li>
-                    <li class="menu-title text-xs">Leady</li>
-                    <li><a href="{% url 'leads:category_index' %}">Kategorie leadów</a></li>
                 </ul>
             </div>
         </div>
