@@ -1,0 +1,72 @@
+{% if brand %}
+{# Przycisk #}
+<button type="button" class="btn btn-ghost btn-xs gap-1"
+    onclick="document.getElementById('brand-modal').showModal()">
+    🎨 Brief marki
+</button>
+
+{# Modal #}
+<dialog id="brand-modal" class="modal">
+    <div class="modal-box max-w-2xl max-h-[80vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg">🎨 Brief marki — {{ lead.name }}</h3>
+            <a href="{% url 'leads:brand_profile' lead.pk %}" target="_blank"
+               class="btn btn-ghost btn-xs">Edytuj →</a>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            {% if brand.tone_of_voice %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Ton komunikacji</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.tone_of_voice }}</p>
+            </div>
+            {% endif %}
+            {% if brand.target_audience %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Grupa docelowa</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.target_audience }}</p>
+            </div>
+            {% endif %}
+            {% if brand.brand_values %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Wartości marki</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.brand_values }}</p>
+            </div>
+            {% endif %}
+            {% if brand.language_rules %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Zasady językowe</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.language_rules }}</p>
+            </div>
+            {% endif %}
+            {% if brand.keywords %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Słowa kluczowe</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.keywords }}</p>
+            </div>
+            {% endif %}
+            {% if brand.avoid %}
+            <div class="bg-error/10 rounded p-3">
+                <div class="text-xs font-semibold text-error uppercase tracking-wide mb-1">Czego unikać</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.avoid }}</p>
+            </div>
+            {% endif %}
+            {% if brand.extra_notes %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Dodatkowe notatki</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.extra_notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="modal-action">
+            <button class="btn btn-sm" onclick="document.getElementById('brand-modal').close()">Zamknij</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+{% else %}
+<a href="{% url 'leads:brand_profile' lead.pk %}" class="btn btn-ghost btn-xs text-gray-400">
+    🎨 Uzupełnij brief marki
+</a>
+{% endif %}

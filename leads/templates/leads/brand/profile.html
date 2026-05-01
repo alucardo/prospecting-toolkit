@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost btn-sm">← {{ lead.name }}</a>
+    <h1 class="text-2xl font-bold">🎨 Brief marki</h1>
+    {% if profile.updated_at %}
+    <span class="text-xs text-gray-400">Ostatnia aktualizacja: {{ profile.updated_at|date:"d.m.Y H:i" }}</span>
+    {% endif %}
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for field_name, label, placeholder, value in fields %}
+        <div class="card bg-base-200 {% if field_name == 'extra_notes' %}md:col-span-2{% endif %}">
+            <div class="card-body py-4">
+                <label class="font-semibold text-sm mb-1 block">{{ label }}</label>
+                <textarea
+                    name="{{ field_name }}"
+                    rows="{% if field_name == 'extra_notes' %}4{% else %}3{% endif %}"
+                    class="textarea textarea-bordered w-full text-sm"
+                    placeholder="{{ placeholder }}">{{ value }}</textarea>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="mt-6">
+        <button type="submit" class="btn btn-primary">Zapisz brief</button>
+        <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost ml-2">Anuluj</a>
+    </div>
+</form>
+{% endblock %}

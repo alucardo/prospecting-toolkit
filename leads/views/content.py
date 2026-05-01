@@ -98,6 +98,12 @@ def content_create(request, lead_pk):
         )
         return redirect('leads:content_detail', lead_pk=lead.pk, post_pk=post.pk)
 
+    from ..models import BrandProfile
+    try:
+        brand = lead.brand_profile
+    except BrandProfile.DoesNotExist:
+        brand = None
+
     return render(request, 'leads/content/form.html', {
         'lead': lead,
         'post': None,
@@ -105,6 +111,7 @@ def content_create(request, lead_pk):
         'status_choices': ContentPost.STATUS_CHOICES,
         'channel_choices': ContentPost.CHANNEL_CHOICES,
         'type_choices': ContentPost.TYPE_CHOICES,
+        'brand': brand,
     })
 
 
@@ -156,10 +163,17 @@ def content_detail(request, lead_pk, post_pk):
 
         return redirect('leads:content_detail', lead_pk=lead.pk, post_pk=post.pk)
 
+    from ..models import BrandProfile
+    try:
+        brand = lead.brand_profile
+    except BrandProfile.DoesNotExist:
+        brand = None
+
     return render(request, 'leads/content/detail.html', {
         'lead': lead,
         'post': post,
         'current': current,
         'history': history,
         'status_choices': ContentPost.STATUS_CHOICES,
+        'brand': brand,
     })

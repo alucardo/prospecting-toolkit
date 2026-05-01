@@ -109,6 +109,9 @@ urlpatterns = [
     path('klienci/<int:lead_pk>/content/<int:post_pk>/', views.content.content_detail, name='content_detail'),
     path('klienci/<int:lead_pk>/content/<int:post_pk>/v/<int:version_pk>/', views.content.content_version_preview, name='content_version_preview'),
 
+    # Brief marki
+    path('klienci/<int:lead_pk>/brief/', views.brand.brand_profile, name='brand_profile'),
+
     # Metryki GBP
     path('klienci/<int:lead_pk>/metryki/', views.gbp_metrics.gbp_metrics_index, name='gbp_metrics_index'),
     path('klienci/<int:lead_pk>/metryki/dzienne/', views.gbp_metrics.gbp_metrics_daily, name='gbp_metrics_daily'),
