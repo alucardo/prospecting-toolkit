@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:content_index' lead.pk %}" class="btn btn-ghost btn-sm">← Content</a>
+    <h1 class="text-2xl font-bold">
+        {% if current %}{{ current.title|default:"(bez tytułu)" }}{% else %}Post{% endif %}
+    </h1>
+    <span class="badge {{ post.status_badge }}">{{ post.get_status_display }}</span>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    {# Lewa — status i metadane #}
+    <div class="flex flex-col gap-4">
+
+        {# Panel statusu #}
+        <div class="card bg-base-200">
+            <div class="card-body gap-3">
+                <h2 class="card-title text-base">Status</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+                    <div class="form-control mb-2">
+                        <select name="status" class="select select-bordered select-sm w-full">
+                            {% for val, label in status_choices %}
+                            <option value="{{ val }}" {% if post.status == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control mb-3">
+                        <label class="label py-1"><span class="label-text text-xs">Data publikacji</span></label>
+                        <input type="date" name="published_at"
+                            value="{{ post.published_at|date:'Y-m-d'|default:'' }}"
+                            class="input input-bordered input-sm w-full">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary w-full">Zapisz status</button>
+                </form>
+            </div>
+        </div>
+
+        {# Info #}
+        <div class="card bg-base-200">
+            <div class="card-body py-4 gap-1 text-sm">
+                <div class="text-gray-400 text-xs mb-1">Informacje</div>
+                <div>Kanał: <strong>{{ post.get_channel_display }}</strong></div>
+                <div>Typ: <strong>{{ post.get_post_type_display }}</strong></div>
+                <div>Wersji: <strong>{{ post.versions.count }}</strong></div>
+                <div>Utworzono: <strong>{{ post.created_at|date:"d.m.Y" }}</strong></div>
+                {% if post.published_at %}
+                <div>Publikacja: <strong>{{ post.published_at|date:"d.m.Y" }}</strong></div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Historia wersji #}
+        {% if history.count > 1 %}
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h2 class="card-title text-base mb-2">Historia wersji</h2>
+                <div class="flex flex-col gap-1">
+                    {% for ver in history %}
+                    <div class="flex items-center justify-between text-sm py-1 {% if ver.is_current %}font-medium{% else %}text-gray-400{% endif %}">
+                        <span>v{{ ver.version_number }}
+                            {% if ver.is_current %}<span class="badge badge-xs badge-primary ml-1">aktualna</span>{% endif %}
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs">{{ ver.created_at|date:"d.m.Y H:i" }}</span>
+                            {% if not ver.is_current %}
+                            <a href="{% url 'leads:content_version_preview' lead.pk post.pk ver.pk %}"
+                               class="btn btn-ghost btn-xs" title="Podgląd">👁</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Usuń #}
+        <form method="post" onsubmit="return confirm('Usunąć ten post wraz z wszystkimi wersjami?')">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <button class="btn btn-error btn-sm w-full">🗑 Usuń post</button>
+        </form>
+
+    </div>
+
+    {# Prawa — treść #}
+    <div class="md:col-span-2 flex flex-col gap-4">
+        {% if current %}
+        <form method="post" id="content-form" class="flex flex-col gap-4">
+            {% csrf_token %}
+
+            <div class="form-control">
+                <label class="label py-1"><span class="label-text text-sm">Tytuł</span></label>
+                <input type="text" name="title" class="input input-bordered w-full"
+                    value="{{ current.title }}">
+            </div>
+
+            <div class="form-control">
+                <label class="label py-1">
+                    <span class="label-text text-sm">Treść *</span>
+                    <span class="label-text-alt text-gray-400" id="char-count">{{ current.body|length }} / 1500</span>
+                </label>
+                <textarea name="body" id="body-field" rows="8"
+                    class="textarea textarea-bordered w-full"
+                    required maxlength="1500">{{ current.body }}</textarea>
+            </div>
+
+            <div class="form-control">
+                <label class="label py-1"><span class="label-text text-sm">Link do zdjęcia (Google Drive)</span></label>
+                <input type="url" name="drive_url" id="drive-url-input"
+                    class="input input-bordered w-full"
+                    value="{{ current.drive_url }}"
+                    oninput="updatePreview(this.value)">
+                <div id="drive-preview" class="mt-2 {% if not current.drive_preview_url %}hidden{% endif %}">
+                    <img id="drive-img"
+                        src="{% if current.drive_preview_url %}{{ current.drive_preview_url }}{% endif %}"
+                        alt="Podgląd" class="max-h-48 rounded border border-base-300"
+                        onerror="document.getElementById('drive-preview-error').classList.remove('hidden'); this.classList.add('hidden')">
+                    <div id="drive-preview-error" class="hidden text-xs text-error mt-1">
+                        ⚠ Nie można załadować podglądu — sprawdź czy zdjęcie jest publiczne.
+                    </div>
+                </div>
+                <div class="text-xs text-gray-400 mt-1">Zalecany rozmiar obrazu to 1260 x 570 pikseli, w proporcji 16:9.</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="form-control">
+                    <label class="label py-1"><span class="label-text text-sm">Tekst CTA</span></label>
+                    <input type="text" name="cta_text" class="input input-bordered input-sm w-full"
+                        value="{{ current.cta_text }}">
+                </div>
+                <div class="form-control">
+                    <label class="label py-1"><span class="label-text text-sm">URL CTA</span></label>
+                    <input type="url" name="cta_url" class="input input-bordered input-sm w-full"
+                        value="{{ current.cta_url }}">
+                </div>
+            </div>
+
+            <div class="form-control">
+                <label class="label py-1"><span class="label-text text-sm">Notatki / uwagi do poprawek</span></label>
+                <textarea name="notes" rows="3" class="textarea textarea-bordered w-full">{{ current.notes }}</textarea>
+            </div>
+
+            {# Przyciski zapisu #}
+            <div class="flex gap-3">
+                <button type="submit" name="action" value="save_current" class="btn btn-primary"
+                    onclick="return confirm('Na pewno chcesz nadpisać v{{ current.version_number }}? Zmiany nie będą można cofnąć.')">
+                    💾 Zapisz do v{{ current.version_number }}
+                </button>
+                <button type="submit" name="action" value="save_new" class="btn btn-outline">
+                    📋 Zapisz jako nową wersję
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <div class="hero min-h-32 bg-base-200 rounded-box">
+            <p class="text-gray-400">Brak wersji — coś poszło nie tak.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+const bodyField = document.getElementById('body-field');
+const charCount = document.getElementById('char-count');
+if (bodyField) {
+    bodyField.addEventListener('input', function() {
+        charCount.textContent = this.value.length + ' / 1500';
+        charCount.className = this.value.length > 1400 ? 'label-text-alt text-warning' : 'label-text-alt text-gray-400';
+    });
+}
+
+function updatePreview(url) {
+    const preview = document.getElementById('drive-preview');
+    const img = document.getElementById('drive-img');
+    const err = document.getElementById('drive-preview-error');
+    if (!url) { preview.classList.add('hidden'); return; }
+    const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+        img.src = 'https://drive.google.com/uc?export=view&id=' + match[1];
+        img.classList.remove('hidden');
+        err.classList.add('hidden');
+        preview.classList.remove('hidden');
+    } else {
+        preview.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

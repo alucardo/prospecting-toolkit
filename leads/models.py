@@ -787,6 +787,122 @@ def format_duration(minutes):
     return f"{minutes} min"
 
 
+class ContentPost(models.Model):
+    CHANNEL_GBP = 'gbp'
+    CHANNEL_CHOICES = [
+        (CHANNEL_GBP, 'Wizytówka Google'),
+    ]
+
+    TYPE_NEWS = 'news'
+    TYPE_CHOICES = [
+        (TYPE_NEWS, 'Aktualność'),
+    ]
+
+    STATUS_DRAFT = 'draft'
+    STATUS_REVIEW = 'review'
+    STATUS_CHANGES = 'changes'
+    STATUS_APPROVED = 'approved'
+    STATUS_PUBLISHED = 'published'
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, 'Szkic'),
+        (STATUS_REVIEW, 'Do zatwierdzenia'),
+        (STATUS_CHANGES, 'Zgłoszone poprawki'),
+        (STATUS_APPROVED, 'Zatwierdzony'),
+        (STATUS_PUBLISHED, 'Opublikowany'),
+    ]
+
+    STATUS_COLORS = {
+        STATUS_DRAFT: 'badge-ghost',
+        STATUS_REVIEW: 'badge-warning',
+        STATUS_CHANGES: 'badge-error',
+        STATUS_APPROVED: 'badge-success',
+        STATUS_PUBLISHED: 'badge-primary',
+    }
+
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name='content_posts',
+        verbose_name='Klient',
+    )
+    channel = models.CharField(
+        max_length=50, default=CHANNEL_GBP,
+        choices=CHANNEL_CHOICES, verbose_name='Kanał',
+    )
+    post_type = models.CharField(
+        max_length=50, default=TYPE_NEWS,
+        choices=TYPE_CHOICES, verbose_name='Typ posta',
+    )
+    status = models.CharField(
+        max_length=50, default=STATUS_DRAFT,
+        choices=STATUS_CHOICES, verbose_name='Status',
+    )
+    published_at = models.DateField(null=True, blank=True, verbose_name='Data publikacji')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Post'
+        verbose_name_plural = 'Posty'
+
+    def __str__(self):
+        return f"{self.lead.name} — {self.get_post_type_display()} ({self.get_status_display()})"
+
+    @property
+    def current_version(self):
+        return self.versions.filter(is_current=True).first()
+
+    @property
+    def status_badge(self):
+        return self.STATUS_COLORS.get(self.status, 'badge-ghost')
+
+
+class ContentPostVersion(models.Model):
+    post = models.ForeignKey(
+        ContentPost,
+        on_delete=models.CASCADE,
+        related_name='versions',
+        verbose_name='Post',
+    )
+    version_number = models.PositiveIntegerField(default=1, verbose_name='Numer wersji')
+    title = models.CharField(max_length=300, blank=True, verbose_name='Tytuł')
+    body = models.TextField(verbose_name='Treść')
+    drive_url = models.URLField(blank=True, verbose_name='Link do zdjęcia (Google Drive)')
+    cta_text = models.CharField(max_length=100, blank=True, verbose_name='Tekst przycisku CTA')
+    cta_url = models.URLField(blank=True, verbose_name='URL przycisku CTA')
+    notes = models.TextField(blank=True, verbose_name='Notatki / uwagi do poprawek')
+    is_current = models.BooleanField(default=True, verbose_name='Aktualna wersja')
+    created_by = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='content_versions',
+        verbose_name='Autor wersji',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-version_number']
+        verbose_name = 'Wersja posta'
+        verbose_name_plural = 'Wersje postów'
+
+    def __str__(self):
+        return f"v{self.version_number} — {self.post}"
+
+    @property
+    def drive_preview_url(self):
+        """Konwertuje link share z Google Drive na URL do podglądu obrazka."""
+        if not self.drive_url:
+            return None
+        import re
+        match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', self.drive_url)
+        if match:
+            file_id = match.group(1)
+            return f'https://drive.google.com/uc?export=view&id={file_id}'
+        return None
+
+
 class LeadCategory(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='Nazwa')
     color = models.CharField(max_length=7, default='#6366f1', verbose_name='Kolor')
