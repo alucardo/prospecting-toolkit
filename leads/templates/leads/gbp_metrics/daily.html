@@ -30,7 +30,7 @@
                     <td class="text-center">{{ snap.profile_views|default:"—" }}</td>
                     <td class="text-center">{{ snap.website_visits|default:"—" }}</td>
                     <td>
-                        <form method="post" onsubmit="return confirm('Usunąć wpis za {{ snap.day|stringformat:\"02d\" }}.{{ snap.month|stringformat:\"02d\" }}.{{ snap.year }}?')">
+                        <form method="post" onsubmit="return confirm('Usunąć ten wpis?')">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="pk" value="{{ snap.pk }}">
