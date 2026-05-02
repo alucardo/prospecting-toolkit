@@ -48,6 +48,14 @@ def task_add_ajax(request):
         if task.assigned_to:
             assigned_name = task.assigned_to.get_full_name() or task.assigned_to.username
 
+        from datetime import date as date_cls
+        due_end_str = None
+        if task.due_date_end:
+            if hasattr(task.due_date_end, 'strftime'):
+                due_end_str = task.due_date_end.strftime('%d.%m.%Y')
+            else:
+                due_end_str = date_cls.fromisoformat(str(task.due_date_end)).strftime('%d.%m.%Y')
+
         return JsonResponse({
             'ok': True,
             'task_pk': task.pk,
@@ -55,7 +63,7 @@ def task_add_ajax(request):
             'lead_name': lead.name,
             'title': task.title,
             'assigned_to': assigned_name,
-            'due_date_end': task.due_date_end.strftime('%d.%m.%Y') if task.due_date_end else None,
+            'due_date_end': due_end_str,
         })
 
     except Exception as e:
