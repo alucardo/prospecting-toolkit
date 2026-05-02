@@ -58,7 +58,7 @@
             ✅ Zapisano <strong>{{ saved_count }}</strong> nowych dni.
             {% if skipped_count > 0 %}Pominięto {{ skipped_count }} (już były w bazie).{% endif %}
         {% elif already_existed %}
-            ℹ️ Wszystkie dni w wybranym zakresie są już w bazie — API nie zostało odpytane.
+            ℹ️ Wszystkie dni w wybranym zakresie są już w bazie — API nie zostało odpytane. Zaznacz "Wymuś odświeżenie" aby pobrać ponownie.
         {% endif %}
         <a href="{% url 'leads:gbp_metrics_index' lead.pk %}" class="link ml-2">Przejdź do Metryk →</a>
     </span>
@@ -74,9 +74,13 @@
         <div class="card-body py-4">
             <h2 class="card-title text-base">📅 Ostatnie 30 dni</h2>
             <p class="text-sm text-gray-400">Pobiera dane od ~35 do ~5 dni wstecz (bufor na opóźnienie Google).</p>
-            <form method="post" class="mt-3">
+            <form method="post" class="mt-3 flex flex-col gap-2">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="fetch_30">
+                <label class="cursor-pointer flex items-center gap-2 text-sm text-gray-500">
+                    <input type="checkbox" name="force_refresh" value="1" class="checkbox checkbox-sm">
+                    Wymuś odświeżenie (usuń i pobierz ponownie)
+                </label>
                 <button type="submit" class="btn btn-primary w-full">
                     📥 Pobierz i zapisz ostatnie 30 dni
                 </button>
@@ -89,20 +93,23 @@
         <div class="card-body py-4">
             <h2 class="card-title text-base">🗓 Wybrany miesiąc</h2>
             <p class="text-sm text-gray-400">Pobiera wszystkie dostępne dane z wybranego miesiąca.</p>
-            <form method="post" class="mt-3 flex gap-2">
+            <form method="post" class="mt-3 flex flex-col gap-2">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="fetch_month">
-                <select name="month_month" class="select select-bordered select-sm flex-1">
+                <input type="hidden" name="month_year" id="month_year_input" value="{{ default_year }}">
+                <select name="month_month" class="select select-bordered select-sm w-full">
                     {% for y, m, label in month_choices %}
-                    <option value="{{ m }}"
-                        data-year="{{ y }}"
+                    <option value="{{ m }}" data-year="{{ y }}"
                         {% if m == default_month and y == default_year %}selected{% endif %}>
                         {{ label }}
                     </option>
                     {% endfor %}
                 </select>
-                <input type="hidden" name="month_year" id="month_year_input" value="{{ default_year }}">
-                <button type="submit" class="btn btn-primary btn-sm shrink-0">
+                <label class="cursor-pointer flex items-center gap-2 text-sm text-gray-500">
+                    <input type="checkbox" name="force_refresh" value="1" class="checkbox checkbox-sm">
+                    Wymuś odświeżenie (usuń i pobierz ponownie)
+                </label>
+                <button type="submit" class="btn btn-primary btn-sm w-full">
                     📥 Pobierz
                 </button>
             </form>
@@ -126,7 +133,6 @@
 {% endif %}
 
 <script>
-// Aktualizuj ukryte pole roku gdy zmienia się select miesiąca
 document.querySelector('select[name="month_month"]').addEventListener('change', function() {
     const opt = this.options[this.selectedIndex];
     document.getElementById('month_year_input').value = opt.dataset.year;

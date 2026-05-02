@@ -18,6 +18,8 @@
                     <th class="text-center">👁 Wyświetlenia</th>
                     <th class="text-center">🗺 Trasy</th>
                     <th class="text-center">🌐 Witryna</th>
+                    <th class="text-center">💬 Wiadomości</th>
+                    <th class="text-center text-xs text-gray-400">Pobrano</th>
                     <th class="w-10"></th>
                 </tr>
             </thead>
@@ -31,6 +33,8 @@
                     <td class="text-center">{{ snap.profile_views|default:"—" }}</td>
                     <td class="text-center">{{ snap.direction_requests|default:"—" }}</td>
                     <td class="text-center">{{ snap.website_visits|default:"—" }}</td>
+                    <td class="text-center">{{ snap.conversations|default:"—" }}</td>
+                    <td class="text-center text-xs text-gray-400">{{ snap.created_at|date:"d.m H:i" }}</td>
                     <td>
                         <form method="post" onsubmit="return confirm('Usunąć ten wpis?')">
                             {% csrf_token %}

@@ -91,6 +91,24 @@ def gbp_metrics_fetch_test(request, lead_pk):
 
         missing_days = all_days - existing_days
 
+        force_refresh = request.POST.get('force_refresh') == '1'
+        if force_refresh:
+            # Usuń istniejące wpisy z tego zakresu przed ponownym pobraniem
+            GBPMetricsSnapshot.objects.filter(
+                lead=lead,
+                source=GBPMetricsSnapshot.SOURCE_API,
+                day__isnull=False,
+                year__gte=date_from.year,
+            ).filter(
+                year__lte=date_to.year,
+            ).exclude(
+                year=date_from.year, month__lt=date_from.month,
+            ).exclude(
+                year=date_to.year, month__gt=date_to.month,
+            ).delete()
+            existing_days = set()
+            missing_days = all_days
+
         if not missing_days:
             saved = True
             already_existed = True
@@ -254,6 +272,11 @@ def gbp_metrics_index(request, lead_pk):
         'calls': sum(s.calls or 0 for s in daily_snapshots),
         'profile_views': sum(s.profile_views or 0 for s in daily_snapshots),
         'website_visits': sum(s.website_visits or 0 for s in daily_snapshots),
+        'direction_requests': sum(s.direction_requests or 0 for s in daily_snapshots),
+        'conversations': sum(s.conversations or 0 for s in daily_snapshots),
+        'bookings': sum(s.bookings or 0 for s in daily_snapshots),
+        'food_orders': sum(s.food_orders or 0 for s in daily_snapshots),
+        'food_menu_clicks': sum(s.food_menu_clicks or 0 for s in daily_snapshots),
         'count': len(daily_snapshots),
     }
 
@@ -279,6 +302,8 @@ def gbp_metrics_index(request, lead_pk):
         'calls': [s.calls or 0 for s in monthly_api],
         'profile_views': [s.profile_views or 0 for s in monthly_api],
         'website_visits': [s.website_visits or 0 for s in monthly_api],
+        'direction_requests': [s.direction_requests or 0 for s in monthly_api],
+        'conversations': [s.conversations or 0 for s in monthly_api],
     }
 
     return render(request, 'leads/gbp_metrics/index.html', {

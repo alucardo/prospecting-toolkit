@@ -14,7 +14,7 @@
         <h2 class="text-lg font-bold">🔄 Dane z API (ostatnie {{ daily_totals.count }} dni)</h2>
         <a href="{% url 'leads:gbp_metrics_daily' lead.pk %}" class="btn btn-ghost btn-sm">Wszystkie wpisy →</a>
     </div>
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="stat bg-base-200 rounded-box py-3 px-4">
             <div class="stat-title text-xs">📞 Telefony — suma</div>
             <div class="stat-value text-2xl">{{ daily_totals.calls }}</div>
@@ -24,9 +24,37 @@
             <div class="stat-value text-2xl">{{ daily_totals.profile_views }}</div>
         </div>
         <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">🗺 Trasy — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.direction_requests }}</div>
+        </div>
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
             <div class="stat-title text-xs">🌐 Witryna — suma</div>
             <div class="stat-value text-2xl">{{ daily_totals.website_visits }}</div>
         </div>
+        {% if daily_totals.conversations %}
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">💬 Wiadomości — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.conversations }}</div>
+        </div>
+        {% endif %}
+        {% if daily_totals.bookings %}
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">📅 Rezerwacje — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.bookings }}</div>
+        </div>
+        {% endif %}
+        {% if daily_totals.food_orders %}
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">🍕 Zamówienia — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.food_orders }}</div>
+        </div>
+        {% endif %}
+        {% if daily_totals.food_menu_clicks %}
+        <div class="stat bg-base-200 rounded-box py-3 px-4">
+            <div class="stat-title text-xs">📝 Menu — suma</div>
+            <div class="stat-value text-2xl">{{ daily_totals.food_menu_clicks }}</div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -52,8 +80,20 @@
         </div>
         <div class="card bg-base-200">
             <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">🗺 Zapytania o trasę</h3>
+                <canvas id="chart-directions" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
                 <h3 class="font-medium text-sm mb-2">🌐 Odwiedziny witryny</h3>
                 <canvas id="chart-website" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">💬 Wiadomości</h3>
+                <canvas id="chart-conversations" height="120"></canvas>
             </div>
         </div>
     </div>
@@ -93,12 +133,28 @@
                 backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
         }
     });
+    new Chart(document.getElementById('chart-directions'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.direction_requests, borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
     new Chart(document.getElementById('chart-website'), {
         ...defaults,
         data: {
             labels: data.labels,
             datasets: [{ data: data.website_visits, borderColor: '#10b981',
                 backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
+    new Chart(document.getElementById('chart-conversations'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.conversations, borderColor: '#ec4899',
+                backgroundColor: 'rgba(236,72,153,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
         }
     });
 })();
