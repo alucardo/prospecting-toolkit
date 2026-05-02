@@ -282,6 +282,11 @@ def gbp_metrics_index(request, lead_pk):
         'food_menu_clicks': sum(s.food_menu_clicks or 0 for s in daily_snapshots),
         'count': len(daily_snapshots),
     }
+    daily_totals['total_interactions'] = (
+        daily_totals['calls'] + daily_totals['website_visits'] +
+        daily_totals['direction_requests'] + daily_totals['conversations'] +
+        daily_totals['bookings'] + daily_totals['food_orders'] + daily_totals['food_menu_clicks']
+    )
 
     # Miesiące do selecta — bieżący rok i rok poprzedni
     months = [(y, m) for y in [now.year, now.year - 1] for m in range(1, 13)]
@@ -307,6 +312,13 @@ def gbp_metrics_index(request, lead_pk):
         'website_visits': [s.website_visits or 0 for s in monthly_api],
         'direction_requests': [s.direction_requests or 0 for s in monthly_api],
         'conversations': [s.conversations or 0 for s in monthly_api],
+        'food_orders': [s.food_orders or 0 for s in monthly_api],
+        'food_menu_clicks': [s.food_menu_clicks or 0 for s in monthly_api],
+        'total_interactions': [
+            (s.calls or 0) + (s.website_visits or 0) + (s.direction_requests or 0) +
+            (s.conversations or 0) + (s.bookings or 0) + (s.food_orders or 0) + (s.food_menu_clicks or 0)
+            for s in monthly_api
+        ],
     }
 
     return render(request, 'leads/gbp_metrics/index.html', {

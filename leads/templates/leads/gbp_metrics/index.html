@@ -57,6 +57,11 @@
             <div class="stat-value text-2xl">{{ daily_totals.food_menu_clicks }}</div>
         </div>
         {% endif %}
+        <div class="stat bg-primary/10 border border-primary/30 rounded-box py-3 px-4">
+            <div class="stat-title text-xs font-semibold">📊 Łączne interakcje</div>
+            <div class="stat-value text-2xl">{{ daily_totals.total_interactions }}</div>
+            <div class="stat-desc text-xs">telefony + witryna + trasy + inne</div>
+        </div>
     </div>
 </div>
 
@@ -96,6 +101,24 @@
             <div class="card-body py-4">
                 <h3 class="font-medium text-sm mb-2">💬 Wiadomości</h3>
                 <canvas id="chart-conversations" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">🍕 Zamówienia jedzenia</h3>
+                <canvas id="chart-food-orders" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">📝 Kliknięcia w menu</h3>
+                <canvas id="chart-food-menu" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card bg-primary/5 border border-primary/20 md:col-span-3">
+            <div class="card-body py-4">
+                <h3 class="font-medium text-sm mb-2">📊 Łączne interakcje (telefony + witryna + trasy + wiadomości + rezerwacje + zamówienia + menu)</h3>
+                <canvas id="chart-total" height="80"></canvas>
             </div>
         </div>
     </div>
@@ -157,6 +180,30 @@
             labels: data.labels,
             datasets: [{ data: data.conversations, borderColor: '#ec4899',
                 backgroundColor: 'rgba(236,72,153,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
+    new Chart(document.getElementById('chart-food-orders'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.food_orders, borderColor: '#f97316',
+                backgroundColor: 'rgba(249,115,22,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
+    new Chart(document.getElementById('chart-food-menu'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.food_menu_clicks, borderColor: '#64748b',
+                backgroundColor: 'rgba(100,116,139,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+        }
+    });
+    new Chart(document.getElementById('chart-total'), {
+        ...defaults,
+        data: {
+            labels: data.labels,
+            datasets: [{ data: data.total_interactions, borderColor: '#6366f1',
+                backgroundColor: 'rgba(99,102,241,0.15)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 }]
         }
     });
 })();
