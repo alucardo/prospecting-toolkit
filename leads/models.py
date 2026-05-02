@@ -967,6 +967,10 @@ class GBPMetricsSnapshot(models.Model):
     profile_views = models.IntegerField(null=True, blank=True, verbose_name='Wyświetlenia profilu')
     direction_requests = models.IntegerField(null=True, blank=True, verbose_name='Zapytania o trasę')
     website_visits = models.IntegerField(null=True, blank=True, verbose_name='Odwiedziny witryny')
+    conversations = models.IntegerField(null=True, blank=True, verbose_name='Wiadomości (konwersacje)')
+    bookings = models.IntegerField(null=True, blank=True, verbose_name='Rezerwacje')
+    food_orders = models.IntegerField(null=True, blank=True, verbose_name='Zamówienia jedzenia')
+    food_menu_clicks = models.IntegerField(null=True, blank=True, verbose_name='Kliknięcia w menu')
 
     source = models.CharField(
         max_length=10,

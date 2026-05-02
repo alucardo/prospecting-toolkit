@@ -22,9 +22,10 @@ def fetch_gbp_metrics_all():
     from django.db.models import Sum
     from .models import GBPMetricsSnapshot, AppSettings
     from .services.gbp_service import (
-        get_access_token, get_performance_metrics,
-        parse_performance, compute_monthly_snapshot,
-    )
+                get_access_token, get_performance_metrics,
+                parse_performance, compute_monthly_snapshot,
+                _metrics_to_snapshot_kwargs,
+            )
 
     settings = AppSettings.get()
     if not settings.google_refresh_token:
@@ -96,22 +97,11 @@ def fetch_gbp_metrics_all():
                     if (d.year, d.month, d.day) in existing_days:
                         continue
 
-                    impressions = sum(
-                        metrics.get(m, 0) for m in [
-                            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
-                            'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
-                            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
-                            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
-                        ]
-                    )
                     GBPMetricsSnapshot.objects.create(
                         lead=lead,
                         year=d.year, month=d.month, day=d.day,
                         source=GBPMetricsSnapshot.SOURCE_API,
-                        profile_views=impressions,
-                        calls=metrics.get('CALL_CLICKS', 0),
-                        website_visits=metrics.get('WEBSITE_CLICKS', 0),
-                        direction_requests=None,
+                        **_metrics_to_snapshot_kwargs(metrics),
                     )
                     saved += 1
 

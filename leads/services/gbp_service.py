@@ -86,8 +86,6 @@ def get_performance_metrics(access_token, location_name, date_from, date_to):
     location_name format: 'locations/123456789'
     date_from / date_to: datetime.date
     """
-    # fetchMultiDailyMetricsTimeSeries obsługuje tylko metryki wrażenia
-    # CALL_CLICKS, DIRECTION_REQUESTS, WEBSITE_CLICKS są przez getDailyMetricsTimeSeries
     metrics = [
         'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
         'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
@@ -95,6 +93,11 @@ def get_performance_metrics(access_token, location_name, date_from, date_to):
         'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
         'CALL_CLICKS',
         'WEBSITE_CLICKS',
+        'DIRECTION_REQUESTS',
+        'BUSINESS_CONVERSATIONS',
+        'BUSINESS_BOOKINGS',
+        'BUSINESS_FOOD_ORDERS',
+        'BUSINESS_FOOD_MENU_CLICKS',
     ]
 
     from urllib.parse import urlencode
@@ -137,6 +140,11 @@ def compute_monthly_snapshot(lead, year, month):
         calls=Sum('calls'),
         profile_views=Sum('profile_views'),
         website_visits=Sum('website_visits'),
+        direction_requests=Sum('direction_requests'),
+        conversations=Sum('conversations'),
+        bookings=Sum('bookings'),
+        food_orders=Sum('food_orders'),
+        food_menu_clicks=Sum('food_menu_clicks'),
     )
 
     if all(v is None for v in daily.values()):
@@ -152,10 +160,36 @@ def compute_monthly_snapshot(lead, year, month):
             'calls': daily['calls'] or 0,
             'profile_views': daily['profile_views'] or 0,
             'website_visits': daily['website_visits'] or 0,
-            'direction_requests': None,
+            'direction_requests': daily['direction_requests'] or 0,
+            'conversations': daily['conversations'] or 0,
+            'bookings': daily['bookings'] or 0,
+            'food_orders': daily['food_orders'] or 0,
+            'food_menu_clicks': daily['food_menu_clicks'] or 0,
         },
     )
     return snapshot, created
+
+
+def _metrics_to_snapshot_kwargs(metrics):
+    """Przetwarza słownik metryk z API na kwargs do GBPMetricsSnapshot.objects.create()."""
+    impressions = sum(
+        metrics.get(m, 0) for m in [
+            'BUSINESS_IMPRESSIONS_DESKTOP_MAPS',
+            'BUSINESS_IMPRESSIONS_MOBILE_MAPS',
+            'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH',
+            'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
+        ]
+    )
+    return {
+        'profile_views': impressions,
+        'calls': metrics.get('CALL_CLICKS', 0),
+        'website_visits': metrics.get('WEBSITE_CLICKS', 0),
+        'direction_requests': metrics.get('DIRECTION_REQUESTS', 0),
+        'conversations': metrics.get('BUSINESS_CONVERSATIONS', 0),
+        'bookings': metrics.get('BUSINESS_BOOKINGS', 0),
+        'food_orders': metrics.get('BUSINESS_FOOD_ORDERS', 0),
+        'food_menu_clicks': metrics.get('BUSINESS_FOOD_MENU_CLICKS', 0),
+    }
 
 
 def parse_performance(raw):

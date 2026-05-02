@@ -16,6 +16,7 @@
                     <th>Data</th>
                     <th class="text-center">📞 Telefony</th>
                     <th class="text-center">👁 Wyświetlenia</th>
+                    <th class="text-center">🗺 Trasy</th>
                     <th class="text-center">🌐 Witryna</th>
                     <th class="w-10"></th>
                 </tr>
@@ -28,6 +29,7 @@
                     </td>
                     <td class="text-center">{{ snap.calls|default:"—" }}</td>
                     <td class="text-center">{{ snap.profile_views|default:"—" }}</td>
+                    <td class="text-center">{{ snap.direction_requests|default:"—" }}</td>
                     <td class="text-center">{{ snap.website_visits|default:"—" }}</td>
                     <td>
                         <form method="post" onsubmit="return confirm('Usunąć ten wpis?')">
