@@ -794,12 +794,16 @@ class BrandProfile(models.Model):
         related_name='brand_profile',
         verbose_name='Klient',
     )
+    description = models.TextField(blank=True, verbose_name='Opis marki')
     tone_of_voice = models.TextField(blank=True, verbose_name='Ton komunikacji')
     target_audience = models.TextField(blank=True, verbose_name='Grupa docelowa')
+    usp = models.TextField(blank=True, verbose_name='USP (unikalna propozycja wartości)')
     brand_values = models.TextField(blank=True, verbose_name='Wartości marki')
+    competition = models.TextField(blank=True, verbose_name='Konkurencja')
     language_rules = models.TextField(blank=True, verbose_name='Zasady językowe')
     keywords = models.TextField(blank=True, verbose_name='Słowa kluczowe / frazy marki')
     avoid = models.TextField(blank=True, verbose_name='Czego unikać')
+    seasonality = models.TextField(blank=True, verbose_name='Sezonowość / ważne daty')
     extra_notes = models.TextField(blank=True, verbose_name='Dodatkowe notatki')
     updated_at = models.DateTimeField(auto_now=True)
 

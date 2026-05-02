@@ -4,12 +4,16 @@ from ..models import Lead, BrandProfile
 
 
 FIELDS = [
+    ('description', 'Opis marki', 'Krótki opis czym się zajmuje firma, co oferuje, jaka jest jej historia...'),
     ('tone_of_voice', 'Ton komunikacji', 'Jak marka mówi do odbiorców? Formalnie/nieformalnie, z humorem, poważnie...'),
     ('target_audience', 'Grupa docelowa', 'Kto jest głównym odbiorcą? Wiek, płeć, zainteresowania, potrzeby...'),
+    ('usp', 'USP (unikalna propozycja wartości)', 'Co wyróżnia tę markę na rynku? Dlaczego klient powinien wybrać właśnie ją?'),
     ('brand_values', 'Wartości marki', 'Co jest ważne dla marki? Jakość, tradycja, innowacja, lokalność...'),
+    ('competition', 'Konkurencja', 'Kto jest konkurentem? Czym się od nich odróżniamy?'),
     ('language_rules', 'Zasady językowe', 'Czy używamy "ty" czy "Pan/Pani"? Czy unikamy żargonu? Emoji tak/nie?'),
     ('keywords', 'Słowa kluczowe / frazy marki', 'Frazy które warto powtarzać w komunikacji, tagline, slogany...'),
     ('avoid', 'Czego unikać', 'Tematy, słowa, skojarzenia których nie chcemy w komunikacji marki...'),
+    ('seasonality', 'Sezonowość / ważne daty', 'Święta, eventy, okresy promocyjne ważne dla tej branży...'),
     ('extra_notes', 'Dodatkowe notatki', 'Inne ważne informacje o marce, kontekst, historia...'),
 ]
 

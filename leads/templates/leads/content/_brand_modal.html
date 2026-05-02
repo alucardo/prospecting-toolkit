@@ -15,6 +15,12 @@
         </div>
 
         <div class="flex flex-col gap-4">
+            {% if brand.description %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Opis marki</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.description }}</p>
+            </div>
+            {% endif %}
             {% if brand.tone_of_voice %}
             <div>
                 <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Ton komunikacji</div>
@@ -27,10 +33,22 @@
                 <p class="text-sm whitespace-pre-wrap">{{ brand.target_audience }}</p>
             </div>
             {% endif %}
+            {% if brand.usp %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">USP</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.usp }}</p>
+            </div>
+            {% endif %}
             {% if brand.brand_values %}
             <div>
                 <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Wartości marki</div>
                 <p class="text-sm whitespace-pre-wrap">{{ brand.brand_values }}</p>
+            </div>
+            {% endif %}
+            {% if brand.competition %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Konkurencja</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.competition }}</p>
             </div>
             {% endif %}
             {% if brand.language_rules %}
@@ -49,6 +67,12 @@
             <div class="bg-error/10 rounded p-3">
                 <div class="text-xs font-semibold text-error uppercase tracking-wide mb-1">Czego unikać</div>
                 <p class="text-sm whitespace-pre-wrap">{{ brand.avoid }}</p>
+            </div>
+            {% endif %}
+            {% if brand.seasonality %}
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sezonowość / ważne daty</div>
+                <p class="text-sm whitespace-pre-wrap">{{ brand.seasonality }}</p>
             </div>
             {% endif %}
             {% if brand.extra_notes %}
