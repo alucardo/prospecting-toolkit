@@ -117,13 +117,16 @@ def gbp_metrics_fetch_test(request, lead_pk):
             error_trace = None
         else:
             try:
-                from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance, compute_monthly_snapshot, _metrics_to_snapshot_kwargs
+                from ..services.gbp_service import get_access_token, get_performance_metrics, parse_performance, compute_monthly_snapshot, _metrics_to_snapshot_kwargs, get_direction_requests
                 settings = AppSettings.get()
                 access_token = get_access_token(settings.google_refresh_token)
 
                 raw_result = get_performance_metrics(access_token, location_name, date_from, date_to)
                 parsed_full = parse_performance(raw_result)
                 daily_data = parsed_full.get('daily', {})
+
+                # Pobierz trasy osobnym endpointem
+                direction_map = get_direction_requests(access_token, location_name, date_from, date_to)
 
                 saved_count = 0
                 skipped_count = len(existing_days)
@@ -141,7 +144,7 @@ def gbp_metrics_fetch_test(request, lead_pk):
                         lead=lead,
                         year=d.year, month=d.month, day=d.day,
                         source=GBPMetricsSnapshot.SOURCE_API,
-                        **_metrics_to_snapshot_kwargs(metrics),
+                        **_metrics_to_snapshot_kwargs(metrics, direction_map, date_str),
                     )
                     saved_count += 1
 

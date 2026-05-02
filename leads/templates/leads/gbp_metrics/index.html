@@ -4,7 +4,10 @@
 <div class="flex items-center gap-4 mb-6">
     <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost btn-sm">← {{ lead.name }}</a>
     <h1 class="text-2xl font-bold">📊 Metryki GBP</h1>
-    <a href="{% url 'leads:gbp_metrics_fetch_test' lead.pk %}" class="btn btn-outline btn-sm ml-auto">🧪 Pobierz z API</a>
+    <div class="ml-auto flex gap-2">
+        <a href="{% url 'leads:gbp_metrics_daily' lead.pk %}" class="btn btn-ghost btn-sm">📋 Wszystkie dni</a>
+        <a href="{% url 'leads:gbp_metrics_fetch_test' lead.pk %}" class="btn btn-outline btn-sm">🧪 Pobierz z API</a>
+    </div>
 </div>
 
 {# ===== DANE Z API — DZIENNE ===== #}
@@ -12,7 +15,6 @@
 <div class="mb-8">
     <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-bold">🔄 Dane z API (ostatnie {{ daily_totals.count }} dni)</h2>
-        <a href="{% url 'leads:gbp_metrics_daily' lead.pk %}" class="btn btn-ghost btn-sm">Wszystkie wpisy →</a>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="stat bg-base-200 rounded-box py-3 px-4">

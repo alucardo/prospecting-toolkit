@@ -93,7 +93,6 @@ def get_performance_metrics(access_token, location_name, date_from, date_to):
         'BUSINESS_IMPRESSIONS_MOBILE_SEARCH',
         'CALL_CLICKS',
         'WEBSITE_CLICKS',
-        'DIRECTION_REQUESTS',
         'BUSINESS_CONVERSATIONS',
         'BUSINESS_BOOKINGS',
         'BUSINESS_FOOD_ORDERS',
@@ -170,7 +169,39 @@ def compute_monthly_snapshot(lead, year, month):
     return snapshot, created
 
 
-def _metrics_to_snapshot_kwargs(metrics):
+def get_direction_requests(access_token, location_name, date_from, date_to):
+    """
+    Pobiera zapytania o trasę przez getDailyMetricsTimeSeries.
+    Zwraca dict {date_str: count}.
+    """
+    from urllib.parse import urlencode
+    params = [
+        ('dailyMetric', 'DIRECTION_REQUESTS'),
+        ('dailyRange.startDate.year', date_from.year),
+        ('dailyRange.startDate.month', date_from.month),
+        ('dailyRange.startDate.day', date_from.day),
+        ('dailyRange.endDate.year', date_to.year),
+        ('dailyRange.endDate.month', date_to.month),
+        ('dailyRange.endDate.day', date_to.day),
+    ]
+    qs = urlencode(params)
+    resp = requests.get(
+        f'{GBP_PERF_BASE}/{location_name}:getDailyMetricsTimeSeries?{qs}',
+        headers=_auth_headers(access_token),
+    )
+    if not resp.ok:
+        return {}  # nie blokuj całego pobierania jeśli ten endpoint nie działa
+    data = resp.json()
+    result = {}
+    for item in data.get('timeSeries', {}).get('datedValues', []):
+        d = item.get('date', {})
+        if d:
+            date_str = f"{d['year']}-{d['month']:02d}-{d['day']:02d}"
+            result[date_str] = item.get('value', 0) or 0
+    return result
+
+
+def _metrics_to_snapshot_kwargs(metrics, direction_requests_map=None, date_str=None):
     """Przetwarza słownik metryk z API na kwargs do GBPMetricsSnapshot.objects.create()."""
     impressions = sum(
         metrics.get(m, 0) for m in [
@@ -184,7 +215,7 @@ def _metrics_to_snapshot_kwargs(metrics):
         'profile_views': impressions,
         'calls': metrics.get('CALL_CLICKS', 0),
         'website_visits': metrics.get('WEBSITE_CLICKS', 0),
-        'direction_requests': metrics.get('DIRECTION_REQUESTS', 0),
+        'direction_requests': direction_requests_map.get(date_str, 0) if direction_requests_map and date_str else None,
         'conversations': metrics.get('BUSINESS_CONVERSATIONS', 0),
         'bookings': metrics.get('BUSINESS_BOOKINGS', 0),
         'food_orders': metrics.get('BUSINESS_FOOD_ORDERS', 0),

@@ -22,10 +22,10 @@ def fetch_gbp_metrics_all():
     from django.db.models import Sum
     from .models import GBPMetricsSnapshot, AppSettings
     from .services.gbp_service import (
-                get_access_token, get_performance_metrics,
-                parse_performance, compute_monthly_snapshot,
-                _metrics_to_snapshot_kwargs,
-            )
+    get_access_token, get_performance_metrics,
+    parse_performance, compute_monthly_snapshot,
+    _metrics_to_snapshot_kwargs, get_direction_requests,
+    )
 
     settings = AppSettings.get()
     if not settings.google_refresh_token:
@@ -86,6 +86,7 @@ def fetch_gbp_metrics_all():
                 raw = get_performance_metrics(access_token, location_name, date_from, date_to)
                 parsed = parse_performance(raw)
                 daily_data = parsed.get('daily', {})
+                direction_map = get_direction_requests(access_token, location_name, date_from, date_to)
 
                 saved = 0
                 for date_str, metrics in daily_data.items():
@@ -101,7 +102,7 @@ def fetch_gbp_metrics_all():
                         lead=lead,
                         year=d.year, month=d.month, day=d.day,
                         source=GBPMetricsSnapshot.SOURCE_API,
-                        **_metrics_to_snapshot_kwargs(metrics),
+                        **_metrics_to_snapshot_kwargs(metrics, direction_map, date_str),
                     )
                     saved += 1
 
