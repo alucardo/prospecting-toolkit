@@ -190,14 +190,33 @@ def get_direction_requests(access_token, location_name, date_from, date_to):
         headers=_auth_headers(access_token),
     )
     if not resp.ok:
-        return {}  # nie blokuj całego pobierania jeśli ten endpoint nie działa
+        import logging
+        logging.getLogger(__name__).warning(f'[GBP directions] HTTP {resp.status_code}: {resp.text[:200]}')
+        return {}
+
     data = resp.json()
     result = {}
-    for item in data.get('timeSeries', {}).get('datedValues', []):
+
+    # Spróbuj obu możliwych struktur odpowiedzi API
+    # Struktura 1: {timeSeries: {datedValues: [{date: {}, value: N}]}}
+    dated_values = data.get('timeSeries', {}).get('datedValues', [])
+
+    # Struktura 2: {multiDailyMetricTimeSeries: [{dailyMetricTimeSeries: [{timeSeries: {datedValues: []}}]}]}
+    if not dated_values:
+        for series in data.get('multiDailyMetricTimeSeries', []):
+            for item in series.get('dailyMetricTimeSeries', []):
+                if item.get('dailyMetric') == 'DIRECTION_REQUESTS':
+                    dated_values = item.get('timeSeries', {}).get('datedValues', [])
+                    break
+
+    for item in dated_values:
         d = item.get('date', {})
         if d:
-            date_str = f"{d['year']}-{d['month']:02d}-{d['day']:02d}"
-            result[date_str] = item.get('value', 0) or 0
+            date_str = f"{d.get('year', 0)}-{d.get('month', 0):02d}-{d.get('day', 0):02d}"
+            result[date_str] = int(item.get('value') or 0)
+
+    import logging
+    logging.getLogger(__name__).info(f'[GBP directions] pobrano {len(result)} dni')
     return result
 
 

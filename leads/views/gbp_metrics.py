@@ -127,6 +127,9 @@ def gbp_metrics_fetch_test(request, lead_pk):
 
                 # Pobierz trasy osobnym endpointem
                 direction_map = get_direction_requests(access_token, location_name, date_from, date_to)
+                # Loguj dla debugowania
+                import logging
+                logging.getLogger(__name__).info(f'[GBP test] direction_map sample: {dict(list(direction_map.items())[:3])}')
 
                 saved_count = 0
                 skipped_count = len(existing_days)

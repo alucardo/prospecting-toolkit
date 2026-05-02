@@ -99,6 +99,26 @@ def activity_report_preview(request, pk):
             bookings = sum(s.bookings or 0 for s in snapshots)
             food_orders = sum(s.food_orders or 0 for s in snapshots)
             food_menu_clicks = sum(s.food_menu_clicks or 0 for s in snapshots)
+
+            # Jeśli conversations jest NULL (stary wpis przed migracją) — sprawdź dane dzienne
+            if all(getattr(s, 'conversations', None) is None for s in snapshots):
+                daily_fallback = GBPMetricsSnapshot.objects.filter(
+                    lead=lead,
+                    source='api',
+                    day__isnull=False,
+                    year__gte=date_from.year,
+                    year__lte=date_to.year,
+                )
+                daily_fallback = [
+                    s for s in daily_fallback
+                    if (s.year, s.month) >= (date_from.year, date_from.month)
+                    and (s.year, s.month) <= (date_to.year, date_to.month)
+                ]
+                if daily_fallback:
+                    conversations = sum(s.conversations or 0 for s in daily_fallback)
+                    bookings = sum(s.bookings or 0 for s in daily_fallback)
+                    food_orders = sum(s.food_orders or 0 for s in daily_fallback)
+                    food_menu_clicks = sum(s.food_menu_clicks or 0 for s in daily_fallback)
             metrics_data = {
                 'calls': calls,
                 'profile_views': sum(s.profile_views or 0 for s in snapshots),
