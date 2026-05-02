@@ -54,22 +54,39 @@ def activity_report_preview(request, pk):
     # --- Metryki GBP ---
     metrics_data = None
     if include_metrics:
-        # Znajdź snapshoty miesięczne w zakresie dat
+        # Znajdź snapshoty miesięczne w zakresie dat — oba źródła
         snapshots = GBPMetricsSnapshot.objects.filter(
             lead=lead,
             day__isnull=True,
-            source='manual',
-        ).filter(
-            # miesiąc/rok snapshot musi zachodzić na wybrany zakres
             year__gte=date_from.year,
             year__lte=date_to.year,
         )
-        # Dokładne filtrowanie na poziomie Pythona (rok+miesiąc w zakresie)
         snapshots = [
             s for s in snapshots
             if (s.year, s.month) >= (date_from.year, date_from.month)
             and (s.year, s.month) <= (date_to.year, date_to.month)
         ]
+        # Jeśli brak miesięcznych — spróbuj zsumować dzienne z API
+        if not snapshots:
+            daily = GBPMetricsSnapshot.objects.filter(
+                lead=lead,
+                source='api',
+                day__isnull=False,
+                year__gte=date_from.year,
+                year__lte=date_to.year,
+            )
+            daily = [
+                s for s in daily
+                if (s.year, s.month) >= (date_from.year, date_from.month)
+                and (s.year, s.month) <= (date_to.year, date_to.month)
+            ]
+            if daily:
+                snapshots = [type('S', (), {
+                    'calls': sum(s.calls or 0 for s in daily),
+                    'profile_views': sum(s.profile_views or 0 for s in daily),
+                    'direction_requests': sum(s.direction_requests or 0 for s in daily),
+                    'website_visits': sum(s.website_visits or 0 for s in daily),
+                })()] 
         if snapshots:
             metrics_data = {
                 'calls': sum(s.calls or 0 for s in snapshots),
