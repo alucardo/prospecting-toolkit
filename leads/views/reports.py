@@ -86,13 +86,29 @@ def activity_report_preview(request, pk):
                     'profile_views': sum(s.profile_views or 0 for s in daily),
                     'direction_requests': sum(s.direction_requests or 0 for s in daily),
                     'website_visits': sum(s.website_visits or 0 for s in daily),
-                })()] 
+                    'conversations': sum(s.conversations or 0 for s in daily),
+                    'bookings': sum(s.bookings or 0 for s in daily),
+                    'food_orders': sum(s.food_orders or 0 for s in daily),
+                    'food_menu_clicks': sum(s.food_menu_clicks or 0 for s in daily),
+                })()]
         if snapshots:
+            calls = sum(s.calls or 0 for s in snapshots)
+            website_visits = sum(s.website_visits or 0 for s in snapshots)
+            direction_requests = sum(s.direction_requests or 0 for s in snapshots)
+            conversations = sum(s.conversations or 0 for s in snapshots)
+            bookings = sum(s.bookings or 0 for s in snapshots)
+            food_orders = sum(s.food_orders or 0 for s in snapshots)
+            food_menu_clicks = sum(s.food_menu_clicks or 0 for s in snapshots)
             metrics_data = {
-                'calls': sum(s.calls or 0 for s in snapshots),
+                'calls': calls,
                 'profile_views': sum(s.profile_views or 0 for s in snapshots),
-                'direction_requests': sum(s.direction_requests or 0 for s in snapshots),
-                'website_visits': sum(s.website_visits or 0 for s in snapshots),
+                'direction_requests': direction_requests,
+                'website_visits': website_visits,
+                'conversations': conversations,
+                'bookings': bookings,
+                'food_orders': food_orders,
+                'food_menu_clicks': food_menu_clicks,
+                'total_interactions': calls + website_visits + direction_requests + conversations + bookings + food_orders + food_menu_clicks,
                 'months': snapshots,
             }
 

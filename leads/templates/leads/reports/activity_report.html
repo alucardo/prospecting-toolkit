@@ -208,19 +208,63 @@
                 </div>
             </div>
 
+            {% if metrics_data.conversations %}
+            <div style="-webkit-print-color-adjust:exact; print-color-adjust:exact;
+                        background:#f5f0e8; border-radius:10px; padding:24px 20px;
+                        display:flex; align-items:center; gap:16px;">
+                <div style="font-size:28pt; line-height:1;">💬</div>
+                <div>
+                    <div style="font-size:30pt; font-weight:900; color:#1a1a1a; line-height:1;">{{ metrics_data.conversations }}</div>
+                    <div style="font-size:9pt; color:#b8922a; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">Wiadomości</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if metrics_data.bookings %}
+            <div style="-webkit-print-color-adjust:exact; print-color-adjust:exact;
+                        background:#f5f0e8; border-radius:10px; padding:24px 20px;
+                        display:flex; align-items:center; gap:16px;">
+                <div style="font-size:28pt; line-height:1;">📅</div>
+                <div>
+                    <div style="font-size:30pt; font-weight:900; color:#1a1a1a; line-height:1;">{{ metrics_data.bookings }}</div>
+                    <div style="font-size:9pt; color:#b8922a; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">Rezerwacje</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if metrics_data.food_orders %}
+            <div style="-webkit-print-color-adjust:exact; print-color-adjust:exact;
+                        background:#f5f0e8; border-radius:10px; padding:24px 20px;
+                        display:flex; align-items:center; gap:16px;">
+                <div style="font-size:28pt; line-height:1;">🍕</div>
+                <div>
+                    <div style="font-size:30pt; font-weight:900; color:#1a1a1a; line-height:1;">{{ metrics_data.food_orders }}</div>
+                    <div style="font-size:9pt; color:#b8922a; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">Zamówienia jedzenia</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if metrics_data.food_menu_clicks %}
+            <div style="-webkit-print-color-adjust:exact; print-color-adjust:exact;
+                        background:#f5f0e8; border-radius:10px; padding:24px 20px;
+                        display:flex; align-items:center; gap:16px;">
+                <div style="font-size:28pt; line-height:1;">📝</div>
+                <div>
+                    <div style="font-size:30pt; font-weight:900; color:#1a1a1a; line-height:1;">{{ metrics_data.food_menu_clicks }}</div>
+                    <div style="font-size:9pt; color:#b8922a; margin-top:4px; text-transform:uppercase; letter-spacing:1px;">Kliknięcia w menu</div>
+                </div>
+            </div>
+            {% endif %}
+
         </div>
 
-        {# Łączny zasięg #}
+        {# Łączne interakcje #}
         <div style="-webkit-print-color-adjust:exact; print-color-adjust:exact;
                     background:#b8922a; border-radius:10px; padding:16px 24px;
                     display:flex; justify-content:space-between; align-items:center;
                     margin-bottom:20px;">
             <div style="color:white; font-size:10pt;">Łączna liczba interakcji z wizytówką</div>
-            <div style="color:white; font-size:22pt; font-weight:900;">
-                {% with total=metrics_data.calls|add:metrics_data.profile_views|add:metrics_data.direction_requests|add:metrics_data.website_visits %}
-                {{ total }}
-                {% endwith %}
-            </div>
+            <div style="color:white; font-size:22pt; font-weight:900;">{{ metrics_data.total_interactions }}</div>
         </div>
 
         {% else %}
