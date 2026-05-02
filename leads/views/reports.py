@@ -93,8 +93,8 @@ def activity_report_preview(request, pk):
             if not checks_in_range:
                 continue
 
-            # Ostatnia pozycja w okresie
-            last_position = checks_in_range[-1]['position']
+            # Ostatnia pozycja w okresie — None = poza TOP 20, traktujemy jako 20
+            last_position = checks_in_range[-1]['position'] or 20
 
             # Poprzedni check sprzed okresu — do trendu
             prev_check = (
@@ -105,15 +105,16 @@ def activity_report_preview(request, pk):
                 .first()
             )
             trend = None
-            if prev_check and last_position and prev_check['position']:
-                trend = prev_check['position'] - last_position  # dodatni = poprawa
+            if prev_check and last_position:
+                prev_pos = prev_check['position'] or 20
+                trend = prev_pos - last_position  # dodatni = poprawa
 
             keywords_data.append({
                 'phrase': kw.phrase,
                 'position': last_position,
                 'trend': trend,
                 'chart_labels': json.dumps([c['checked_at'].strftime('%d.%m') for c in checks_in_range]),
-                'chart_data': json.dumps([c['position'] for c in checks_in_range]),
+                'chart_data': json.dumps([c['position'] or 20 for c in checks_in_range]),
             })
         keywords_data.sort(key=lambda x: (x['position'] or 999))
 
