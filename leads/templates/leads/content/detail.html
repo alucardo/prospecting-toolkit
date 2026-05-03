@@ -118,10 +118,12 @@
                     value="{{ current.drive_url }}"
                     oninput="updatePreview(this.value)">
                 <div id="drive-preview" class="mt-2 {% if not current.drive_preview_url %}hidden{% endif %}">
-                    <img id="drive-img"
-                        src="{% if current.drive_preview_url %}{{ current.drive_preview_url }}{% endif %}"
-                        alt="Podgląd" class="max-h-48 rounded border border-base-300"
-                        onerror="document.getElementById('drive-preview-error').classList.remove('hidden'); this.classList.add('hidden')">
+                    <a id="drive-link" href="{{ current.drive_url }}" target="_blank" rel="noopener">
+                        <img id="drive-img"
+                            src="{% if current.drive_preview_url %}{{ current.drive_preview_url }}{% endif %}"
+                            alt="Podgląd" class="max-h-48 rounded border border-base-300 hover:opacity-80 transition-opacity cursor-pointer"
+                            onerror="document.getElementById('drive-preview-error').classList.remove('hidden'); this.classList.add('hidden')">
+                    </a>
                     <div id="drive-preview-error" class="hidden text-xs text-error mt-1">
                         ⚠ Nie można załadować podglądu — sprawdź czy zdjęcie jest publiczne.
                     </div>
@@ -184,6 +186,7 @@ function updatePreview(url) {
     const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (match) {
         img.src = 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w800';
+        document.getElementById('drive-link').href = url;
         img.classList.remove('hidden');
         err.classList.add('hidden');
         preview.classList.remove('hidden');

@@ -83,9 +83,11 @@
                     placeholder="https://drive.google.com/file/d/..."
                     oninput="updatePreview(this.value)">
                 <div id="drive-preview" class="mt-2 hidden">
-                    <img id="drive-img" src="" alt="Podgląd zdjęcia"
-                        class="max-h-48 rounded border border-base-300"
-                        onerror="document.getElementById('drive-preview-error').classList.remove('hidden'); this.classList.add('hidden')">
+                    <a id="drive-link" href="#" target="_blank" rel="noopener">
+                        <img id="drive-img" src="" alt="Podgląd zdjęcia"
+                            class="max-h-48 rounded border border-base-300 hover:opacity-80 transition-opacity cursor-pointer"
+                            onerror="document.getElementById('drive-preview-error').classList.remove('hidden'); this.classList.add('hidden')">
+                    </a>
                     <div id="drive-preview-error" class="hidden text-xs text-error mt-1">
                         ⚠ Nie można załadować podglądu — sprawdź czy zdjęcie jest publiczne.
                     </div>
@@ -141,6 +143,7 @@ function updatePreview(url) {
     if (match) {
         const previewUrl = 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w800';
         img.src = previewUrl;
+        document.getElementById('drive-link').href = url;
         img.classList.remove('hidden');
         err.classList.add('hidden');
         preview.classList.remove('hidden');
