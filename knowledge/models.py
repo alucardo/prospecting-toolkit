@@ -3,6 +3,26 @@ from django.contrib.auth.models import User
 import re
 
 
+class KnowledgeSettings(models.Model):
+    video_folder_url = models.URLField(
+        blank=True,
+        verbose_name='Link do folderu wideo na Google Drive',
+        help_text='Link do folderu na Google Drive z inspiracjami wideo',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Ustawienia bazy wiedzy'
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return 'Ustawienia bazy wiedzy'
+
+
 class KnowledgeTag(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='Nazwa')
     created_at = models.DateTimeField(auto_now_add=True)

@@ -4,6 +4,9 @@ from .views import tags, videos
 app_name = 'knowledge'
 
 urlpatterns = [
+    # Ustawienia
+    path('baza-wiedzy/ustawienia/', videos.knowledge_settings, name='settings'),
+
     # Tagi
     path('baza-wiedzy/tagi/', tags.tag_index, name='tag_index'),
 

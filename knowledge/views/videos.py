@@ -1,21 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from ..models import VideoInspiration, KnowledgeTag
+from ..models import VideoInspiration, KnowledgeTag, KnowledgeSettings
 
 
 @login_required
 def video_index(request):
     videos = VideoInspiration.objects.prefetch_related('tags', 'created_by')
 
-    # Filtr po tagu
     tag_filter = request.GET.getlist('tag')
     if tag_filter:
         for t in tag_filter:
             videos = videos.filter(tags__pk=t)
         videos = videos.distinct()
 
-    # Wyszukiwanie po tytule
     search = request.GET.get('search', '').strip()
     if search:
         videos = videos.filter(title__icontains=search)
@@ -33,6 +30,7 @@ def video_index(request):
 @login_required
 def video_create(request):
     tags = KnowledgeTag.objects.all()
+    settings = KnowledgeSettings.get()
 
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
@@ -53,6 +51,7 @@ def video_create(request):
     return render(request, 'knowledge/video/form.html', {
         'tags': tags,
         'video': None,
+        'settings': settings,
     })
 
 
@@ -60,6 +59,7 @@ def video_create(request):
 def video_edit(request, pk):
     video = get_object_or_404(VideoInspiration, pk=pk)
     tags = KnowledgeTag.objects.all()
+    settings = KnowledgeSettings.get()
 
     if request.method == 'POST':
         video.title = request.POST.get('title', '').strip()
@@ -72,6 +72,7 @@ def video_edit(request, pk):
     return render(request, 'knowledge/video/form.html', {
         'tags': tags,
         'video': video,
+        'settings': settings,
     })
 
 
@@ -81,3 +82,15 @@ def video_delete(request, pk):
     if request.method == 'POST':
         video.delete()
     return redirect('knowledge:video_index')
+
+
+@login_required
+def knowledge_settings(request):
+    settings = KnowledgeSettings.get()
+
+    if request.method == 'POST':
+        settings.video_folder_url = request.POST.get('video_folder_url', '').strip()
+        settings.save()
+        return redirect('knowledge:settings')
+
+    return render(request, 'knowledge/settings.html', {'settings': settings})
