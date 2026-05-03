@@ -92,20 +92,17 @@ def gbp_metrics_fetch_test(request, lead_pk):
         missing_days = all_days - existing_days
 
         force_refresh = request.POST.get('force_refresh') == '1'
-        if force_refresh:
-            # Usuń istniejące wpisy z tego zakresu przed ponownym pobraniem
+        if force_refresh and all_days:
+            # Usuń tylko konkretne dni z zakresu — nie całe miesiące
+            from django.db.models import Q
+            q = Q()
+            for y, m, d in all_days:
+                q |= Q(year=y, month=m, day=d)
             GBPMetricsSnapshot.objects.filter(
                 lead=lead,
                 source=GBPMetricsSnapshot.SOURCE_API,
                 day__isnull=False,
-                year__gte=date_from.year,
-            ).filter(
-                year__lte=date_to.year,
-            ).exclude(
-                year=date_from.year, month__lt=date_from.month,
-            ).exclude(
-                year=date_to.year, month__gt=date_to.month,
-            ).delete()
+            ).filter(q).delete()
             existing_days = set()
             missing_days = all_days
 
