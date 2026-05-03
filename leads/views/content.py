@@ -31,6 +31,7 @@ def content_generate_ai(request, lead_pk):
     user_input = data.get('user_input', '').strip()
     idea_title = data.get('idea_title', '').strip()
     idea_hint = data.get('idea_hint', '').strip()
+    selected_keywords = data.get('keywords', [])
     channel = data.get('channel', 'Wizytówka Google')
     post_type = data.get('post_type', 'Aktualność')
 
@@ -60,6 +61,10 @@ def content_generate_ai(request, lead_pk):
             system_parts.append(f'Słowa kluczowe marki: {brand.keywords}')
         if brand.usp:
             system_parts.append(f'Unikalna propozycja wartości: {brand.usp}')
+
+    if selected_keywords:
+        kw_str = ', '.join(selected_keywords)
+        system_parts.append(f'Naturalnie wpleć w treść następujące słowa kluczowe (nie na siłę, ale naturalnie): {kw_str}.')
 
     system_prompt = ' '.join(system_parts)
 
@@ -224,6 +229,7 @@ def content_create(request, lead_pk):
         brand = None
 
     idea_categories = PostIdeaCategory.objects.prefetch_related('ideas').all()
+    lead_keywords = list(lead.keywords_list.values_list('phrase', flat=True))
 
     return render(request, 'leads/content/form.html', {
         'lead': lead,
@@ -234,6 +240,7 @@ def content_create(request, lead_pk):
         'type_choices': ContentPost.TYPE_CHOICES,
         'brand': brand,
         'idea_categories': idea_categories,
+        'lead_keywords': lead_keywords,
     })
 
 
@@ -293,6 +300,7 @@ def content_detail(request, lead_pk, post_pk):
         brand = None
 
     idea_categories = PostIdeaCategory.objects.prefetch_related('ideas').all()
+    lead_keywords = list(lead.keywords_list.values_list('phrase', flat=True))
 
     # Dane wszystkich wersji do modalu podglądu
     import json as _json
@@ -323,4 +331,5 @@ def content_detail(request, lead_pk, post_pk):
         'brand': brand,
         'idea_categories': idea_categories,
         'versions_json': _json.dumps(versions_data, ensure_ascii=False),
+        'lead_keywords': lead_keywords,
     })

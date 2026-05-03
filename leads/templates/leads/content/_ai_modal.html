@@ -69,6 +69,25 @@
             </div>
         </div>
 
+        {# Słowa kluczowe — zawsze widoczne, z fraz leada #}
+        {% if lead_keywords %}
+        <div class="form-control mb-3">
+            <label class="label py-1">
+                <span class="label-text text-sm font-medium">Słowa kluczowe SEO</span>
+                <span class="label-text-alt text-gray-400">opcjonalnie</span>
+            </label>
+            <div class="flex flex-wrap gap-2" id="ai-keywords-wrap">
+                {% for kw in lead_keywords %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" class="hidden ai-kw-checkbox" value="{{ kw }}"
+                        onchange="updateKwStyle(this)">
+                    <span class="badge badge-outline badge-sm cursor-pointer">{{ kw }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         {# Uwagi — zawsze widoczne #}
         <div class="form-control mb-4">
             <label class="label py-1">
@@ -205,6 +224,9 @@ function generateAI(isRevision) {
     const ideaTitle = aiCurrentMode === 'list' ? aiSelectedTitle : customTopic;
     const ideaHint = aiCurrentMode === 'list' ? aiSelectedHint : '';
 
+    // Zbierz zaznaczone słowa kluczowe
+    const selectedKeywords = [...document.querySelectorAll('.ai-kw-checkbox:checked')].map(cb => cb.value);
+
     fetch(AI_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_AI },
@@ -213,6 +235,7 @@ function generateAI(isRevision) {
             user_input: userInput,
             idea_title: ideaTitle,
             idea_hint: ideaHint,
+            keywords: selectedKeywords,
             channel: channelEl ? channelEl.options[channelEl.selectedIndex]?.text : 'Wizytówka Google',
             post_type: typeEl ? typeEl.options[typeEl.selectedIndex]?.text : 'Aktualność',
         }),
@@ -269,10 +292,26 @@ function resetAiModal() {
     if (catSel) catSel.value = '';
     const topicEl = document.getElementById('ai-custom-topic');
     if (topicEl) topicEl.value = '';
+    // Reset słów kluczowych
+    document.querySelectorAll('.ai-kw-checkbox').forEach(cb => {
+        cb.checked = false;
+        updateKwStyle(cb);
+    });
 }
 
 function showAiError(msg) {
     document.getElementById('ai-error-msg').textContent = msg;
     document.getElementById('ai-error').classList.remove('hidden');
+}
+
+function updateKwStyle(checkbox) {
+    const badge = checkbox.nextElementSibling;
+    if (checkbox.checked) {
+        badge.classList.remove('badge-outline');
+        badge.classList.add('badge-primary');
+    } else {
+        badge.classList.remove('badge-primary');
+        badge.classList.add('badge-outline');
+    }
 }
 </script>
