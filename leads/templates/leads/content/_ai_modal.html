@@ -1,8 +1,6 @@
-{% load static %}
-
 {# Przycisk otwierający modal #}
 <button type="button" class="btn btn-accent btn-sm gap-1"
-    onclick="document.getElementById('ai-modal').showModal()">
+    onclick="document.getElementById('ai-modal').showModal(); resetAiModal()">
     ✨ Generuj przez AI
 </button>
 
@@ -11,68 +9,83 @@
     <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg mb-4">✨ Generuj treść przez AI</h3>
 
-        {# Krok 1: Wybór tematu #}
-        <div id="ai-step-1">
+        {# Przełącznik trybu #}
+        <div class="flex gap-2 mb-5">
+            <button type="button" id="mode-btn-list"
+                class="btn btn-sm btn-primary flex-1"
+                onclick="setMode('list')">
+                📋 Z bazy pomysłów
+            </button>
+            <button type="button" id="mode-btn-custom"
+                class="btn btn-sm btn-ghost flex-1"
+                onclick="setMode('custom')">
+                ✏️ Własny temat
+            </button>
+        </div>
 
-            {# Wybór z listy pomysłów #}
+        {# Tryb: z bazy pomysłów #}
+        <div id="mode-list">
             {% if idea_categories %}
             <div class="form-control mb-3">
-                <label class="label py-1"><span class="label-text text-sm font-medium">Wybierz z bazy pomysłów</span></label>
-                <select id="ai-category" class="select select-bordered select-sm w-full mb-2"
+                <label class="label py-1"><span class="label-text text-sm">Kategoria</span></label>
+                <select id="ai-category" class="select select-bordered select-sm w-full"
                     onchange="loadIdeas(this.value)">
                     <option value="">— wybierz kategorię —</option>
                     {% for cat in idea_categories %}
                     <option value="{{ cat.pk }}">{{ cat.name }}</option>
                     {% endfor %}
                 </select>
-                <select id="ai-idea" class="select select-bordered select-sm w-full hidden"
+            </div>
+            <div id="ai-idea-wrapper" class="form-control mb-3 hidden">
+                <label class="label py-1"><span class="label-text text-sm">Pomysł</span></label>
+                <select id="ai-idea" class="select select-bordered select-sm w-full"
                     onchange="selectIdea(this)">
                     <option value="">— wybierz pomysł —</option>
-                    {% for cat in idea_categories %}
-                    {% for idea in cat.ideas.all %}
-                    <option value="{{ idea.pk }}"
-                        data-cat="{{ cat.pk }}"
-                        data-title="{{ idea.title }}"
-                        data-hint="{{ idea.hint }}">
-                        {{ idea.title }}
-                    </option>
-                    {% endfor %}
-                    {% endfor %}
                 </select>
                 <div id="ai-idea-hint" class="text-xs text-gray-400 mt-1 hidden"></div>
             </div>
-
-            <div class="divider text-xs text-gray-400">lub</div>
+            {# Ukryty store wszystkich pomysłów do filtrowania po JS #}
+            <div id="ai-ideas-store" class="hidden">
+                {% for cat in idea_categories %}
+                {% for idea in cat.ideas.all %}
+                <span data-cat="{{ cat.pk }}" data-pk="{{ idea.pk }}"
+                      data-title="{{ idea.title }}" data-hint="{{ idea.hint }}"></span>
+                {% endfor %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-warning mb-3">
+                <span>Brak pomysłów w bazie. <a href="{% url 'leads:idea_index' %}" target="_blank" class="link">Dodaj pomysły →</a></span>
+            </div>
             {% endif %}
+        </div>
 
-            {# Własny temat #}
+        {# Tryb: własny temat #}
+        <div id="mode-custom" class="hidden">
             <div class="form-control mb-3">
-                <label class="label py-1"><span class="label-text text-sm font-medium">Własny temat / opis</span></label>
+                <label class="label py-1"><span class="label-text text-sm">Temat posta *</span></label>
                 <input type="text" id="ai-custom-topic" class="input input-bordered input-sm w-full"
-                    placeholder="np. Wprowadzamy nowe danie — żeberka BBQ, limitowana oferta">
+                    placeholder="np. Danie dnia — żeberka BBQ w sosie miodowym">
             </div>
+        </div>
 
-            {# Uwagi dodatkowe #}
-            <div class="form-control mb-4">
-                <label class="label py-1">
-                    <span class="label-text text-sm font-medium">Uwagi i szczegóły</span>
-                    <span class="label-text-alt text-gray-400">co podkreślić, konkretne informacje</span>
-                </label>
-                <textarea id="ai-user-input" rows="3" class="textarea textarea-bordered w-full text-sm"
-                    placeholder="np. Żeberka BBQ dostępne tylko w weekendy, cena 49 zł, polecane z frytkami..."></textarea>
-            </div>
-
+        {# Uwagi — zawsze widoczne #}
+        <div class="form-control mb-4">
+            <label class="label py-1">
+                <span class="label-text text-sm font-medium">Uwagi i szczegóły</span>
+                <span class="label-text-alt text-gray-400">co podkreślić, konkretne informacje</span>
+            </label>
+            <textarea id="ai-user-input" rows="3" class="textarea textarea-bordered w-full text-sm"
+                placeholder="np. Dostępne tylko w weekendy, cena 49 zł, polecane z frytkami i surówką..."></textarea>
         </div>
 
         {# Wynik generowania #}
         <div id="ai-result" class="hidden">
             <div class="divider text-xs">Wygenerowana treść</div>
-            <div class="bg-base-200 rounded-box p-4 mb-3 relative">
+            <div class="bg-base-200 rounded-box p-4 mb-3">
                 <p id="ai-generated-text" class="text-sm whitespace-pre-wrap leading-relaxed"></p>
                 <span id="ai-char-count" class="text-xs text-gray-400 mt-2 block"></span>
             </div>
-
-            {# Uwagi do poprawki #}
             <div class="form-control mb-4">
                 <label class="label py-1">
                     <span class="label-text text-sm font-medium">Uwagi do poprawki</span>
@@ -91,25 +104,15 @@
         {# Akcje #}
         <div class="modal-action flex-wrap gap-2">
             <button type="button" class="btn btn-ghost btn-sm"
-                onclick="resetAiModal(); document.getElementById('ai-modal').close()">
-                Anuluj
-            </button>
+                onclick="document.getElementById('ai-modal').close()">Anuluj</button>
             <button type="button" id="ai-reset-btn" class="btn btn-ghost btn-sm hidden"
-                onclick="resetAiModal()">
-                ↺ Zacznij od nowa
-            </button>
+                onclick="resetAiModal()">↺ Zacznij od nowa</button>
             <button type="button" id="ai-generate-btn" class="btn btn-accent"
-                onclick="generateAI(false)">
-                ✨ Generuj
-            </button>
+                onclick="generateAI(false)">✨ Generuj</button>
             <button type="button" id="ai-regenerate-btn" class="btn btn-outline btn-accent hidden"
-                onclick="generateAI(true)">
-                🔄 Generuj ponownie
-            </button>
+                onclick="generateAI(true)">🔄 Generuj ponownie</button>
             <button type="button" id="ai-use-btn" class="btn btn-primary hidden"
-                onclick="useGeneratedText()">
-                ✓ Użyj tej treści
-            </button>
+                onclick="useGeneratedText()">✓ Użyj tej treści</button>
         </div>
     </div>
     <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
@@ -117,35 +120,45 @@
 
 <script>
 const AI_URL = '{% url "leads:content_generate_ai" lead.pk %}';
-const CSRF = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+const CSRF_AI = '{{ csrf_token }}';
 
 let aiMessages = [];
 let aiSelectedTitle = '';
 let aiSelectedHint = '';
+let aiCurrentMode = 'list';
 
-// Załaduj pomysły dla wybranej kategorii
+function setMode(mode) {
+    aiCurrentMode = mode;
+    document.getElementById('mode-list').classList.toggle('hidden', mode !== 'list');
+    document.getElementById('mode-custom').classList.toggle('hidden', mode !== 'custom');
+    document.getElementById('mode-btn-list').className =
+        'btn btn-sm flex-1 ' + (mode === 'list' ? 'btn-primary' : 'btn-ghost');
+    document.getElementById('mode-btn-custom').className =
+        'btn btn-sm flex-1 ' + (mode === 'custom' ? 'btn-primary' : 'btn-ghost');
+}
+
 function loadIdeas(catPk) {
-    const ideaSelect = document.getElementById('ai-idea');
-    ideaSelect.innerHTML = '<option value="">— wybierz pomysł —</option>';
+    const wrapper = document.getElementById('ai-idea-wrapper');
+    const select = document.getElementById('ai-idea');
+    const hintDiv = document.getElementById('ai-idea-hint');
 
-    if (!catPk) {
-        ideaSelect.classList.add('hidden');
-        return;
-    }
+    aiSelectedTitle = '';
+    aiSelectedHint = '';
+    hintDiv.classList.add('hidden');
 
-    // Filtruj opcje po kategorii
-    const allOptions = document.querySelectorAll('#ai-idea option[data-cat]');
-    let hasIdeas = false;
-    allOptions.forEach(opt => {
-        if (opt.dataset.cat === catPk) {
-            const clone = opt.cloneNode(true);
-            ideaSelect.appendChild(clone);
-            hasIdeas = true;
-        }
+    if (!catPk) { wrapper.classList.add('hidden'); return; }
+
+    // Wyczyść i wypełnij opcjami z danej kategorii
+    select.innerHTML = '<option value="">— wybierz pomysł —</option>';
+    document.querySelectorAll('#ai-ideas-store span[data-cat="' + catPk + '"]').forEach(el => {
+        const opt = document.createElement('option');
+        opt.value = el.dataset.pk;
+        opt.dataset.title = el.dataset.title;
+        opt.dataset.hint = el.dataset.hint;
+        opt.textContent = el.dataset.title;
+        select.appendChild(opt);
     });
-
-    // Przywróć wszystkie opcje do ukrytego selecta (żeby filtrowanie działało przy zmianie kategorii)
-    if (hasIdeas) ideaSelect.classList.remove('hidden');
+    wrapper.classList.remove('hidden');
 }
 
 function selectIdea(select) {
@@ -165,41 +178,41 @@ function generateAI(isRevision) {
     const userInput = isRevision
         ? document.getElementById('ai-revision-input').value.trim()
         : document.getElementById('ai-user-input').value.trim();
+
     const customTopic = document.getElementById('ai-custom-topic')?.value.trim() || '';
 
-    if (!isRevision && !aiSelectedTitle && !customTopic && !userInput) {
-        showAiError('Wybierz pomysł z listy lub wpisz temat/uwagi.');
-        return;
+    // Walidacja
+    if (!isRevision) {
+        if (aiCurrentMode === 'list' && !aiSelectedTitle) {
+            showAiError('Wybierz pomysł z listy.'); return;
+        }
+        if (aiCurrentMode === 'custom' && !customTopic) {
+            showAiError('Wpisz temat posta.'); return;
+        }
+    } else {
+        if (!userInput) { showAiError('Wpisz uwagi do poprawki.'); return; }
     }
 
-    if (isRevision && !userInput) {
-        showAiError('Wpisz uwagi do poprawki.');
-        return;
-    }
-
-    const btn = isRevision
-        ? document.getElementById('ai-regenerate-btn')
-        : document.getElementById('ai-generate-btn');
+    const btn = document.getElementById(isRevision ? 'ai-regenerate-btn' : 'ai-generate-btn');
     const origText = btn.textContent;
     btn.disabled = true;
     btn.textContent = '⏳ Generuję...';
     document.getElementById('ai-error').classList.add('hidden');
 
-    // Pobierz kanał/typ z formularza
     const channelEl = document.querySelector('[name="channel"]');
     const typeEl = document.querySelector('[name="post_type"]');
 
+    const ideaTitle = aiCurrentMode === 'list' ? aiSelectedTitle : customTopic;
+    const ideaHint = aiCurrentMode === 'list' ? aiSelectedHint : '';
+
     fetch(AI_URL, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': CSRF,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_AI },
         body: JSON.stringify({
             messages: aiMessages,
             user_input: userInput,
-            idea_title: aiSelectedTitle,
-            idea_hint: aiSelectedHint,
+            idea_title: ideaTitle,
+            idea_hint: ideaHint,
             channel: channelEl ? channelEl.options[channelEl.selectedIndex]?.text : 'Wizytówka Google',
             post_type: typeEl ? typeEl.options[typeEl.selectedIndex]?.text : 'Aktualność',
         }),
@@ -208,22 +221,13 @@ function generateAI(isRevision) {
     .then(data => {
         btn.disabled = false;
         btn.textContent = origText;
+        if (!data.ok) { showAiError(data.error || 'Błąd generowania'); return; }
 
-        if (!data.ok) {
-            showAiError(data.error || 'Błąd generowania');
-            return;
-        }
-
-        // Zapisz historię konwersacji
         aiMessages = data.messages;
-
-        // Pokaż wynik
         document.getElementById('ai-generated-text').textContent = data.generated;
         document.getElementById('ai-char-count').textContent = data.char_count + ' / 1500 znaków';
         document.getElementById('ai-result').classList.remove('hidden');
         document.getElementById('ai-revision-input').value = '';
-
-        // Pokaż/ukryj przyciski
         document.getElementById('ai-generate-btn').classList.add('hidden');
         document.getElementById('ai-regenerate-btn').classList.remove('hidden');
         document.getElementById('ai-use-btn').classList.remove('hidden');
@@ -241,17 +245,16 @@ function useGeneratedText() {
     const bodyField = document.getElementById('body-field');
     if (bodyField) {
         bodyField.value = text;
-        // Odpal event żeby licznik znaków się zaktualizował
         bodyField.dispatchEvent(new Event('input'));
     }
     document.getElementById('ai-modal').close();
-    resetAiModal();
 }
 
 function resetAiModal() {
     aiMessages = [];
     aiSelectedTitle = '';
     aiSelectedHint = '';
+    setMode('list');
     document.getElementById('ai-result').classList.add('hidden');
     document.getElementById('ai-error').classList.add('hidden');
     document.getElementById('ai-generate-btn').classList.remove('hidden');
@@ -260,13 +263,12 @@ function resetAiModal() {
     document.getElementById('ai-reset-btn').classList.add('hidden');
     document.getElementById('ai-revision-input').value = '';
     document.getElementById('ai-user-input').value = '';
-    if (document.getElementById('ai-custom-topic'))
-        document.getElementById('ai-custom-topic').value = '';
     document.getElementById('ai-idea-hint').classList.add('hidden');
+    document.getElementById('ai-idea-wrapper').classList.add('hidden');
     const catSel = document.getElementById('ai-category');
-    if (catSel) { catSel.value = ''; }
-    const ideaSel = document.getElementById('ai-idea');
-    if (ideaSel) { ideaSel.classList.add('hidden'); ideaSel.value = ''; }
+    if (catSel) catSel.value = '';
+    const topicEl = document.getElementById('ai-custom-topic');
+    if (topicEl) topicEl.value = '';
 }
 
 function showAiError(msg) {
