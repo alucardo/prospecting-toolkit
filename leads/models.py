@@ -794,6 +794,25 @@ class BrandProfile(models.Model):
         related_name='brand_profile',
         verbose_name='Klient',
     )
+    ARCHETYPE_CHOICES = [
+        ('innocent',  'Niewinny — szczęście, optymizm, prostota'),
+        ('sage',      'Mędrzec — zrozumienie, wiedza, prawda'),
+        ('explorer',  'Odkrywca — autonomia, wolność, przygoda'),
+        ('outlaw',    'Buntownik — wolność, rewolucja, zmiana zasad'),
+        ('magician',  'Magik — moc, transformacja, spełnianie marzeń'),
+        ('hero',      'Bohater — mistrzostwo, odwaga, determinacja'),
+        ('lover',     'Kochanek — intymność, pasja, piękno'),
+        ('jester',    'Błazen — radość, humor, lekkość'),
+        ('everyman',  'Zwykły człowiek — przynależność, równość, realizm'),
+        ('caregiver', 'Opiekun — opiekuńczość, troska, bezpieczeństwo'),
+        ('ruler',     'Władca — kontrola, porządek, przywództwo'),
+        ('creator',   'Kreator — innowacyjność, wyobraźnia, tworzenie'),
+    ]
+    archetype = models.CharField(
+        max_length=50, blank=True,
+        choices=ARCHETYPE_CHOICES,
+        verbose_name='Archetyp marki',
+    )
     description = models.TextField(blank=True, verbose_name='Opis marki')
     tone_of_voice = models.TextField(blank=True, verbose_name='Ton komunikacji')
     target_audience = models.TextField(blank=True, verbose_name='Grupa docelowa')

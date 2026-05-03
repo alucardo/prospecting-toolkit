@@ -11,6 +11,27 @@
 
 <form method="post">
     {% csrf_token %}
+
+    {# Archetyp marki — na górze jako karta pełnej szerokości #}
+    <div class="card bg-base-200 mb-4">
+        <div class="card-body py-4">
+            <label class="font-semibold text-sm mb-2 block">🎭 Archetyp marki</label>
+            <select name="archetype" class="select select-bordered w-full max-w-lg">
+                <option value="">— wybierz archetyp —</option>
+                {% for val, label in archetype_choices %}
+                <option value="{{ val }}" {% if profile.archetype == val %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+            {% if profile.archetype %}
+            <p class="text-xs text-gray-400 mt-2">
+                Wybrany: <strong>{{ profile.get_archetype_display }}</strong>
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% for field_name, label, placeholder, value in fields %}
         <div class="card bg-base-200 {% if field_name == 'extra_notes' %}md:col-span-2{% endif %}">

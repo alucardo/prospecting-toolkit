@@ -24,6 +24,7 @@ def brand_profile(request, lead_pk):
     profile, _ = BrandProfile.objects.get_or_create(lead=lead)
 
     if request.method == 'POST':
+        profile.archetype = request.POST.get('archetype', '').strip()
         for field, _, _ in FIELDS:
             setattr(profile, field, request.POST.get(field, '').strip())
         profile.save()
@@ -32,6 +33,7 @@ def brand_profile(request, lead_pk):
     return render(request, 'leads/brand/profile.html', {
         'lead': lead,
         'profile': profile,
+        'archetype_choices': BrandProfile.ARCHETYPE_CHOICES,
         'fields': [
             (field, label, placeholder, getattr(profile, field))
             for field, label, placeholder in FIELDS
