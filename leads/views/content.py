@@ -139,6 +139,10 @@ def content_list_all(request):
 
     # Filtr po statusach (wielokrotny)
     status_filters = request.GET.getlist('status')
+    # Domyślnie wszystkie statusy poza 'published'
+    default_statuses = [v for v, _ in ContentPost.STATUS_CHOICES if v != ContentPost.STATUS_PUBLISHED]
+    if not status_filters and 'status' not in request.GET:
+        status_filters = default_statuses
     if status_filters:
         posts = posts.filter(status__in=status_filters)
 
