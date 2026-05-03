@@ -127,9 +127,24 @@ def gbp_metrics_fetch_test(request, lead_pk):
 
                 # Pobierz trasy osobnym endpointem
                 direction_map = get_direction_requests(access_token, location_name, date_from, date_to)
-                # Loguj dla debugowania
-                import logging
-                logging.getLogger(__name__).info(f'[GBP test] direction_map sample: {dict(list(direction_map.items())[:3])}')
+
+                # Zachowaj surową odpowiedź directions do debugowania
+                from urllib.parse import urlencode as _ue
+                _params = [
+                    ('dailyMetric', 'DIRECTION_REQUESTS'),
+                    ('dailyRange.startDate.year', date_from.year),
+                    ('dailyRange.startDate.month', date_from.month),
+                    ('dailyRange.startDate.day', date_from.day),
+                    ('dailyRange.endDate.year', date_to.year),
+                    ('dailyRange.endDate.month', date_to.month),
+                    ('dailyRange.endDate.day', date_to.day),
+                ]
+                import requests as _req
+                _resp = _req.get(
+                    f'https://businessprofileperformance.googleapis.com/v1/{location_name}:getDailyMetricsTimeSeries?{_ue(_params)}',
+                    headers={'Authorization': f'Bearer {access_token}'},
+                )
+                directions_raw = json.dumps(_resp.json(), indent=2, ensure_ascii=False)
 
                 saved_count = 0
                 skipped_count = len(existing_days)
@@ -177,6 +192,7 @@ def gbp_metrics_fetch_test(request, lead_pk):
         'error': error,
         'error_trace': error_trace,
         'raw_result': json.dumps(raw_result, indent=2, ensure_ascii=False) if raw_result else None,
+        'directions_raw': directions_raw if 'directions_raw' in dir() else None,
         'parsed': parsed,
         'saved': saved,
         'already_existed': already_existed,

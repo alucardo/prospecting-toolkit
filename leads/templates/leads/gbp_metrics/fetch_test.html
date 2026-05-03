@@ -125,6 +125,13 @@
 </div>
 {% endif %}
 
+{% if directions_raw %}
+<details class="mt-3">
+    <summary class="cursor-pointer text-sm text-gray-400 hover:text-gray-600">Surowa odpowiedź API — Zapytania o trasę (DEBUG)</summary>
+    <pre class="bg-base-200 rounded-box p-4 mt-2 text-xs overflow-auto max-h-96">{{ directions_raw }}</pre>
+</details>
+{% endif %}
+
 {% if raw_result %}
 <details>
     <summary class="cursor-pointer text-sm text-gray-400 hover:text-gray-600">Surowa odpowiedź API (JSON)</summary>
