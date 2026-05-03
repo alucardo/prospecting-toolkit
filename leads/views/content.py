@@ -1,7 +1,110 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.utils import timezone
-from ..models import Lead, ContentPost, ContentPostVersion
+from ..models import Lead, ContentPost, ContentPostVersion, PostIdeaCategory
+import json
+
+
+@login_required
+def content_generate_ai(request, lead_pk):
+    """AJAX — generuje treść posta przez OpenAI."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'error': 'Błąd parsowania danych'}, status=400)
+
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+
+    # Pobierz brief marki
+    from ..models import BrandProfile
+    try:
+        brand = lead.brand_profile
+    except BrandProfile.DoesNotExist:
+        brand = None
+
+    # Historia konwersacji z frontendu
+    messages = data.get('messages', [])
+    user_input = data.get('user_input', '').strip()
+    idea_title = data.get('idea_title', '').strip()
+    idea_hint = data.get('idea_hint', '').strip()
+    channel = data.get('channel', 'Wizytówka Google')
+    post_type = data.get('post_type', 'Aktualność')
+
+    if not user_input and not idea_title:
+        return JsonResponse({'error': 'Podaj temat lub wybierz pomysł'}, status=400)
+
+    # Buduj system prompt z briefu marki
+    system_parts = [
+        f'Jesteś ekspertem od marketingu lokalnego. Piszesz posty dla firmy "{lead.name}".',
+        f'Kanal: {channel}. Typ posta: {post_type}.',
+        'Maksymalna długość treści posta: 1500 znaków.',
+        'Zwracaj TYLKO treść posta — bez tytułu, bez komentarzy, bez cudzysłowów otaczających treść.',
+    ]
+
+    if brand:
+        if brand.archetype:
+            system_parts.append(f'Archetyp marki: {brand.get_archetype_display()}.')
+        if brand.tone_of_voice:
+            system_parts.append(f'Ton komunikacji: {brand.tone_of_voice}')
+        if brand.target_audience:
+            system_parts.append(f'Grupa docelowa: {brand.target_audience}')
+        if brand.language_rules:
+            system_parts.append(f'Zasady językowe: {brand.language_rules}')
+        if brand.avoid:
+            system_parts.append(f'Czego bezwzględnie unikaj: {brand.avoid}')
+        if brand.keywords:
+            system_parts.append(f'Słowa kluczowe marki: {brand.keywords}')
+        if brand.usp:
+            system_parts.append(f'Unikalna propozycja wartości: {brand.usp}')
+
+    system_prompt = ' '.join(system_parts)
+
+    # Pierwsze wywołanie — buduj wiadomość użytkownika
+    if not messages:
+        user_msg_parts = []
+        if idea_title:
+            user_msg_parts.append(f'Temat posta: {idea_title}')
+            if idea_hint:
+                user_msg_parts.append(f'Wskazówka: {idea_hint}')
+        if user_input:
+            user_msg_parts.append(f'Dodatkowe informacje / uwagi: {user_input}')
+        user_message = '\n'.join(user_msg_parts)
+    else:
+        # Kolejne wywołanie — uwagi do poprawki
+        user_message = f'Popraw post zgodnie z uwagami: {user_input}'
+
+    # Dodaj nową wiadomość do historii
+    messages.append({'role': 'user', 'content': user_message})
+
+    # Wywołaj OpenAI
+    import openai
+    from django.conf import settings
+    openai.api_key = settings.OPENAI_API_KEY
+
+    try:
+        response = openai.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[{'role': 'system', 'content': system_prompt}] + messages,
+            max_tokens=600,
+            temperature=0.75,
+        )
+        generated = response.choices[0].message.content.strip()
+    except Exception as e:
+        return JsonResponse({'error': f'Błąd OpenAI: {str(e)}'}, status=500)
+
+    # Dodaj odpowiedź AI do historii
+    messages.append({'role': 'assistant', 'content': generated})
+
+    return JsonResponse({
+        'ok': True,
+        'generated': generated,
+        'messages': messages,
+        'char_count': len(generated),
+    })
 
 
 @login_required
@@ -104,6 +207,8 @@ def content_create(request, lead_pk):
     except BrandProfile.DoesNotExist:
         brand = None
 
+    idea_categories = PostIdeaCategory.objects.prefetch_related('ideas').all()
+
     return render(request, 'leads/content/form.html', {
         'lead': lead,
         'post': None,
@@ -112,6 +217,7 @@ def content_create(request, lead_pk):
         'channel_choices': ContentPost.CHANNEL_CHOICES,
         'type_choices': ContentPost.TYPE_CHOICES,
         'brand': brand,
+        'idea_categories': idea_categories,
     })
 
 
@@ -169,6 +275,8 @@ def content_detail(request, lead_pk, post_pk):
     except BrandProfile.DoesNotExist:
         brand = None
 
+    idea_categories = PostIdeaCategory.objects.prefetch_related('ideas').all()
+
     return render(request, 'leads/content/detail.html', {
         'lead': lead,
         'post': post,
@@ -176,4 +284,5 @@ def content_detail(request, lead_pk, post_pk):
         'history': history,
         'status_choices': ContentPost.STATUS_CHOICES,
         'brand': brand,
+        'idea_categories': idea_categories,
     })

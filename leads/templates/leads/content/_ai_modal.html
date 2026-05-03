@@ -1,0 +1,276 @@
+{% load static %}
+
+{# Przycisk otwierający modal #}
+<button type="button" class="btn btn-accent btn-sm gap-1"
+    onclick="document.getElementById('ai-modal').showModal()">
+    ✨ Generuj przez AI
+</button>
+
+{# Modal #}
+<dialog id="ai-modal" class="modal">
+    <div class="modal-box max-w-2xl">
+        <h3 class="font-bold text-lg mb-4">✨ Generuj treść przez AI</h3>
+
+        {# Krok 1: Wybór tematu #}
+        <div id="ai-step-1">
+
+            {# Wybór z listy pomysłów #}
+            {% if idea_categories %}
+            <div class="form-control mb-3">
+                <label class="label py-1"><span class="label-text text-sm font-medium">Wybierz z bazy pomysłów</span></label>
+                <select id="ai-category" class="select select-bordered select-sm w-full mb-2"
+                    onchange="loadIdeas(this.value)">
+                    <option value="">— wybierz kategorię —</option>
+                    {% for cat in idea_categories %}
+                    <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                <select id="ai-idea" class="select select-bordered select-sm w-full hidden"
+                    onchange="selectIdea(this)">
+                    <option value="">— wybierz pomysł —</option>
+                    {% for cat in idea_categories %}
+                    {% for idea in cat.ideas.all %}
+                    <option value="{{ idea.pk }}"
+                        data-cat="{{ cat.pk }}"
+                        data-title="{{ idea.title }}"
+                        data-hint="{{ idea.hint }}">
+                        {{ idea.title }}
+                    </option>
+                    {% endfor %}
+                    {% endfor %}
+                </select>
+                <div id="ai-idea-hint" class="text-xs text-gray-400 mt-1 hidden"></div>
+            </div>
+
+            <div class="divider text-xs text-gray-400">lub</div>
+            {% endif %}
+
+            {# Własny temat #}
+            <div class="form-control mb-3">
+                <label class="label py-1"><span class="label-text text-sm font-medium">Własny temat / opis</span></label>
+                <input type="text" id="ai-custom-topic" class="input input-bordered input-sm w-full"
+                    placeholder="np. Wprowadzamy nowe danie — żeberka BBQ, limitowana oferta">
+            </div>
+
+            {# Uwagi dodatkowe #}
+            <div class="form-control mb-4">
+                <label class="label py-1">
+                    <span class="label-text text-sm font-medium">Uwagi i szczegóły</span>
+                    <span class="label-text-alt text-gray-400">co podkreślić, konkretne informacje</span>
+                </label>
+                <textarea id="ai-user-input" rows="3" class="textarea textarea-bordered w-full text-sm"
+                    placeholder="np. Żeberka BBQ dostępne tylko w weekendy, cena 49 zł, polecane z frytkami..."></textarea>
+            </div>
+
+        </div>
+
+        {# Wynik generowania #}
+        <div id="ai-result" class="hidden">
+            <div class="divider text-xs">Wygenerowana treść</div>
+            <div class="bg-base-200 rounded-box p-4 mb-3 relative">
+                <p id="ai-generated-text" class="text-sm whitespace-pre-wrap leading-relaxed"></p>
+                <span id="ai-char-count" class="text-xs text-gray-400 mt-2 block"></span>
+            </div>
+
+            {# Uwagi do poprawki #}
+            <div class="form-control mb-4">
+                <label class="label py-1">
+                    <span class="label-text text-sm font-medium">Uwagi do poprawki</span>
+                    <span class="label-text-alt text-gray-400">co zmienić w kolejnym generowaniu</span>
+                </label>
+                <textarea id="ai-revision-input" rows="2" class="textarea textarea-bordered w-full text-sm"
+                    placeholder="np. Za oficjalnie, zrób luźniej. Dodaj emoji. Skróć do 300 znaków."></textarea>
+            </div>
+        </div>
+
+        {# Błąd #}
+        <div id="ai-error" class="alert alert-error mb-3 hidden">
+            <span id="ai-error-msg"></span>
+        </div>
+
+        {# Akcje #}
+        <div class="modal-action flex-wrap gap-2">
+            <button type="button" class="btn btn-ghost btn-sm"
+                onclick="resetAiModal(); document.getElementById('ai-modal').close()">
+                Anuluj
+            </button>
+            <button type="button" id="ai-reset-btn" class="btn btn-ghost btn-sm hidden"
+                onclick="resetAiModal()">
+                ↺ Zacznij od nowa
+            </button>
+            <button type="button" id="ai-generate-btn" class="btn btn-accent"
+                onclick="generateAI(false)">
+                ✨ Generuj
+            </button>
+            <button type="button" id="ai-regenerate-btn" class="btn btn-outline btn-accent hidden"
+                onclick="generateAI(true)">
+                🔄 Generuj ponownie
+            </button>
+            <button type="button" id="ai-use-btn" class="btn btn-primary hidden"
+                onclick="useGeneratedText()">
+                ✓ Użyj tej treści
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+
+<script>
+const AI_URL = '{% url "leads:content_generate_ai" lead.pk %}';
+const CSRF = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+
+let aiMessages = [];
+let aiSelectedTitle = '';
+let aiSelectedHint = '';
+
+// Załaduj pomysły dla wybranej kategorii
+function loadIdeas(catPk) {
+    const ideaSelect = document.getElementById('ai-idea');
+    ideaSelect.innerHTML = '<option value="">— wybierz pomysł —</option>';
+
+    if (!catPk) {
+        ideaSelect.classList.add('hidden');
+        return;
+    }
+
+    // Filtruj opcje po kategorii
+    const allOptions = document.querySelectorAll('#ai-idea option[data-cat]');
+    let hasIdeas = false;
+    allOptions.forEach(opt => {
+        if (opt.dataset.cat === catPk) {
+            const clone = opt.cloneNode(true);
+            ideaSelect.appendChild(clone);
+            hasIdeas = true;
+        }
+    });
+
+    // Przywróć wszystkie opcje do ukrytego selecta (żeby filtrowanie działało przy zmianie kategorii)
+    if (hasIdeas) ideaSelect.classList.remove('hidden');
+}
+
+function selectIdea(select) {
+    const opt = select.options[select.selectedIndex];
+    aiSelectedTitle = opt.dataset.title || '';
+    aiSelectedHint = opt.dataset.hint || '';
+    const hintDiv = document.getElementById('ai-idea-hint');
+    if (aiSelectedHint) {
+        hintDiv.textContent = '💡 ' + aiSelectedHint;
+        hintDiv.classList.remove('hidden');
+    } else {
+        hintDiv.classList.add('hidden');
+    }
+}
+
+function generateAI(isRevision) {
+    const userInput = isRevision
+        ? document.getElementById('ai-revision-input').value.trim()
+        : document.getElementById('ai-user-input').value.trim();
+    const customTopic = document.getElementById('ai-custom-topic')?.value.trim() || '';
+
+    if (!isRevision && !aiSelectedTitle && !customTopic && !userInput) {
+        showAiError('Wybierz pomysł z listy lub wpisz temat/uwagi.');
+        return;
+    }
+
+    if (isRevision && !userInput) {
+        showAiError('Wpisz uwagi do poprawki.');
+        return;
+    }
+
+    const btn = isRevision
+        ? document.getElementById('ai-regenerate-btn')
+        : document.getElementById('ai-generate-btn');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Generuję...';
+    document.getElementById('ai-error').classList.add('hidden');
+
+    // Pobierz kanał/typ z formularza
+    const channelEl = document.querySelector('[name="channel"]');
+    const typeEl = document.querySelector('[name="post_type"]');
+
+    fetch(AI_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF,
+        },
+        body: JSON.stringify({
+            messages: aiMessages,
+            user_input: userInput,
+            idea_title: aiSelectedTitle,
+            idea_hint: aiSelectedHint,
+            channel: channelEl ? channelEl.options[channelEl.selectedIndex]?.text : 'Wizytówka Google',
+            post_type: typeEl ? typeEl.options[typeEl.selectedIndex]?.text : 'Aktualność',
+        }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.textContent = origText;
+
+        if (!data.ok) {
+            showAiError(data.error || 'Błąd generowania');
+            return;
+        }
+
+        // Zapisz historię konwersacji
+        aiMessages = data.messages;
+
+        // Pokaż wynik
+        document.getElementById('ai-generated-text').textContent = data.generated;
+        document.getElementById('ai-char-count').textContent = data.char_count + ' / 1500 znaków';
+        document.getElementById('ai-result').classList.remove('hidden');
+        document.getElementById('ai-revision-input').value = '';
+
+        // Pokaż/ukryj przyciski
+        document.getElementById('ai-generate-btn').classList.add('hidden');
+        document.getElementById('ai-regenerate-btn').classList.remove('hidden');
+        document.getElementById('ai-use-btn').classList.remove('hidden');
+        document.getElementById('ai-reset-btn').classList.remove('hidden');
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.textContent = origText;
+        showAiError('Błąd połączenia: ' + err.message);
+    });
+}
+
+function useGeneratedText() {
+    const text = document.getElementById('ai-generated-text').textContent;
+    const bodyField = document.getElementById('body-field');
+    if (bodyField) {
+        bodyField.value = text;
+        // Odpal event żeby licznik znaków się zaktualizował
+        bodyField.dispatchEvent(new Event('input'));
+    }
+    document.getElementById('ai-modal').close();
+    resetAiModal();
+}
+
+function resetAiModal() {
+    aiMessages = [];
+    aiSelectedTitle = '';
+    aiSelectedHint = '';
+    document.getElementById('ai-result').classList.add('hidden');
+    document.getElementById('ai-error').classList.add('hidden');
+    document.getElementById('ai-generate-btn').classList.remove('hidden');
+    document.getElementById('ai-regenerate-btn').classList.add('hidden');
+    document.getElementById('ai-use-btn').classList.add('hidden');
+    document.getElementById('ai-reset-btn').classList.add('hidden');
+    document.getElementById('ai-revision-input').value = '';
+    document.getElementById('ai-user-input').value = '';
+    if (document.getElementById('ai-custom-topic'))
+        document.getElementById('ai-custom-topic').value = '';
+    document.getElementById('ai-idea-hint').classList.add('hidden');
+    const catSel = document.getElementById('ai-category');
+    if (catSel) { catSel.value = ''; }
+    const ideaSel = document.getElementById('ai-idea');
+    if (ideaSel) { ideaSel.classList.add('hidden'); ideaSel.value = ''; }
+}
+
+function showAiError(msg) {
+    document.getElementById('ai-error-msg').textContent = msg;
+    document.getElementById('ai-error').classList.remove('hidden');
+}
+</script>
