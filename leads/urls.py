@@ -102,6 +102,9 @@ urlpatterns = [
     path('szablony-zadan/<int:pk>/edytuj/', views.task_blueprint.blueprint_edit, name='blueprint_edit'),
     path('szablony-zadan/<int:pk>/usun/', views.task_blueprint.blueprint_delete, name='blueprint_delete'),
 
+    # Pomysły na posty
+    path('pomysly-na-posty/', views.post_ideas.idea_index, name='idea_index'),
+
     # Content
     path('content/', views.content.content_list_all, name='content_list_all'),
     path('klienci/<int:lead_pk>/content/', views.content.content_index, name='content_index'),

@@ -787,6 +787,43 @@ def format_duration(minutes):
     return f"{minutes} min"
 
 
+class PostIdeaCategory(models.Model):
+    name = models.CharField(max_length=150, unique=True, verbose_name='Nazwa kategorii')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Kategoria pomysłów'
+        verbose_name_plural = 'Kategorie pomysłów'
+
+    def __str__(self):
+        return self.name
+
+
+class PostIdea(models.Model):
+    category = models.ForeignKey(
+        PostIdeaCategory,
+        on_delete=models.CASCADE,
+        related_name='ideas',
+        verbose_name='Kategoria',
+    )
+    title = models.CharField(max_length=255, verbose_name='Tytuł pomysłu')
+    hint = models.TextField(
+        blank=True,
+        verbose_name='Wskazówka dla AI',
+        help_text='Co podkreślić, na co zwrócić uwagę — trafi do promptu AI',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['title']
+        verbose_name = 'Pomysł na post'
+        verbose_name_plural = 'Pomysły na posty'
+
+    def __str__(self):
+        return f'{self.category.name} — {self.title}'
+
+
 class BrandProfile(models.Model):
     lead = models.OneToOneField(
         Lead,

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">💡 Pomysły na posty</h1>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    {# Lewa — dodaj kategorię #}
+    <div>
+        <div class="card bg-base-200 mb-4">
+            <div class="card-body py-4">
+                <h2 class="card-title text-base">+ Nowa kategoria</h2>
+                <form method="post" class="flex flex-col gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_category">
+                    <input type="text" name="name"
+                        class="input input-bordered input-sm w-full"
+                        placeholder="np. Menu i dania" required>
+                    <button type="submit" class="btn btn-primary btn-sm">Dodaj kategorię</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <h2 class="card-title text-base mb-3">Kategorie ({{ categories|length }})</h2>
+                {% if categories %}
+                <div class="flex flex-col gap-2">
+                    {% for cat in categories %}
+                    <div>
+                        <div class="flex items-center justify-between gap-2 py-1">
+                            <span class="font-medium text-sm">{{ cat.name }}</span>
+                            <div class="flex gap-1 shrink-0">
+                                <button class="btn btn-ghost btn-xs"
+                                    onclick="toggleCatEdit({{ cat.pk }})">✏️</button>
+                                <form method="post"
+                                    onsubmit="return confirm('Usunąć kategorię {{ cat.name }} wraz z wszystkimi pomysłami?')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_category">
+                                    <input type="hidden" name="pk" value="{{ cat.pk }}">
+                                    <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div id="cat-edit-{{ cat.pk }}" class="hidden">
+                            <form method="post" class="flex gap-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="edit_category">
+                                <input type="hidden" name="pk" value="{{ cat.pk }}">
+                                <input type="text" name="name" value="{{ cat.name }}"
+                                    class="input input-bordered input-xs flex-1">
+                                <button type="submit" class="btn btn-primary btn-xs">Zapisz</button>
+                                <button type="button" class="btn btn-ghost btn-xs"
+                                    onclick="toggleCatEdit({{ cat.pk }})">✕</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-gray-400">Brak kategorii</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Prawa — pomysły #}
+    <div class="md:col-span-2 flex flex-col gap-4">
+        {% if categories %}
+        {% for cat in categories %}
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="card-title text-base">{{ cat.name }}
+                        <span class="badge badge-ghost badge-sm">{{ cat.ideas.count }}</span>
+                    </h2>
+                    <button class="btn btn-xs btn-ghost text-gray-400"
+                        onclick="toggleAddIdea({{ cat.pk }})">+ pomysł</button>
+                </div>
+
+                {# Formularz dodawania pomysłu #}
+                <div id="add-idea-{{ cat.pk }}" class="hidden mb-3 card bg-base-300">
+                    <div class="card-body py-3">
+                        <form method="post" class="flex flex-col gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_idea">
+                            <input type="hidden" name="category_pk" value="{{ cat.pk }}">
+                            <input type="text" name="title"
+                                class="input input-bordered input-sm w-full"
+                                placeholder="Tytuł pomysłu *" required>
+                            <textarea name="hint" rows="2"
+                                class="textarea textarea-bordered w-full text-sm"
+                                placeholder="Wskazówka dla AI (opcjonalnie) — co podkreślić, na co zwrócić uwagę..."></textarea>
+                            <div class="flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-xs">Dodaj</button>
+                                <button type="button" class="btn btn-ghost btn-xs"
+                                    onclick="toggleAddIdea({{ cat.pk }})">Anuluj</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {# Lista pomysłów #}
+                {% if cat.ideas.all %}
+                <div class="flex flex-col gap-2">
+                    {% for idea in cat.ideas.all %}
+                    <div class="border-l-2 border-base-300 pl-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium">{{ idea.title }}</p>
+                                {% if idea.hint %}
+                                <p class="text-xs text-gray-400 mt-0.5">💡 {{ idea.hint }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="flex gap-1 shrink-0">
+                                <button class="btn btn-ghost btn-xs"
+                                    onclick="toggleIdeaEdit({{ idea.pk }})">✏️</button>
+                                <form method="post"
+                                    onsubmit="return confirm('Usunąć pomysł?')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_idea">
+                                    <input type="hidden" name="pk" value="{{ idea.pk }}">
+                                    <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {# Edycja inline #}
+                        <div id="idea-edit-{{ idea.pk }}" class="hidden mt-2">
+                            <form method="post" class="flex flex-col gap-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="edit_idea">
+                                <input type="hidden" name="pk" value="{{ idea.pk }}">
+                                <input type="text" name="title" value="{{ idea.title }}"
+                                    class="input input-bordered input-xs w-full">
+                                <textarea name="hint" rows="2"
+                                    class="textarea textarea-bordered w-full text-xs"
+                                    placeholder="Wskazówka dla AI...">{{ idea.hint }}</textarea>
+                                <div class="flex gap-1">
+                                    <button type="submit" class="btn btn-primary btn-xs">Zapisz</button>
+                                    <button type="button" class="btn btn-ghost btn-xs"
+                                        onclick="toggleIdeaEdit({{ idea.pk }})">Anuluj</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-gray-400">Brak pomysłów — kliknij "+ pomysł"</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="hero min-h-48 bg-base-200 rounded-box">
+            <p class="text-gray-400">Dodaj pierwszą kategorię po lewej stronie</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleCatEdit(pk) {
+    document.getElementById('cat-edit-' + pk).classList.toggle('hidden');
+}
+function toggleAddIdea(pk) {
+    document.getElementById('add-idea-' + pk).classList.toggle('hidden');
+}
+function toggleIdeaEdit(pk) {
+    document.getElementById('idea-edit-' + pk).classList.toggle('hidden');
+}
+</script>
+{% endblock %}
