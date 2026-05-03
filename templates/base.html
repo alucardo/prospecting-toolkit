@@ -17,7 +17,14 @@
             <a href="{% url 'leads:city_index' %}" class="btn btn-ghost btn-sm">Miasta</a>
             <a href="{% url 'leads:client_index' %}" class="btn btn-ghost btn-sm">Klienci</a>
             <a href="{% url 'leads:all_tasks_index' %}" class="btn btn-ghost btn-sm">Zadania</a>
-            <a href="{% url 'leads:content_list_all' %}" class="btn btn-ghost btn-sm">Content</a>
+
+            <div class="dropdown dropdown-bottom">
+                <label tabindex="0" class="btn btn-ghost btn-sm">Content ▾</label>
+                <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box shadow w-48 mt-1 z-50">
+                    <li><a href="{% url 'leads:content_list_all' %}">Lista contentów</a></li>
+                    <li><a href="{% url 'leads:idea_index' %}">Pomysły na posty</a></li>
+                </ul>
+            </div>
 
             <div class="dropdown dropdown-bottom">
                 <label tabindex="0" class="btn btn-ghost btn-sm">Narzędzia ▾</label>
@@ -31,8 +38,6 @@
                     <li><a href="{% url 'leads:nap_tag_index' %}">Tagi katalogów</a></li>
                     <li class="menu-title text-xs">Zadania</li>
                     <li><a href="{% url 'leads:blueprint_index' %}">Szablony zadań</a></li>
-                    <li class="menu-title text-xs">Content</li>
-                    <li><a href="{% url 'leads:idea_index' %}">Pomysły na posty</a></li>
                 </ul>
             </div>
         </div>
