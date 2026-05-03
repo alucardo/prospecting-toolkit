@@ -183,7 +183,7 @@ function updatePreview(url) {
     if (!url) { preview.classList.add('hidden'); return; }
     const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (match) {
-        img.src = 'https://drive.google.com/uc?export=view&id=' + match[1];
+        img.src = 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w800';
         img.classList.remove('hidden');
         err.classList.add('hidden');
         preview.classList.remove('hidden');

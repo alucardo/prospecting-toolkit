@@ -139,7 +139,7 @@ function updatePreview(url) {
 
     const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (match) {
-        const previewUrl = 'https://drive.google.com/uc?export=view&id=' + match[1];
+        const previewUrl = 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w800';
         img.src = previewUrl;
         img.classList.remove('hidden');
         err.classList.add('hidden');

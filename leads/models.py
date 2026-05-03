@@ -983,7 +983,7 @@ class ContentPostVersion(models.Model):
         match = re.search(r'/file/d/([a-zA-Z0-9_-]+)', self.drive_url)
         if match:
             file_id = match.group(1)
-            return f'https://drive.google.com/uc?export=view&id={file_id}'
+            return f'https://drive.google.com/thumbnail?id={file_id}&sz=w800'
         return None
 
 
