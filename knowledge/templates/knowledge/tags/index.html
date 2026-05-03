@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">🏷️ Tagi — Baza wiedzy</h1>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {# Formularz dodawania #}
+    <div>
+        <div class="card bg-base-200">
+            <div class="card-body">
+                <h2 class="card-title text-base">+ Nowy tag</h2>
+                <form method="post" class="flex flex-col gap-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add">
+                    <input type="text" name="name" class="input input-bordered input-sm w-full"
+                        placeholder="np. rolka, humor, edukacja" required>
+                    <button type="submit" class="btn btn-primary btn-sm">Dodaj</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# Lista tagów #}
+    <div class="md:col-span-2">
+        {% if tags %}
+        <div class="flex flex-col gap-2">
+            {% for tag in tags %}
+            <div class="card bg-base-200">
+                <div class="card-body py-3">
+                    <div class="flex items-center gap-3">
+                        <span class="flex-1 font-medium">{{ tag.name }}</span>
+                        <span class="badge badge-ghost badge-sm">{{ tag.video_count }} wideo</span>
+                        <button class="btn btn-ghost btn-xs" onclick="toggleEdit({{ tag.pk }})">✏️</button>
+                        <form method="post" onsubmit="return confirm('Usunąć tag {{ tag.name }}?')">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="pk" value="{{ tag.pk }}">
+                            <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                        </form>
+                    </div>
+                    <div id="edit-{{ tag.pk }}" class="hidden mt-2">
+                        <form method="post" class="flex gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="edit">
+                            <input type="hidden" name="pk" value="{{ tag.pk }}">
+                            <input type="text" name="name" value="{{ tag.name }}"
+                                class="input input-bordered input-xs flex-1">
+                            <button type="submit" class="btn btn-primary btn-xs">Zapisz</button>
+                            <button type="button" class="btn btn-ghost btn-xs"
+                                onclick="toggleEdit({{ tag.pk }})">Anuluj</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="hero min-h-32 bg-base-200 rounded-box">
+            <p class="text-gray-400">Brak tagów — dodaj pierwszy z formularza</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function toggleEdit(pk) {
+    document.getElementById('edit-' + pk).classList.toggle('hidden');
+}
+</script>
+{% endblock %}

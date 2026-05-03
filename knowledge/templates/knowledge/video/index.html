@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">🎬 Inspiracje wideo</h1>
+        <span class="badge badge-ghost">{{ videos|length }}</span>
+    </div>
+    <a href="{% url 'knowledge:video_create' %}" class="btn btn-primary btn-sm">+ Dodaj inspirację</a>
+</div>
+
+{# Filtry #}
+<div class="card bg-base-200 mb-6">
+    <div class="card-body py-4">
+        <form method="get" class="flex flex-col gap-3">
+
+            {# Wyszukiwarka #}
+            <div class="flex gap-2">
+                <input type="text" name="search" value="{{ search }}"
+                    placeholder="🔍 Szukaj po tytule..."
+                    class="input input-bordered input-sm flex-1 max-w-sm">
+                <button type="submit" class="btn btn-sm btn-primary">Szukaj</button>
+                {% if search or tag_filter %}
+                <a href="{% url 'knowledge:video_index' %}" class="btn btn-sm btn-ghost">✕ Wyczyść</a>
+                {% endif %}
+            </div>
+
+            {# Tagi #}
+            {% if tags %}
+            <div class="flex flex-wrap gap-2 items-center">
+                <span class="text-sm text-gray-400">Tagi:</span>
+                {% for tag in tags %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="tag" value="{{ tag.pk }}" class="hidden peer"
+                        {% if tag.pk in tag_filter %}checked{% endif %}
+                        onchange="this.form.submit()">
+                    <span class="badge badge-lg peer-checked:badge-primary badge-ghost cursor-pointer">
+                        {{ tag.name }}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </form>
+    </div>
+</div>
+
+{# Lista inspiracji #}
+{% if videos %}
+<div class="flex flex-col gap-3">
+    {% for video in videos %}
+    <div class="card bg-base-200 hover:bg-base-300 transition-colors">
+        <div class="card-body py-4">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                    {# Tytuł — klikalny, otwiera modal #}
+                    <button type="button"
+                        class="text-left font-bold text-base hover:text-primary transition-colors"
+                        onclick="openVideoModal('{{ video.drive_preview_url }}', '{{ video.title|escapejs }}', '{{ video.description|escapejs }}')">
+                        {{ video.title }}
+                    </button>
+
+                    {# Tagi #}
+                    {% if video.tags.all %}
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        {% for tag in video.tags.all %}
+                        <span class="badge badge-ghost badge-sm">{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {# Meta #}
+                    <div class="text-xs text-gray-400 mt-2">
+                        Dodano {{ video.created_at|date:"d.m.Y" }}
+                        {% if video.created_by %} przez {{ video.created_by.get_full_name|default:video.created_by.username }}{% endif %}
+                    </div>
+                </div>
+
+                {# Akcje #}
+                <div class="flex gap-2 shrink-0">
+                    <a href="{{ video.drive_url }}" target="_blank" rel="noopener"
+                        class="btn btn-ghost btn-xs" title="Otwórz w Drive">🔗</a>
+                    <a href="{% url 'knowledge:video_edit' video.pk %}"
+                        class="btn btn-ghost btn-xs">✏️</a>
+                    <form method="post" action="{% url 'knowledge:video_delete' video.pk %}"
+                        onsubmit="return confirm('Usunąć inspirację?')">
+                        {% csrf_token %}
+                        <button class="btn btn-ghost btn-xs text-error">🗑</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="hero min-h-48 bg-base-200 rounded-box">
+    <div class="text-center">
+        <p class="text-gray-500 mb-3">Brak inspiracji{% if search or tag_filter %} spełniających kryteria{% endif %}</p>
+        {% if not search and not tag_filter %}
+        <a href="{% url 'knowledge:video_create' %}" class="btn btn-primary btn-sm">Dodaj pierwszą</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{# Modal odtwarzacza #}
+<dialog id="video-modal" class="modal">
+    <div class="modal-box max-w-3xl">
+        <h3 class="font-bold text-lg mb-4" id="video-modal-title"></h3>
+
+        <div class="aspect-video mb-4 bg-black rounded-box overflow-hidden">
+            <iframe id="video-modal-iframe"
+                src=""
+                width="100%" height="100%"
+                allow="autoplay"
+                allowfullscreen
+                class="w-full h-full">
+            </iframe>
+        </div>
+
+        <p id="video-modal-desc" class="text-sm text-gray-500 whitespace-pre-wrap mb-4"></p>
+
+        <div class="modal-action">
+            <button class="btn btn-ghost btn-sm" onclick="closeVideoModal()">Zamknij</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button onclick="closeVideoModal()">zamknij</button></form>
+</dialog>
+
+<script>
+function openVideoModal(previewUrl, title, description) {
+    document.getElementById('video-modal-title').textContent = title;
+    document.getElementById('video-modal-iframe').src = previewUrl;
+    document.getElementById('video-modal-desc').textContent = description;
+    document.getElementById('video-modal').showModal();
+}
+
+function closeVideoModal() {
+    // Zatrzymaj wideo przez wyczyszczenie src
+    document.getElementById('video-modal-iframe').src = '';
+    document.getElementById('video-modal').close();
+}
+</script>
+{% endblock %}

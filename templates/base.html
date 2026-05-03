@@ -27,6 +27,15 @@
             </div>
 
             <div class="dropdown dropdown-bottom">
+                <label tabindex="0" class="btn btn-ghost btn-sm">Baza wiedzy ▾</label>
+                <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box shadow w-48 mt-1 z-50">
+                    <li class="menu-title text-xs">Wideo</li>
+                    <li><a href="{% url 'knowledge:video_index' %}">Inspiracje wideo</a></li>
+                    <li><a href="{% url 'knowledge:tag_index' %}">Tagi</a></li>
+                </ul>
+            </div>
+
+            <div class="dropdown dropdown-bottom">
                 <label tabindex="0" class="btn btn-ghost btn-sm">Narzędzia ▾</label>
                 <ul tabindex="0" class="dropdown-content menu menu-sm bg-base-200 rounded-box shadow w-48 mt-1 z-50">
                     <li class="menu-title text-xs">Leady</li>

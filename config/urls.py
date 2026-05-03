@@ -28,4 +28,5 @@ urlpatterns = [
     path('google/oauth/start/', oauth_start, name='google_oauth_start'),
     path('google/oauth/callback/', oauth_callback, name='google_oauth_callback'),
     path('', include('leads.urls', namespace='leads')),
+    path('', include('knowledge.urls', namespace='knowledge')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
