@@ -176,7 +176,7 @@ def get_direction_requests(access_token, location_name, date_from, date_to):
     """
     from urllib.parse import urlencode
     params = [
-        ('dailyMetric', 'DIRECTION_REQUESTS'),
+        ('dailyMetric', 'BUSINESS_DIRECTION_REQUESTS'),
         ('dailyRange.startDate.year', date_from.year),
         ('dailyRange.startDate.month', date_from.month),
         ('dailyRange.startDate.day', date_from.day),

@@ -131,7 +131,7 @@ def gbp_metrics_fetch_test(request, lead_pk):
                 # Zachowaj surową odpowiedź directions do debugowania
                 from urllib.parse import urlencode as _ue
                 _params = [
-                    ('dailyMetric', 'DIRECTION_REQUESTS'),
+                    ('dailyMetric', 'BUSINESS_DIRECTION_REQUESTS'),
                     ('dailyRange.startDate.year', date_from.year),
                     ('dailyRange.startDate.month', date_from.month),
                     ('dailyRange.startDate.day', date_from.day),
