@@ -60,10 +60,12 @@
             {% if tags %}
             <div class="flex flex-wrap gap-2">
                 {% for tag in tags %}
-                <label class="cursor-pointer">
-                    <input type="checkbox" name="tags" value="{{ tag.pk }}" class="hidden peer"
-                        {% if video and tag in video.tags.all %}checked{% endif %}>
-                    <span class="badge badge-lg peer-checked:badge-primary badge-ghost cursor-pointer">
+                <label class="cursor-pointer tag-label">
+                    <input type="checkbox" name="tags" value="{{ tag.pk }}"
+                        class="hidden tag-checkbox"
+                        {% if video and tag in video.tags.all %}checked{% endif %}
+                        onchange="updateTagStyle(this)">
+                    <span class="badge badge-lg cursor-pointer {% if video and tag in video.tags.all %}badge-primary{% else %}badge-ghost{% endif %}">
                         {{ tag.name }}
                     </span>
                 </label>
@@ -105,5 +107,16 @@ function updatePreview(url) {
 {% if video and video.drive_preview_url %}
 updatePreview('{{ video.drive_url }}');
 {% endif %}
+
+function updateTagStyle(checkbox) {
+    const badge = checkbox.nextElementSibling;
+    if (checkbox.checked) {
+        badge.classList.remove('badge-ghost');
+        badge.classList.add('badge-primary');
+    } else {
+        badge.classList.remove('badge-primary');
+        badge.classList.add('badge-ghost');
+    }
+}
 </script>
 {% endblock %}

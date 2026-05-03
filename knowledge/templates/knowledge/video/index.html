@@ -65,7 +65,7 @@
                     {% if video.tags.all %}
                     <div class="flex flex-wrap gap-1 mt-2">
                         {% for tag in video.tags.all %}
-                        <span class="badge badge-ghost badge-sm">{{ tag.name }}</span>
+                        <span class="badge badge-outline badge-sm">{{ tag.name }}</span>
                         {% endfor %}
                     </div>
                     {% endif %}
