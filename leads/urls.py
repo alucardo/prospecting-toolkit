@@ -109,9 +109,9 @@ urlpatterns = [
     path('content/', views.content.content_list_all, name='content_list_all'),
     path('klienci/<int:lead_pk>/content/', views.content.content_index, name='content_index'),
     path('klienci/<int:lead_pk>/content/nowy/', views.content.content_create, name='content_create'),
+    path('klienci/<int:lead_pk>/content/generate/', views.content.content_generate_ai, name='content_generate_ai'),
     path('klienci/<int:lead_pk>/content/<int:post_pk>/', views.content.content_detail, name='content_detail'),
     path('klienci/<int:lead_pk>/content/<int:post_pk>/v/<int:version_pk>/', views.content.content_version_preview, name='content_version_preview'),
-    path('klienci/<int:lead_pk>/content/generate/', views.content.content_generate_ai, name='content_generate_ai'),
 
     # Brief marki
     path('klienci/<int:lead_pk>/brief/', views.brand.brand_profile, name='brand_profile'),
