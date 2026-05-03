@@ -80,19 +80,31 @@ def content_generate_ai(request, lead_pk):
     # Dodaj nową wiadomość do historii
     messages.append({'role': 'user', 'content': user_message})
 
-    # Wywołaj OpenAI
-    import openai
-    from django.conf import settings
-    openai.api_key = settings.OPENAI_API_KEY
+    # Wywołaj OpenAI przez requests
+    from ..models import AppSettings
+    import requests as req
+
+    api_key = AppSettings.get().openai_api_key
+    if not api_key:
+        return JsonResponse({'error': 'Brak klucza OpenAI w Ustawieniach aplikacji'}, status=500)
 
     try:
-        response = openai.chat.completions.create(
-            model='gpt-4o-mini',
-            messages=[{'role': 'system', 'content': system_prompt}] + messages,
-            max_tokens=600,
-            temperature=0.75,
+        resp = req.post(
+            'https://api.openai.com/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'gpt-4.1',
+                'messages': [{'role': 'system', 'content': system_prompt}] + messages,
+                'max_tokens': 600,
+                'temperature': 0.75,
+            },
+            timeout=30,
         )
-        generated = response.choices[0].message.content.strip()
+        resp.raise_for_status()
+        generated = resp.json()['choices'][0]['message']['content'].strip()
     except Exception as e:
         return JsonResponse({'error': f'Błąd OpenAI: {str(e)}'}, status=500)
 
