@@ -269,11 +269,12 @@ def content_detail(request, lead_pk, post_pk):
                 drive_url=request.POST.get('drive_url', '').strip(),
                 cta_text=request.POST.get('cta_text', '').strip(),
                 cta_url=request.POST.get('cta_url', '').strip(),
-                notes=request.POST.get('notes', '').strip(),
+                notes='',
                 is_current=True,
                 created_by=request.user,
             )
-            post.save(update_fields=['updated_at'])
+            post.status = ContentPost.STATUS_REVIEW
+            post.save(update_fields=['updated_at', 'status'])
 
         elif action == 'delete':
             post.delete()
@@ -289,6 +290,26 @@ def content_detail(request, lead_pk, post_pk):
 
     idea_categories = PostIdeaCategory.objects.prefetch_related('ideas').all()
 
+    # Dane wszystkich wersji do modalu podglądu
+    import json as _json
+    versions_data = [
+        {
+            'pk': v.pk,
+            'version_number': v.version_number,
+            'is_current': v.is_current,
+            'title': v.title,
+            'body': v.body,
+            'drive_url': v.drive_url,
+            'drive_preview_url': v.drive_preview_url or '',
+            'cta_text': v.cta_text,
+            'cta_url': v.cta_url,
+            'notes': v.notes,
+            'created_at': v.created_at.strftime('%d.%m.%Y %H:%M'),
+            'created_by': v.created_by.get_full_name() or v.created_by.username if v.created_by else '',
+        }
+        for v in history
+    ]
+
     return render(request, 'leads/content/detail.html', {
         'lead': lead,
         'post': post,
@@ -297,4 +318,5 @@ def content_detail(request, lead_pk, post_pk):
         'status_choices': ContentPost.STATUS_CHOICES,
         'brand': brand,
         'idea_categories': idea_categories,
+        'versions_json': _json.dumps(versions_data, ensure_ascii=False),
     })
