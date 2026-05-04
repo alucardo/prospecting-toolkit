@@ -134,6 +134,15 @@ class Lead(models.Model):
     social_facebook = models.URLField(blank=True, verbose_name='Facebook')
     social_tiktok = models.URLField(blank=True, verbose_name='TikTok')
     social_youtube = models.URLField(blank=True, verbose_name='YouTube')
+    latitude = models.FloatField(null=True, blank=True, verbose_name='Szerokość geograficzna')
+    longitude = models.FloatField(null=True, blank=True, verbose_name='Długość geograficzna')
+
+    @property
+    def location_coordinate(self):
+        """Format dla DataForSEO: lat,lng,zoom. Jesli brak — None (fallback na miasto)."""
+        if self.latitude is not None and self.longitude is not None:
+            return f'{self.latitude},{self.longitude},14'
+        return None
     categories = models.ManyToManyField(
         'LeadCategory',
         blank=True,
@@ -587,6 +596,7 @@ class ClientActivityLog(models.Model):
 class AppSettings(models.Model):
     """Singleton — zawsze tylko jeden rekord."""
     openai_api_key = models.CharField(max_length=255, blank=True)
+    google_maps_api_key = models.CharField(max_length=255, blank=True, verbose_name='Google Maps API Key (Geocoding)')
     dataforseo_login = models.CharField(max_length=255, blank=True)
     dataforseo_password = models.CharField(max_length=255, blank=True)
     google_refresh_token = models.TextField(blank=True)

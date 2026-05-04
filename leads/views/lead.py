@@ -231,6 +231,60 @@ def lead_quick_note(request, pk):
 
 
 @login_required
+def lead_geocode(request, pk):
+    """AJAX — wyznacza GPS lokalu przez Google Geocoding API."""
+    from django.http import JsonResponse
+    import requests as req
+    lead = get_object_or_404(Lead, pk=pk)
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+
+    from ..models import AppSettings
+    settings = AppSettings.get()
+    api_key = settings.google_maps_api_key or ''
+
+    # Zbuduj adres do geocodingu
+    address_parts = []
+    if lead.address:
+        address_parts.append(lead.address)
+    if lead.city:
+        address_parts.append(lead.city.name)
+    address_parts.append('Poland')
+    address = ', '.join(address_parts)
+
+    try:
+        params = {'address': address, 'key': api_key}
+        resp = req.get(
+            'https://maps.googleapis.com/maps/api/geocode/json',
+            params=params,
+            timeout=10,
+        )
+        data = resp.json()
+        if data.get('status') != 'OK' or not data.get('results'):
+            return JsonResponse({'error': f'Geocoding nie znałazł adresu: {address}. Status: {data.get("status")}'})
+
+        location = data['results'][0]['geometry']['location']
+        lat = location['lat']
+        lng = location['lng']
+        formatted = data['results'][0].get('formatted_address', address)
+
+        # Zapisz do bazy
+        lead.latitude = lat
+        lead.longitude = lng
+        lead.save(update_fields=['latitude', 'longitude'])
+
+        return JsonResponse({
+            'ok': True,
+            'lat': lat,
+            'lng': lng,
+            'formatted_address': formatted,
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
 def lead_scrape_email(request, pk):
     lead = Lead.objects.get(pk=pk)
     if request.method == 'POST':

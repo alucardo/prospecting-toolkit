@@ -88,6 +88,21 @@
             </div>
         </div>
 
+        <!-- Google Maps API -->
+        <div class="card bg-base-200">
+            <div class="card-body gap-3">
+                <h2 class="card-title text-base">🗺 Google Maps API</h2>
+                <div class="form-control">
+                    <label class="label py-0"><span class="label-text text-sm">Klucz API (Geocoding)</span></label>
+                    <input type="password" name="google_maps_api_key"
+                        value="{{ app_settings.google_maps_api_key }}"
+                        placeholder="AIza..."
+                        class="input input-bordered input-sm w-full font-mono"/>
+                    <label class="label py-0"><span class="label-text-alt text-gray-400">Wymagany do wyznaczania GPS lokali. <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="link">Google Cloud Console</a> — włącz Geocoding API.</span></label>
+                </div>
+            </div>
+        </div>
+
         <button type="submit" class="btn btn-primary w-full">Zapisz ustawienia</button>
 
     </div>

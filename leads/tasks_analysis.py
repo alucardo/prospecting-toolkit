@@ -601,13 +601,16 @@ def check_keyword_rankings(lead_id, keyword_ids=None, force=False):
                         break
 
             else:
-                # Miasto — Google Maps SERP
+                # Miasto lub GPS lokalu — Google Maps SERP
                 payload = {
                     "keyword": kw.phrase,
                     "language_name": "Polish",
                     "depth": 20,
                 }
-                if lead.city.location_coordinate:
+                # Priorytet: GPS lokalu > GPS miasta > nazwa kraju
+                if lead.location_coordinate:
+                    payload["location_coordinate"] = lead.location_coordinate
+                elif lead.city.location_coordinate:
                     payload["location_coordinate"] = lead.city.location_coordinate
                 else:
                     payload["location_name"] = "Poland"

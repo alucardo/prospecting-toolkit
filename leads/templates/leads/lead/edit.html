@@ -30,6 +30,25 @@
                     <button type="submit" class="btn btn-primary w-full mt-2">Zapisz</button>
                 </form>
 
+                {# GPS lokalu #}
+                <div class="divider">Lokalizacja GPS</div>
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-2 text-sm">
+                        {% if lead.latitude and lead.longitude %}
+                        <span class="badge badge-success badge-sm">✓ Zapisane</span>
+                        <span class="text-gray-400">{{ lead.latitude|floatformat:6 }}, {{ lead.longitude|floatformat:6 }}</span>
+                        {% else %}
+                        <span class="badge badge-ghost badge-sm">Brak GPS</span>
+                        <span class="text-gray-400 text-xs">Pozycje będą sprawdzane względem centrum miasta</span>
+                        {% endif %}
+                    </div>
+                    <button type="button" id="geocode-btn" class="btn btn-outline btn-sm w-full"
+                        onclick="geocodeLead()">
+                        📍 Wyznacz GPS na podstawie adresu
+                    </button>
+                    <div id="geocode-result" class="text-xs hidden"></div>
+                </div>
+
                 <div class="divider"></div>
 
                 <form method="post" action="{% url 'leads:lead_delete' lead.pk %}">
@@ -43,4 +62,45 @@
         </div>
     </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function geocodeLead() {
+    const btn = document.getElementById('geocode-btn');
+    const result = document.getElementById('geocode-result');
+    btn.disabled = true;
+    btn.textContent = '⏳ Wyznaczam...';
+    result.classList.add('hidden');
+
+    try {
+        const resp = await fetch('{% url "leads:lead_geocode" lead.pk %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            result.className = 'text-xs text-success';
+            result.textContent = '✓ GPS zapisane: ' + data.lat.toFixed(6) + ', ' + data.lng.toFixed(6) + ' (' + data.formatted_address + ')';
+            result.classList.remove('hidden');
+            btn.textContent = '✅ Zaktualizowano — odśwież stronę by zobaczyć';
+        } else {
+            result.className = 'text-xs text-error';
+            result.textContent = '❌ ' + (data.error || 'Błąd geocodingu');
+            result.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = '📍 Wyznacz GPS na podstawie adresu';
+        }
+    } catch (e) {
+        result.className = 'text-xs text-error';
+        result.textContent = '❌ Błąd połączenia: ' + e.message;
+        result.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '📍 Wyznacz GPS na podstawie adresu';
+    }
+}
+</script>
 {% endblock %}

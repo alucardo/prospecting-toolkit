@@ -87,6 +87,7 @@ def settings(request):
 
     if request.method == 'POST':
         app_settings.openai_api_key = request.POST.get('openai_api_key', '').strip()
+        app_settings.google_maps_api_key = request.POST.get('google_maps_api_key', '').strip()
         app_settings.dataforseo_login = request.POST.get('dataforseo_login', '').strip()
         app_settings.dataforseo_password = request.POST.get('dataforseo_password', '').strip()
         # SMTP
