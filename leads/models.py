@@ -130,6 +130,10 @@ class Lead(models.Model):
         help_text='Format: locations/123456789 — identyfikator wizytyówki w Google Business Profile'
     )
     quick_note = models.CharField(max_length=500, blank=True, verbose_name='Szybka notatka')
+    social_instagram = models.URLField(blank=True, verbose_name='Instagram')
+    social_facebook = models.URLField(blank=True, verbose_name='Facebook')
+    social_tiktok = models.URLField(blank=True, verbose_name='TikTok')
+    social_youtube = models.URLField(blank=True, verbose_name='YouTube')
     categories = models.ManyToManyField(
         'LeadCategory',
         blank=True,

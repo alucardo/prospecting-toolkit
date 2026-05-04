@@ -95,7 +95,7 @@ class LeadForm(forms.ModelForm):
 
     class Meta:
         model = Lead
-        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'analysis_url', 'google_maps_url', 'source', 'status', 'cold_email_sent', 'email_scraped', 'keyword_search_nationwide']
+        fields = ['city', 'name', 'phone', 'address', 'email', 'website', 'analysis_url', 'google_maps_url', 'source', 'status', 'cold_email_sent', 'email_scraped', 'keyword_search_nationwide', 'social_instagram', 'social_facebook', 'social_tiktok', 'social_youtube']
         widgets = {
             'city': forms.Select(attrs={
                 'class': 'select select-bordered w-full',

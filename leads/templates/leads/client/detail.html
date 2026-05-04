@@ -48,6 +48,21 @@
                 {% else %}
                 <span class="text-warning text-xs">⚠ Brak linku do wizytówki</span>
                 {% endif %}
+                {% if lead.website %}
+                <a href="{{ lead.website }}" target="_blank" class="link link-primary text-xs">🌐 Strona WWW</a>
+                {% endif %}
+                {% if lead.social_facebook %}
+                <a href="{{ lead.social_facebook }}" target="_blank" class="link link-primary text-xs">📱 Facebook</a>
+                {% endif %}
+                {% if lead.social_instagram %}
+                <a href="{{ lead.social_instagram }}" target="_blank" class="link link-primary text-xs">📸 Instagram</a>
+                {% endif %}
+                {% if lead.social_tiktok %}
+                <a href="{{ lead.social_tiktok }}" target="_blank" class="link link-primary text-xs">🎵 TikTok</a>
+                {% endif %}
+                {% if lead.social_youtube %}
+                <a href="{{ lead.social_youtube }}" target="_blank" class="link link-primary text-xs">📡 YouTube</a>
+                {% endif %}
             </div>
         </div>
     </div>
