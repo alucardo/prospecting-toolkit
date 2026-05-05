@@ -124,3 +124,33 @@ def settings(request):
         'imap_status': imap_status,
     }
     return render(request, 'leads/settings.html', context)
+
+
+@login_required
+def check_unread_emails(request):
+    """AJAX — pobiera nieprzeczytane wiadomości przez IMAP."""
+    from django.http import JsonResponse
+    from ..models import AppSettings
+    from ..services.imap_service import get_unread_emails
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+
+    settings = AppSettings.get()
+    try:
+        emails = get_unread_emails(settings)
+        return JsonResponse({
+            'ok': True,
+            'count': len(emails),
+            'emails': [
+                {
+                    'uid': e['uid'],
+                    'sender': e['sender'],
+                    'subject': e['subject'],
+                    'date': e['date'].strftime('%d.%m.%Y %H:%M') if e['date'] else '',
+                }
+                for e in emails
+            ],
+        })
+    except Exception as ex:
+        return JsonResponse({'error': str(ex)}, status=500)

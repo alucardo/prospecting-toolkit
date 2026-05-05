@@ -215,6 +215,100 @@
 </div>
 </form>
 
+<!-- Email — skrzynka odbiorcza -->
+<div class="mt-6 max-w-2xl">
+    <div class="card bg-base-200">
+        <div class="card-body gap-3">
+            <div class="flex items-center justify-between">
+                <h2 class="card-title text-base">📨 Nieprzeczytane wiadomości</h2>
+                {% if imap_status == 'ok' %}
+                <span class="badge badge-success badge-sm">✓ IMAP połączony</span>
+                {% else %}
+                <span class="text-xs text-gray-400">Brak konfiguracji IMAP</span>
+                {% endif %}
+            </div>
+
+            {% if imap_status == 'ok' %}
+            <button type="button" id="check-email-btn" class="btn btn-outline btn-sm w-fit"
+                onclick="checkEmails()">
+                🔄 Sprawdz nieprzeczytane
+            </button>
+
+            <div id="email-result" class="hidden">
+                <div id="email-count" class="text-sm font-medium mb-3"></div>
+                <div id="email-list" class="flex flex-col gap-2"></div>
+            </div>
+            <div id="email-error" class="hidden text-sm text-error"></div>
+            {% else %}
+            <p class="text-sm text-gray-400">Skonfiguruj IMAP powyżej by móc sprawdzać wiadomości.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function checkEmails() {
+    const btn = document.getElementById('check-email-btn');
+    const result = document.getElementById('email-result');
+    const errEl = document.getElementById('email-error');
+    const countEl = document.getElementById('email-count');
+    const listEl = document.getElementById('email-list');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Sprawdzam...';
+    result.classList.add('hidden');
+    errEl.classList.add('hidden');
+
+    try {
+        const resp = await fetch('{% url "leads:check_unread_emails" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        });
+        const data = await resp.json();
+
+        btn.disabled = false;
+        btn.textContent = '🔄 Sprawdź nieprzeczytane';
+
+        if (!data.ok) {
+            errEl.textContent = '❌ ' + (data.error || 'Błąd');
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        countEl.textContent = data.count === 0
+            ? '✅ Brak nieprzeczytanych wiadomości'
+            : `📩 ${data.count} nieprzeczytanych wiadomości:`;
+
+        listEl.innerHTML = '';
+        data.emails.forEach(e => {
+            const row = document.createElement('div');
+            row.className = 'bg-base-300 rounded-box px-4 py-3';
+            row.innerHTML = `
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-sm truncate">${escHtml(e.subject)}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">${escHtml(e.sender)}</p>
+                    </div>
+                    <span class="text-xs text-gray-400 shrink-0">${escHtml(e.date)}</span>
+                </div>
+            `;
+            listEl.appendChild(row);
+        });
+
+        result.classList.remove('hidden');
+    } catch (err) {
+        btn.disabled = false;
+        btn.textContent = '🔄 Sprawdź nieprzeczytane';
+        errEl.textContent = '❌ Błąd połączenia: ' + err.message;
+        errEl.classList.remove('hidden');
+    }
+}
+
+function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+</script>
+
 <!-- Google Business Profile -->
 <div class="mt-6 max-w-lg">
     <div class="card bg-base-200">
