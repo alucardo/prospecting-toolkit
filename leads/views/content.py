@@ -226,7 +226,7 @@ def content_publish(request, lead_pk, post_pk):
 
     from ..models import AppSettings
     from ..services.gbp_service import get_access_token
-    from ..services.gbp_publishing_service import publish_local_post, POST_TYPE_MAP
+    from ..services.gbp_publishing_service import publish_local_post, POST_TYPE_MAP, get_full_location_name
 
     settings = AppSettings.get()
     if not settings.google_refresh_token:
@@ -235,11 +235,14 @@ def content_publish(request, lead_pk, post_pk):
     try:
         access_token = get_access_token(settings.google_refresh_token)
 
+        # Pobierz pełną ścieżkę z account ID
+        full_location = get_full_location_name(access_token, lead.gbp_location_name)
+
         topic_type = POST_TYPE_MAP.get(post.post_type, 'STANDARD')
 
         result = publish_local_post(
             access_token=access_token,
-            location_name=lead.gbp_location_name,
+            location_name=full_location,
             body=current.body,
             topic_type=topic_type,
             cta_type=current.cta_type or None,

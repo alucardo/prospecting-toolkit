@@ -15,6 +15,44 @@ def _auth_headers(access_token):
     }
 
 
+def get_full_location_name(access_token, location_name_short):
+    """
+    Pobiera pełną ścieżkę lokalizacji w formacie accounts/XXX/locations/YYY.
+    Potrzebne dla mybusiness.googleapis.com/v4 który wymaga pełnej ścieżkii.
+    """
+    # Wyciągnij samo ID lokalizacji
+    loc_id = location_name_short.split('/')[-1]
+
+    # Pobierz listę kont
+    resp = requests.get(
+        'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+        headers=_auth_headers(access_token),
+        timeout=15,
+    )
+    if not resp.ok:
+        raise ValueError(f'Nie można pobrać kont GBP: {resp.status_code}')
+
+    accounts = resp.json().get('accounts', [])
+    if not accounts:
+        raise ValueError('Brak kont GBP')
+
+    # Sprawdź każde konto czy ma tę lokalizację
+    for account in accounts:
+        account_name = account.get('name', '')  # np. accounts/123456
+        full_name = f'{account_name}/locations/{loc_id}'
+        # Sprawdź czy lokalizacja istnieje
+        check = requests.get(
+            f'https://mybusinessbusinessinformation.googleapis.com/v1/{full_name}',
+            headers=_auth_headers(access_token),
+            params={'readMask': 'name'},
+            timeout=15,
+        )
+        if check.ok:
+            return full_name
+
+    raise ValueError(f'Nie znaleziono lokalizacji {location_name_short} w żadnym koncie')
+
+
 def _normalize_location_name_full(raw):
     """
     Zwraca pełną ścieżkę lokalizacji dla mybusiness.googleapis.com/v4.
