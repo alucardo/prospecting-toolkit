@@ -206,6 +206,65 @@ def content_index(request, lead_pk):
 
 
 @login_required
+def content_publish(request, lead_pk, post_pk):
+    """AJAX — publikuje post na wizytówce Google."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+    post = get_object_or_404(ContentPost, pk=post_pk, lead=lead)
+    current = post.versions.filter(is_current=True).first()
+
+    if not current:
+        return JsonResponse({'error': 'Brak aktualnej wersji posta'}, status=400)
+
+    if post.status != ContentPost.STATUS_APPROVED:
+        return JsonResponse({'error': 'Post musi mieć status „Zatwierdzony‟'}, status=400)
+
+    if not lead.gbp_location_name:
+        return JsonResponse({'error': 'Lead nie ma przypisanego GBP Location Name'}, status=400)
+
+    from ..models import AppSettings
+    from ..services.gbp_service import get_access_token
+    from ..services.gbp_publishing_service import publish_local_post, POST_TYPE_MAP
+
+    settings = AppSettings.get()
+    if not settings.google_refresh_token:
+        return JsonResponse({'error': 'Brak tokena Google OAuth — autoryzuj w Ustawieniach'}, status=400)
+
+    try:
+        access_token = get_access_token(settings.google_refresh_token)
+
+        topic_type = POST_TYPE_MAP.get(post.post_type, 'STANDARD')
+
+        result = publish_local_post(
+            access_token=access_token,
+            location_name=lead.gbp_location_name,
+            body=current.body,
+            topic_type=topic_type,
+            cta_type=current.cta_type or None,
+            cta_url=current.cta_url or None,
+            drive_url=current.drive_url or None,
+            title=current.title or None,
+        )
+
+        # Zapisz external_id i zmień status
+        post.external_id = result.get('name', '')
+        post.status = ContentPost.STATUS_PUBLISHED
+        post.published_at = timezone.now().date()
+        post.save(update_fields=['external_id', 'status', 'published_at', 'updated_at'])
+
+        return JsonResponse({
+            'ok': True,
+            'external_id': post.external_id,
+            'published_at': post.published_at.isoformat(),
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
 def content_calendar(request, lead_pk):
     lead = get_object_or_404(Lead, pk=lead_pk, status='client')
     return render(request, 'leads/content/calendar.html', {

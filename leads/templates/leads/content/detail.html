@@ -9,6 +9,14 @@
     <span class="badge {{ post.status_badge }}">{{ post.get_status_display }}</span>
     {% include 'leads/content/_brand_modal.html' %}
     {% if post.status != 'published' %}{% include 'leads/content/_ai_modal.html' %}{% endif %}
+
+    {# Przycisk publikowania — tylko dla zatwierdzonych z GBP location #}
+    {% if post.status == 'approved' and lead.gbp_location_name %}
+    <button type="button" class="btn btn-success btn-sm ml-auto"
+        onclick="document.getElementById('publish-modal').showModal()">
+        📤 Opublikuj na GBP
+    </button>
+    {% endif %}
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -371,4 +379,90 @@ function renderVersion() {
     }
 }
 </script>
+{# Modal publikowania na GBP #}
+{% if post.status == 'approved' and lead.gbp_location_name %}
+<dialog id="publish-modal" class="modal">
+    <div class="modal-box max-w-lg">
+        <h3 class="font-bold text-lg mb-4">📤 Opublikuj na wizytówce Google</h3>
+
+        {# Podgląd posta #}
+        <div class="bg-base-200 rounded-box p-4 mb-4 flex flex-col gap-3">
+            {% if current.drive_preview_url %}
+            <img src="{{ current.drive_preview_url }}" alt="Zdjęcie"
+                class="w-full max-h-48 object-cover rounded"
+                onerror="this.style.display='none'">
+            {% endif %}
+            {% if current.title %}
+            <p class="font-semibold text-sm">{{ current.title }}</p>
+            {% endif %}
+            <p class="text-sm whitespace-pre-wrap">{{ current.body|truncatechars:300 }}</p>
+            {% if current.cta_type %}
+            <div class="flex items-center gap-2 text-xs text-gray-400">
+                <span class="badge badge-ghost badge-sm">{{ current.get_cta_type_display }}</span>
+                {% if current.cta_url %}<span class="truncate">{{ current.cta_url }}</span>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="text-xs text-gray-400 mb-4">
+            Kanał: <strong>{{ post.get_channel_display }}</strong> &nbsp;&middot;&nbsp;
+            Lokalizacja: <strong>{{ lead.gbp_location_name }}</strong>
+        </div>
+
+        <div id="publish-error" class="alert alert-error mb-4 hidden">
+            <span id="publish-error-msg"></span>
+        </div>
+        <div id="publish-success" class="alert alert-success mb-4 hidden">
+            <span>✅ Post został opublikowany na wizytówce Google!</span>
+        </div>
+
+        <div class="modal-action">
+            <button class="btn btn-ghost" onclick="document.getElementById('publish-modal').close()">Anuluj</button>
+            <button id="publish-btn" class="btn btn-success" onclick="publishPost()">
+                📤 Publikuj teraz
+            </button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+
+<script>
+async function publishPost() {
+    const btn = document.getElementById('publish-btn');
+    const errEl = document.getElementById('publish-error');
+    const errMsg = document.getElementById('publish-error-msg');
+    const successEl = document.getElementById('publish-success');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Publikuję...';
+    errEl.classList.add('hidden');
+
+    try {
+        const resp = await fetch('{% url "leads:content_publish" lead.pk post.pk %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        });
+        const data = await resp.json();
+
+        if (data.ok) {
+            successEl.classList.remove('hidden');
+            btn.classList.add('hidden');
+            // Odśwież stronę po 2s — zmieni status na opublikowany
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            errMsg.textContent = data.error || 'Wystąpił błąd';
+            errEl.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '📤 Publikuj teraz';
+        }
+    } catch (e) {
+        errMsg.textContent = 'Błąd połączenia: ' + e.message;
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '📤 Publikuj teraz';
+    }
+}
+</script>
+{% endif %}
+
 {% endblock %}
