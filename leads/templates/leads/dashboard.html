@@ -34,6 +34,9 @@
                         {{ reminder.lead.name }}
                     </a>
                     <span class="text-sm text-gray-500 ml-2">{{ reminder.lead.city }}</span>
+                    {% if reminder.lead.quick_note %}
+                    <p class="text-xs text-warning mt-1">📝 {{ reminder.lead.quick_note }}</p>
+                    {% endif %}
                     {% if reminder.note %}
                     <p class="text-sm text-gray-500 mt-1">{{ reminder.note }}</p>
                     {% endif %}

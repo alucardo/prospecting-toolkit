@@ -21,6 +21,25 @@
         {{ lead.get_status_display }}
     </span>
     <a href="{% url 'leads:lead_edit' lead.pk %}" class="btn btn-ghost btn-sm">✏️ Edytuj</a>
+
+    {# Szybka notatka inline #}
+    <div class="flex items-center gap-1">
+        <span class="quick-note-display text-xs text-gray-400 cursor-pointer hover:text-gray-700 max-w-xs truncate"
+            onclick="showNoteEdit()"
+            title="Kliknij by edytować{% if lead.quick_note %}: {{ lead.quick_note }}{% endif %}">
+            {% if lead.quick_note %}📝 {{ lead.quick_note }}{% else %}<span class="text-gray-300">+ notatka</span>{% endif %}
+        </span>
+        <div class="quick-note-edit hidden flex gap-1">
+            <input type="text" id="quick-note-input"
+                class="input input-xs input-bordered w-56"
+                value="{{ lead.quick_note }}"
+                placeholder="Szybka notatka..."
+                maxlength="500"
+                onkeydown="if(event.key==='Enter') saveNoteInline(); if(event.key==='Escape') hideNoteEdit();">
+            <button type="button" class="btn btn-xs btn-success" onclick="saveNoteInline()">✓</button>
+            <button type="button" class="btn btn-xs btn-ghost" onclick="hideNoteEdit()">✕</button>
+        </div>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -978,6 +997,44 @@ document.querySelectorAll('.cat-toggle-btn').forEach(btn => {
         .then(data => { if (data.ok) location.reload(); });
     });
 });
+</script>
+
+<script>
+function showNoteEdit() {
+    document.querySelector('.quick-note-display').classList.add('hidden');
+    const edit = document.querySelector('.quick-note-edit');
+    edit.classList.remove('hidden');
+    document.getElementById('quick-note-input').focus();
+    document.getElementById('quick-note-input').select();
+}
+
+function hideNoteEdit() {
+    document.querySelector('.quick-note-display').classList.remove('hidden');
+    document.querySelector('.quick-note-edit').classList.add('hidden');
+}
+
+async function saveNoteInline() {
+    const input = document.getElementById('quick-note-input');
+    const display = document.querySelector('.quick-note-display');
+    const val = input.value.trim();
+
+    const resp = await fetch('{% url "leads:lead_quick_note" lead.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: 'quick_note=' + encodeURIComponent(val),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+        display.innerHTML = val
+            ? '📝 ' + val
+            : '<span class="text-gray-300">+ notatka</span>';
+        display.title = val ? 'Kliknij by edytować: ' + val : 'Kliknij by edytować';
+        hideNoteEdit();
+    }
+}
 </script>
 
 {% endblock %}
