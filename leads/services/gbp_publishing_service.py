@@ -135,9 +135,8 @@ def publish_local_post(access_token, location_name, body, topic_type='STANDARD',
         'topicType': topic_type,
     }
 
-    # Tytuł (wymagany dla OFFER i EVENT)
-    if title:
-        payload['title'] = title
+    # Tytuł — tylko dla EVENT (wewnątrz pola event)
+    # Dla STANDARD i OFFER nie ma pola title na poziomie posta
 
     # CTA
     if cta_type and cta_url:
@@ -162,7 +161,7 @@ def publish_local_post(access_token, location_name, body, topic_type='STANDARD',
     # Daty wydarzenia
     if topic_type == 'EVENT' and event_start and event_end:
         payload['event'] = {
-            'title': title or '',
+            'title': title or body[:50],
             'schedule': {
                 'startDate': _date_to_gbp(event_start),
                 'startTime': _time_to_gbp(event_start),
