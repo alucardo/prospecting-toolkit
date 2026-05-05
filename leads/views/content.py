@@ -293,6 +293,7 @@ def content_create(request, lead_pk):
         'brand': brand,
         'idea_categories': idea_categories,
         'lead_keywords': lead_keywords,
+        'cta_choices': ContentPostVersion.CTA_CHOICES,
     })
 
 
@@ -318,6 +319,7 @@ def content_detail(request, lead_pk, post_pk):
             current.title = request.POST.get('title', '').strip()
             current.body = request.POST.get('body', '').strip()
             current.drive_url = request.POST.get('drive_url', '').strip()
+            current.cta_type = request.POST.get('cta_type', '').strip()
             current.cta_text = request.POST.get('cta_text', '').strip()
             current.cta_url = request.POST.get('cta_url', '').strip()
             current.notes = request.POST.get('notes', '').strip()
@@ -336,6 +338,7 @@ def content_detail(request, lead_pk, post_pk):
                 title=request.POST.get('title', '').strip(),
                 body=request.POST.get('body', '').strip(),
                 drive_url=request.POST.get('drive_url', '').strip(),
+                cta_type=request.POST.get('cta_type', '').strip(),
                 cta_text=request.POST.get('cta_text', '').strip(),
                 cta_url=request.POST.get('cta_url', '').strip(),
                 notes='',
@@ -390,4 +393,5 @@ def content_detail(request, lead_pk, post_pk):
         'idea_categories': idea_categories,
         'versions_json': _json.dumps(versions_data, ensure_ascii=False),
         'lead_keywords': lead_keywords,
+        'cta_choices': ContentPostVersion.CTA_CHOICES,
     })

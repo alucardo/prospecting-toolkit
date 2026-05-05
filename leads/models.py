@@ -1001,6 +1001,15 @@ class ContentPost(models.Model):
 
 
 class ContentPostVersion(models.Model):
+    CTA_CHOICES = [
+        ('LEARN_MORE', 'Dowiedz się więcej'),
+        ('BOOK',       'Zarezerwuj'),
+        ('ORDER',      'Zamów online'),
+        ('SHOP',       'Kup teraz'),
+        ('SIGN_UP',    'Zarejestruj się'),
+        ('CALL',       'Zadzwoń'),
+    ]
+
     post = models.ForeignKey(
         ContentPost,
         on_delete=models.CASCADE,
@@ -1011,6 +1020,11 @@ class ContentPostVersion(models.Model):
     title = models.CharField(max_length=300, blank=True, verbose_name='Tytuł')
     body = models.TextField(verbose_name='Treść')
     drive_url = models.URLField(blank=True, verbose_name='Link do zdjęcia (Google Drive)')
+    cta_type = models.CharField(
+        max_length=20, blank=True,
+        choices=CTA_CHOICES,
+        verbose_name='Typ przycisku CTA',
+    )
     cta_text = models.CharField(max_length=100, blank=True, verbose_name='Tekst przycisku CTA')
     cta_url = models.URLField(blank=True, verbose_name='URL przycisku CTA')
     notes = models.TextField(blank=True, verbose_name='Notatki / uwagi do poprawek')
