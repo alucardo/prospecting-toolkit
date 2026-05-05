@@ -6,8 +6,7 @@ from .lead import lead_index, lead_create, lead_detail, lead_edit, lead_delete, 
 from .lead_note import lead_note_create, lead_note_edit, lead_note_delete
 from .lead_status_history import lead_status_history_delete
 from .lead_contact import lead_contact_create, lead_contact_edit, lead_contact_delete
-from .settings import settings
-from . import settings as settings_module
+from .settings import settings, check_unread_emails
 from .google_business import google_business_fetch, google_business_analyze
 from .lead_keyword import lead_keyword_add, lead_keyword_delete
 from .lead_keyword_ranking import lead_keyword_check_rankings, lead_keyword_check_single
