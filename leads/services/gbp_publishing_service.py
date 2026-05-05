@@ -15,10 +15,24 @@ def _auth_headers(access_token):
     }
 
 
+def _normalize_location_name_full(raw):
+    """
+    Zwraca pełną ścieżkę lokalizacji dla mybusiness.googleapis.com/v4.
+    Format: accounts/XXX/locations/YYY
+    """
+    raw = raw.strip()
+    if raw.startswith('accounts/'):
+        return raw  # już pełna ścieżka
+    elif raw.startswith('locations/'):
+        return raw  # brak accountów — niektóre endpointy akceptują
+    else:
+        return 'locations/' + raw
+
+
 def _normalize_location_name(raw):
     """
     Normalizuje location_name do formatu 'locations/XXXX'
-    który jest wymagany przez lokalPosts endpoint.
+    (używane przez Performance API).
     """
     raw = raw.strip()
     if '/locations/' in raw and raw.startswith('accounts/'):
@@ -85,8 +99,11 @@ def publish_local_post(access_token, location_name, body, topic_type='STANDARD',
     Rzuca:
         ValueError — jeśli API zwróci błąd
     """
-    location = _normalize_location_name(location_name)
+    location = _normalize_location_name_full(location_name)
     url = f'{GBP_BASE}/{location}/localPosts'
+
+    import logging
+    logging.getLogger(__name__).info(f'[GBP publish] POST {url}')
 
     payload = {
         'languageCode': 'pl',
