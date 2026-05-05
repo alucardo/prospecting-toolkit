@@ -26,6 +26,7 @@ urlpatterns = [
     path('leads/<int:pk>/calls/<int:call_pk>/delete/', views.call_log_delete, name='call_log_delete'),
     path('leads/<int:pk>/scrape-email/', views.lead_scrape_email, name='lead_scrape_email'),
     path('leads/<int:pk>/geocode/', views.lead.lead_geocode, name='lead_geocode'),
+    path('leads/<int:pk>/geocode/manual/', views.lead.lead_geocode_manual, name='lead_geocode_manual'),
     path('leads/<int:pk>/quick-note/', views.lead.lead_quick_note, name='lead_quick_note'),
     path('leads/<int:pk>/status-history/<int:history_pk>/delete/', views.lead_status_history_delete, name='lead_status_history_delete'),
     path('leads/<int:pk>/contacts/new/', views.lead_contact_create, name='lead_contact_create'),

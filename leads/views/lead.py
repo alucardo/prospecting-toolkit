@@ -231,6 +231,22 @@ def lead_quick_note(request, pk):
 
 
 @login_required
+def lead_geocode_manual(request, pk):
+    """Zapisuje ręcznie wpisane współrzędne GPS."""
+    lead = get_object_or_404(Lead, pk=pk)
+    if request.method == 'POST':
+        try:
+            lat = float(request.POST.get('latitude', ''))
+            lng = float(request.POST.get('longitude', ''))
+            lead.latitude = lat
+            lead.longitude = lng
+            lead.save(update_fields=['latitude', 'longitude'])
+        except (ValueError, TypeError):
+            pass
+    return redirect('leads:lead_edit', pk=pk)
+
+
+@login_required
 def lead_geocode(request, pk):
     """AJAX — wyznacza GPS lokalu przez Google Geocoding API."""
     from django.http import JsonResponse

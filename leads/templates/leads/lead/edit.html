@@ -42,6 +42,21 @@
                         <span class="text-gray-400 text-xs">Pozycje będą sprawdzane względem centrum miasta</span>
                         {% endif %}
                     </div>
+
+                    {# Ręczne wpisanie współrzędnych #}
+                    <form method="post" action="{% url 'leads:lead_geocode_manual' lead.pk %}" class="flex gap-2">
+                        {% csrf_token %}
+                        <input type="number" name="latitude" step="any"
+                            value="{% if lead.latitude %}{{ lead.latitude }}{% endif %}"
+                            placeholder="Szerokość (np. 50.2649)"
+                            class="input input-bordered input-xs flex-1">
+                        <input type="number" name="longitude" step="any"
+                            value="{% if lead.longitude %}{{ lead.longitude }}{% endif %}"
+                            placeholder="Długość (np. 19.0238)"
+                            class="input input-bordered input-xs flex-1">
+                        <button type="submit" class="btn btn-outline btn-xs shrink-0">Zapisz</button>
+                    </form>
+
                     <button type="button" id="geocode-btn" class="btn btn-outline btn-sm w-full"
                         onclick="geocodeLead()">
                         📍 Wyznacz GPS na podstawie adresu
