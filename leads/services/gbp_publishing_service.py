@@ -154,7 +154,7 @@ def publish_local_post(access_token, location_name, body, topic_type='STANDARD',
             error_msg = resp.json().get('error', {}).get('message', resp.text[:300])
         except Exception:
             error_msg = resp.text[:300]
-        raise ValueError(f'GBP API error {resp.status_code}: {error_msg}')
+        raise ValueError(f'GBP API error {resp.status_code} | URL: {url} | {error_msg}')
 
     return resp.json()
 
