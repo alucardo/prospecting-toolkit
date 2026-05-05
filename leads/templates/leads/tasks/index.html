@@ -144,6 +144,10 @@ function applyBlueprint() {
                         <div class="flex gap-1 shrink-0">
                             <button class="btn btn-ghost btn-xs"
                                 onclick="toggleEdit({{ task.pk }})" title="Edytuj">✏️</button>
+                            <button type="button" class="btn btn-ghost btn-xs"
+                                onclick="openComments({{ task.pk }})" title="Komentarze">
+                                💬{% if task.comments.count %}<span class="badge badge-xs badge-primary ml-0.5">{{ task.comments.count }}</span>{% endif %}
+                            </button>
                             <form method="post"
                                 onsubmit="return confirm('Usunąć zadanie?')">
                                 {% csrf_token %}
@@ -258,5 +262,7 @@ function toggleEdit(pk) {
     el.classList.toggle('hidden');
 }
 </script>
+
+{% include 'leads/tasks/_comments_modal.html' %}
 
 {% endblock %}

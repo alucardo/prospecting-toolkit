@@ -1,0 +1,161 @@
+{# Modal komentarzy do zadania — dołącz przez {% include 'leads/tasks/_comments_modal.html' %} #}
+<dialog id="comments-modal" class="modal">
+    <div class="modal-box max-w-2xl max-h-[85vh] flex flex-col">
+
+        {# Nagłówek #}
+        <div class="flex items-start justify-between mb-4">
+            <div>
+                <h3 class="font-bold text-lg" id="cm-task-title">Komentarze</h3>
+                <p class="text-xs text-gray-400" id="cm-task-lead"></p>
+            </div>
+            <button class="btn btn-ghost btn-sm"
+                onclick="document.getElementById('comments-modal').close()">✕</button>
+        </div>
+
+        {# Lista komentarzy #}
+        <div id="cm-list" class="flex-1 overflow-y-auto flex flex-col gap-4 mb-4 min-h-0">
+            <div id="cm-loading" class="text-center text-gray-400 py-8 text-sm">Ładowanie...</div>
+        </div>
+
+        {# Formularz nowego komentarza #}
+        <div class="border-t border-base-300 pt-4">
+            <div id="cm-reply-info" class="hidden text-xs text-accent mb-2">
+                💬 Odpowiadasz na komentarz —
+                <button type="button" onclick="cancelReply()" class="link">Anuluj</button>
+            </div>
+            <div class="flex gap-2">
+                <textarea id="cm-body" rows="2"
+                    class="textarea textarea-bordered flex-1 text-sm resize-none"
+                    placeholder="Napisz komentarz..."></textarea>
+                <button type="button" class="btn btn-primary btn-sm self-end"
+                    onclick="submitComment()">Wyślij</button>
+            </div>
+            <div id="cm-error" class="text-xs text-error mt-1 hidden"></div>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+
+<script>
+let cmTaskPk = null;
+let cmReplyPk = null;
+const CM_CSRF = '{{ csrf_token }}';
+
+function openComments(taskPk) {
+    cmTaskPk = taskPk;
+    cmReplyPk = null;
+    document.getElementById('cm-body').value = '';
+    document.getElementById('cm-error').classList.add('hidden');
+    document.getElementById('cm-reply-info').classList.add('hidden');
+    document.getElementById('cm-list').innerHTML = '<div class="text-center text-gray-400 py-8 text-sm">Ładowanie...</div>';
+    document.getElementById('comments-modal').showModal();
+    loadComments();
+}
+
+async function loadComments() {
+    const resp = await fetch(`/zadania/${cmTaskPk}/komentarze/`, {
+        headers: { 'X-CSRFToken': CM_CSRF },
+    });
+    const data = await resp.json();
+
+    document.getElementById('cm-task-title').textContent = data.task_title || 'Komentarze';
+    document.getElementById('cm-task-lead').textContent = data.task_lead || '';
+
+    const list = document.getElementById('cm-list');
+    if (!data.comments || data.comments.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-400 text-sm py-8">Brak komentarzy — dodaj pierwszy</p>';
+        return;
+    }
+
+    list.innerHTML = '';
+    data.comments.forEach(c => {
+        list.appendChild(renderComment(c));
+        c.replies.forEach(r => {
+            list.appendChild(renderComment(r, true));
+        });
+    });
+}
+
+function renderComment(c, isReply = false) {
+    const div = document.createElement('div');
+    div.className = `flex gap-3 ${isReply ? 'ml-8 pl-3 border-l-2 border-base-300' : ''}`;
+    div.id = `comment-${c.pk}`;
+
+    div.innerHTML = `
+        <div class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+            ${escHtml(c.author.charAt(0).toUpperCase())}
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="bg-base-200 rounded-box px-3 py-2">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="text-xs font-semibold">${escHtml(c.author)}</span>
+                    <span class="text-xs text-gray-400">${escHtml(c.created_at)}</span>
+                </div>
+                <p class="text-sm whitespace-pre-wrap">${escHtml(c.body)}</p>
+            </div>
+            <div class="flex gap-3 mt-1">
+                ${!isReply ? `<button type="button" class="text-xs text-gray-400 hover:text-primary" onclick="startReply(${c.pk}, '${escHtml(c.author)}')">↩ Odpowiedz</button>` : ''}
+                <button type="button" class="text-xs text-gray-400 hover:text-error" onclick="deleteComment(${c.pk})">🗑 Usuń</button>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+function startReply(commentPk, authorName) {
+    cmReplyPk = commentPk;
+    document.getElementById('cm-reply-info').classList.remove('hidden');
+    document.getElementById('cm-reply-info').innerHTML =
+        `💬 Odpowiadasz na komentarz <strong>${escHtml(authorName)}</strong> — <button type="button" onclick="cancelReply()" class="link">Anuluj</button>`;
+    document.getElementById('cm-body').focus();
+}
+
+function cancelReply() {
+    cmReplyPk = null;
+    document.getElementById('cm-reply-info').classList.add('hidden');
+}
+
+async function submitComment() {
+    const body = document.getElementById('cm-body').value.trim();
+    const errEl = document.getElementById('cm-error');
+    if (!body) {
+        errEl.textContent = 'Treść komentarza nie może być pusta';
+        errEl.classList.remove('hidden');
+        return;
+    }
+    errEl.classList.add('hidden');
+
+    const resp = await fetch(`/zadania/${cmTaskPk}/komentarze/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CM_CSRF },
+        body: JSON.stringify({ body, parent_pk: cmReplyPk }),
+    });
+    const data = await resp.json();
+
+    if (!data.ok) {
+        errEl.textContent = data.error || 'Błąd';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('cm-body').value = '';
+    cancelReply();
+    await loadComments();
+}
+
+async function deleteComment(commentPk) {
+    if (!confirm('Usunąć komentarz?')) return;
+    const resp = await fetch(`/zadania/${cmTaskPk}/komentarze/${commentPk}/usun/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CM_CSRF },
+    });
+    const data = await resp.json();
+    if (data.ok) await loadComments();
+    else alert(data.error || 'Błąd');
+}
+
+function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, s =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+</script>

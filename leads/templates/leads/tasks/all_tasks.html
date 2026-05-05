@@ -125,6 +125,11 @@
                         {% endif %}
                     </div>
 
+                    <button type="button" class="btn btn-ghost btn-xs shrink-0"
+                        onclick="openComments({{ task.pk }})" title="Komentarze">
+                        💬{% if task.comments.count %}<span class="badge badge-xs badge-primary ml-0.5">{{ task.comments.count }}</span>{% endif %}
+                    </button>
+
                     <form method="post" class="shrink-0"
                         onsubmit="return confirm('Usunąć zadanie?')">
                         {% csrf_token %}
@@ -346,5 +351,7 @@ document.addEventListener('click', function(e) {
     });
 });
 </script>
+
+{% include 'leads/tasks/_comments_modal.html' %}
 
 {% endblock %}

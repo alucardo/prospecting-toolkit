@@ -711,6 +711,40 @@ class LeadNapEntry(models.Model):
         return f"{self.lead.name} → {self.directory.name} ({self.get_status_display()})"
 
 
+class TaskComment(models.Model):
+    task = models.ForeignKey(
+        'LeadTask',
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Zadanie',
+    )
+    parent = models.ForeignKey(
+        'self',
+        null=True, blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies',
+        verbose_name='Odpowiedź na',
+    )
+    author = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='task_comments',
+        verbose_name='Autor',
+    )
+    body = models.TextField(verbose_name='Treść')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Komentarz do zadania'
+        verbose_name_plural = 'Komentarze do zadań'
+
+    def __str__(self):
+        return f'Komentarz #{self.pk} do zadania #{self.task_id}'
+
+
 class LeadTask(models.Model):
     lead = models.ForeignKey(
         Lead,

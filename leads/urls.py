@@ -119,7 +119,9 @@ urlpatterns = [
     # Brief marki
     path('klienci/<int:lead_pk>/brief/', views.brand.brand_profile, name='brand_profile'),
 
-    # Metryki GBP
+    # Komentarze do zadań
+    path('zadania/<int:task_pk>/komentarze/', views.task_comments.task_comments, name='task_comments'),
+    path('zadania/<int:task_pk>/komentarze/<int:comment_pk>/usun/', views.task_comments.task_comment_delete, name='task_comment_delete'),
     path('klienci/<int:lead_pk>/metryki/', views.gbp_metrics.gbp_metrics_index, name='gbp_metrics_index'),
     path('klienci/<int:lead_pk>/metryki/dzienne/', views.gbp_metrics.gbp_metrics_daily, name='gbp_metrics_daily'),
     path('klienci/<int:lead_pk>/metryki/test-api/', views.gbp_metrics.gbp_metrics_fetch_test, name='gbp_metrics_fetch_test'),
