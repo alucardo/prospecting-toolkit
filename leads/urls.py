@@ -111,6 +111,8 @@ urlpatterns = [
     # Content
     path('content/', views.content.content_list_all, name='content_list_all'),
     path('klienci/<int:lead_pk>/content/', views.content.content_index, name='content_index'),
+    path('klienci/<int:lead_pk>/content/kalendarz/', views.content.content_calendar, name='content_calendar'),
+    path('klienci/<int:lead_pk>/content/kalendarz/dane/', views.content.content_calendar_data, name='content_calendar_data'),
     path('klienci/<int:lead_pk>/content/nowy/', views.content.content_create, name='content_create'),
     path('klienci/<int:lead_pk>/content/generate/', views.content.content_generate_ai, name='content_generate_ai'),
     path('klienci/<int:lead_pk>/content/<int:post_pk>/', views.content.content_detail, name='content_detail'),

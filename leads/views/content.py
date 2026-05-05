@@ -186,31 +186,66 @@ def content_index(request, lead_pk):
     lead = get_object_or_404(Lead, pk=lead_pk, status='client')
     posts = lead.content_posts.prefetch_related('versions').all()
 
+    # Filtr po statusach — domyślnie wszystkie poza published
+    status_filters = request.GET.getlist('status')
+    default_statuses = [v for v, _ in ContentPost.STATUS_CHOICES if v != ContentPost.STATUS_PUBLISHED]
+    if not status_filters and 'status' not in request.GET:
+        status_filters = default_statuses
+    if status_filters:
+        posts = posts.filter(status__in=status_filters)
+
     for post in posts:
         post.current_ver = post.versions.filter(is_current=True).first()
-
-    # Dane dla kalendarza — tylko posty z datą publikacji
-    import json as _json
-    calendar_posts = [
-        {
-            'pk': p.pk,
-            'title': p.current_ver.title if p.current_ver else '',
-            'status': p.status,
-            'status_label': p.get_status_display(),
-            'status_badge': p.status_badge,
-            'published_at': p.published_at.isoformat() if p.published_at else None,
-            'channel': p.get_channel_display(),
-            'url': f'/klienci/{lead_pk}/content/{p.pk}/',
-        }
-        for p in posts if p.published_at
-    ]
 
     return render(request, 'leads/content/index.html', {
         'lead': lead,
         'posts': posts,
         'status_choices': ContentPost.STATUS_CHOICES,
-        'calendar_posts_json': _json.dumps(calendar_posts, ensure_ascii=False),
+        'status_filters': status_filters,
     })
+
+
+@login_required
+def content_calendar(request, lead_pk):
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+    return render(request, 'leads/content/calendar.html', {
+        'lead': lead,
+    })
+
+
+@login_required
+def content_calendar_data(request, lead_pk):
+    """AJAX — zwraca posty z datą publikacji dla danego miesiąca."""
+    from django.http import JsonResponse
+    lead = get_object_or_404(Lead, pk=lead_pk, status='client')
+
+    try:
+        year = int(request.GET.get('year', 0))
+        month = int(request.GET.get('month', 0))
+        if not (1 <= month <= 12) or year < 2000:
+            raise ValueError
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Nieprawidłowe parametry'}, status=400)
+
+    posts = lead.content_posts.filter(
+        published_at__year=year,
+        published_at__month=month,
+    ).prefetch_related('versions').order_by('published_at')
+
+    data = []
+    for p in posts:
+        cv = p.versions.filter(is_current=True).first()
+        data.append({
+            'pk': p.pk,
+            'title': cv.title if cv else '',
+            'status': p.status,
+            'status_label': p.get_status_display(),
+            'published_at': p.published_at.isoformat(),
+            'channel': p.get_channel_display(),
+            'url': f'/klienci/{lead_pk}/content/{p.pk}/',
+        })
+
+    return JsonResponse({'ok': True, 'posts': data})
 
 
 @login_required

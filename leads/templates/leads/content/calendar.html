@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost btn-sm">← {{ lead.name }}</a>
+    <a href="{% url 'leads:content_index' lead.pk %}" class="btn btn-ghost btn-sm">☰ Lista</a>
+    <h1 class="text-2xl font-bold">📅 Kalendarz contentu</h1>
+    <a href="{% url 'leads:content_create' lead.pk %}" class="btn btn-primary btn-sm ml-auto">+ Nowy post</a>
+</div>
+
+{# Nawigacja miesiącami #}
+<div class="flex items-center justify-between mb-4">
+    <button onclick="changeMonth(-1)" class="btn btn-ghost btn-sm">← Poprzedni</button>
+    <h2 id="cal-title" class="font-bold text-lg"></h2>
+    <button onclick="changeMonth(1)" class="btn btn-ghost btn-sm">Następny →</button>
+</div>
+
+{# Nagłówki dni tygodnia #}
+<div class="grid grid-cols-7 gap-1 mb-1">
+    <div class="text-center text-xs text-gray-400 font-medium py-1">Pn</div>
+    <div class="text-center text-xs text-gray-400 font-medium py-1">Wt</div>
+    <div class="text-center text-xs text-gray-400 font-medium py-1">Śr</div>
+    <div class="text-center text-xs text-gray-400 font-medium py-1">Cz</div>
+    <div class="text-center text-xs text-gray-400 font-medium py-1">Pt</div>
+    <div class="text-center text-xs text-gray-400 font-medium py-1">So</div>
+    <div class="text-center text-xs text-gray-400 font-medium py-1">Nd</div>
+</div>
+
+{# Siatka kalendarza #}
+<div id="cal-grid" class="grid grid-cols-7 gap-1 min-h-96">
+    <div class="col-span-7 text-center text-gray-400 py-16 text-sm">Ładowanie...</div>
+</div>
+
+{# Legenda statusów #}
+<div class="flex flex-wrap gap-4 mt-5 text-xs text-gray-500">
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-gray-300 inline-block"></span> Szkic</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-yellow-400 inline-block"></span> Do zatwierdzenia</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-400 inline-block"></span> Zgłoszone poprawki</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-green-400 inline-block"></span> Zatwierdzony</span>
+    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-400 inline-block"></span> Opublikowany</span>
+</div>
+
+{# Modal dla dni z wieloma postami #}
+<dialog id="day-modal" class="modal">
+    <div class="modal-box max-w-sm">
+        <h3 class="font-bold text-base mb-3" id="day-modal-date"></h3>
+        <div id="day-modal-list" class="flex flex-col gap-2"></div>
+        <div class="modal-action">
+            <button class="btn btn-sm btn-ghost"
+                onclick="document.getElementById('day-modal').close()">Zamknij</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+
+<script>
+const AJAX_URL = '{% url "leads:content_calendar_data" lead.pk %}';
+const MONTHS = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec',
+                'Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+const STATUS_COLORS = {
+    'draft':     'bg-gray-300 text-gray-700',
+    'review':    'bg-yellow-400 text-yellow-900',
+    'changes':   'bg-red-400 text-white',
+    'approved':  'bg-green-400 text-green-900',
+    'published': 'bg-blue-500 text-white',
+};
+
+const today = new Date();
+let calYear = today.getFullYear();
+let calMonth = today.getMonth(); // 0-indexed
+let postsByDate = {};
+let loading = false;
+
+async function loadMonth(year, month) {
+    if (loading) return;
+    loading = true;
+    document.getElementById('cal-grid').innerHTML =
+        '<div class="col-span-7 text-center text-gray-400 py-16 text-sm">⏳ Ładowanie...</div>';
+
+    try {
+        const resp = await fetch(`${AJAX_URL}?year=${year}&month=${month + 1}`);
+        const data = await resp.json();
+
+        postsByDate = {};
+        (data.posts || []).forEach(p => {
+            if (!postsByDate[p.published_at]) postsByDate[p.published_at] = [];
+            postsByDate[p.published_at].push(p);
+        });
+
+        renderGrid(year, month);
+    } catch (e) {
+        document.getElementById('cal-grid').innerHTML =
+            '<div class="col-span-7 text-center text-error py-16 text-sm">❌ Błąd ładowania danych</div>';
+    } finally {
+        loading = false;
+    }
+}
+
+function renderGrid(year, month) {
+    document.getElementById('cal-title').textContent = `${MONTHS[month]} ${year}`;
+
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const offset = (firstDay + 6) % 7; // Pn = 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Puste komórki przed 1.
+    for (let i = 0; i < offset; i++) {
+        const div = document.createElement('div');
+        div.className = 'min-h-24 rounded-box bg-base-100 opacity-20';
+        grid.appendChild(div);
+    }
+
+    // Dni miesiąca
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const posts = postsByDate[dateStr] || [];
+        const isToday = (
+            day === today.getDate() &&
+            month === today.getMonth() &&
+            year === today.getFullYear()
+        );
+        grid.appendChild(buildDayCell(day, dateStr, posts, isToday));
+    }
+}
+
+function buildDayCell(day, dateStr, posts, isToday) {
+    const div = document.createElement('div');
+    div.className = `min-h-24 rounded-box p-1.5 flex flex-col gap-1 ${
+        isToday ? 'ring-2 ring-primary bg-primary/5' : 'bg-base-200'
+    }`;
+
+    const num = document.createElement('div');
+    num.className = `text-xs font-semibold mb-0.5 ${isToday ? 'text-primary' : 'text-gray-500'}`;
+    num.textContent = day;
+    div.appendChild(num);
+
+    const visible = posts.slice(0, 2);
+    const overflow = posts.slice(2);
+
+    visible.forEach(p => {
+        const pill = document.createElement('a');
+        pill.href = p.url;
+        pill.className = `text-xs rounded px-1.5 py-0.5 truncate block hover:opacity-80 leading-5 ${
+            STATUS_COLORS[p.status] || 'bg-gray-300 text-gray-700'
+        }`;
+        pill.title = p.title || p.status_label;
+        pill.textContent = p.title || `(${p.status_label})`;
+        div.appendChild(pill);
+    });
+
+    if (overflow.length > 0) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'text-xs text-gray-400 hover:text-primary text-left mt-auto';
+        more.textContent = `+${overflow.length} więcej`;
+        more.onclick = (e) => { e.stopPropagation(); openDayModal(dateStr, posts); };
+        div.appendChild(more);
+    }
+
+    // Kliknięcie w komórkę z 1 postem → przejdź od razu
+    if (posts.length === 1) {
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'A') window.location.href = posts[0].url;
+        });
+    } else if (posts.length > 1) {
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') openDayModal(dateStr, posts);
+        });
+    }
+
+    return div;
+}
+
+function openDayModal(dateStr, posts) {
+    const [y, m, d] = dateStr.split('-');
+    document.getElementById('day-modal-date').textContent =
+        `${d}.${m}.${y} — ${posts.length} post${posts.length === 1 ? '' : 'y/ów'}`;
+
+    const list = document.getElementById('day-modal-list');
+    list.innerHTML = '';
+    posts.forEach(p => {
+        const a = document.createElement('a');
+        a.href = p.url;
+        a.className = 'flex items-center gap-2 p-2 rounded-box hover:bg-base-200 transition-colors';
+        const color = (STATUS_COLORS[p.status] || 'bg-gray-300').split(' ')[0];
+        a.innerHTML = `
+            <span class="w-2.5 h-2.5 rounded-full shrink-0 ${color}"></span>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">${esc(p.title || '(bez tytułu)')}</p>
+                <p class="text-xs text-gray-400">${esc(p.status_label)} · ${esc(p.channel)}</p>
+            </div>
+        `;
+        list.appendChild(a);
+    });
+
+    document.getElementById('day-modal').showModal();
+}
+
+function changeMonth(dir) {
+    calMonth += dir;
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    if (calMonth > 11) { calMonth = 0;  calYear++; }
+    loadMonth(calYear, calMonth);
+}
+
+function esc(str) {
+    return String(str).replace(/[&<>"']/g, s =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+// Init
+loadMonth(calYear, calMonth);
+</script>
+{% endblock %}
