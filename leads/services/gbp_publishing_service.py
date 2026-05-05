@@ -18,9 +18,7 @@ def _auth_headers(access_token):
 def get_full_location_name(access_token, location_name_short):
     """
     Pobiera pełną ścieżkę lokalizacji w formacie accounts/XXX/locations/YYY.
-    Potrzebne dla mybusiness.googleapis.com/v4 który wymaga pełnej ścieżkii.
     """
-    # Wyciągnij samo ID lokalizacji
     loc_id = location_name_short.split('/')[-1]
 
     # Pobierz listę kont
@@ -30,17 +28,19 @@ def get_full_location_name(access_token, location_name_short):
         timeout=15,
     )
     if not resp.ok:
-        raise ValueError(f'Nie można pobrać kont GBP: {resp.status_code}')
+        raise ValueError(f'Nie można pobrać kont GBP: {resp.status_code} {resp.text[:200]}')
 
     accounts = resp.json().get('accounts', [])
     if not accounts:
-        raise ValueError('Brak kont GBP')
+        raise ValueError(f'Brak kont GBP. Odpowiedź: {resp.text[:300]}')
 
-    # Sprawdź każde konto czy ma tę lokalizację
+    accounts_found = [a.get('name', '') for a in accounts]
+    check_errors = []
+
+    # Sprawdź każde konto
     for account in accounts:
-        account_name = account.get('name', '')  # np. accounts/123456
+        account_name = account.get('name', '')
         full_name = f'{account_name}/locations/{loc_id}'
-        # Sprawdź czy lokalizacja istnieje
         check = requests.get(
             f'https://mybusinessbusinessinformation.googleapis.com/v1/{full_name}',
             headers=_auth_headers(access_token),
@@ -49,8 +49,12 @@ def get_full_location_name(access_token, location_name_short):
         )
         if check.ok:
             return full_name
+        check_errors.append(f'{full_name} -> {check.status_code}: {check.text[:100]}')
 
-    raise ValueError(f'Nie znaleziono lokalizacji {location_name_short} w żadnym koncie')
+    raise ValueError(
+        f'Konta: {accounts_found} | '
+        f'Błędy weryfikacji: {check_errors}'
+    )
 
 
 def _normalize_location_name_full(raw):
