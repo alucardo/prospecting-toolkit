@@ -7,7 +7,14 @@ class KnowledgeSettings(models.Model):
     video_folder_url = models.URLField(
         blank=True,
         verbose_name='Link do folderu wideo na Google Drive',
-        help_text='Link do folderu na Google Drive z inspiracjami wideo',
+    )
+    tiktok_downloader_url = models.URLField(
+        blank=True,
+        verbose_name='Link do programu do pobierania TikTok',
+    )
+    instagram_downloader_url = models.URLField(
+        blank=True,
+        verbose_name='Link do programu do pobierania Instagram',
     )
     updated_at = models.DateTimeField(auto_now=True)
 

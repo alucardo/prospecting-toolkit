@@ -90,6 +90,8 @@ def knowledge_settings(request):
 
     if request.method == 'POST':
         settings.video_folder_url = request.POST.get('video_folder_url', '').strip()
+        settings.tiktok_downloader_url = request.POST.get('tiktok_downloader_url', '').strip()
+        settings.instagram_downloader_url = request.POST.get('instagram_downloader_url', '').strip()
         settings.save()
         return redirect('knowledge:settings')
 

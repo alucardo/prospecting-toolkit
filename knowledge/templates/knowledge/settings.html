@@ -19,7 +19,35 @@
                     class="input input-bordered w-full"
                     placeholder="https://drive.google.com/drive/folders/...">
                 <label class="label">
-                    <span class="label-text-alt text-gray-400">Link do folderu z inspiracjami wideo — pojawi się jako skrót w formularzu dodawania</span>
+                    <span class="label-text-alt text-gray-400">Pojawi się jako skrót w formularzu dodawania inspiracji</span>
+                </label>
+            </div>
+
+            <div class="divider text-xs">Narzędzia do pobierania</div>
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">🎵 Program do pobierania TikTok</span>
+                </label>
+                <input type="url" name="tiktok_downloader_url"
+                    value="{{ settings.tiktok_downloader_url }}"
+                    class="input input-bordered w-full"
+                    placeholder="https://...">
+                <label class="label">
+                    <span class="label-text-alt text-gray-400">Link do aplikacji/strony do pobierania wideo z TikTok</span>
+                </label>
+            </div>
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text font-medium">📸 Program do pobierania Instagram</span>
+                </label>
+                <input type="url" name="instagram_downloader_url"
+                    value="{{ settings.instagram_downloader_url }}"
+                    class="input input-bordered w-full"
+                    placeholder="https://...">
+                <label class="label">
+                    <span class="label-text-alt text-gray-400">Link do aplikacji/strony do pobierania wideo z Instagrama</span>
                 </label>
             </div>
 
