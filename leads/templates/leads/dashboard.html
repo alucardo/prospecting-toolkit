@@ -2,6 +2,21 @@
 
 {% block content %}
 
+{% if global_has_unread_emails %}
+<div class="alert alert-warning mb-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+        <span class="text-xl">📨</span>
+        <div>
+            <div class="font-semibold">Masz nieprzeczytane wiadomości</div>
+            {% if global_unread_checked_at %}
+            <div class="text-xs opacity-70">Ostatnio sprawdzono: {{ global_unread_checked_at|date:"d.m.Y H:i" }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <a href="{% url 'leads:settings' %}#email-check" class="btn btn-sm btn-warning">Sprawdź →</a>
+</div>
+{% endif %}
+
 <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
 
 {% if reminders %}

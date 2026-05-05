@@ -597,6 +597,8 @@ class AppSettings(models.Model):
     """Singleton — zawsze tylko jeden rekord."""
     openai_api_key = models.CharField(max_length=255, blank=True)
     google_maps_api_key = models.CharField(max_length=255, blank=True, verbose_name='Google Maps API Key (Geocoding)')
+    has_unread_emails = models.BooleanField(default=False, verbose_name='Są nieprzeczytane wiadomości')
+    unread_emails_checked_at = models.DateTimeField(null=True, blank=True, verbose_name='Ostatnie sprawdzenie emaili')
     dataforseo_login = models.CharField(max_length=255, blank=True)
     dataforseo_password = models.CharField(max_length=255, blank=True)
     google_refresh_token = models.TextField(blank=True)

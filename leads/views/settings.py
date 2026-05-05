@@ -128,8 +128,9 @@ def settings(request):
 
 @login_required
 def check_unread_emails(request):
-    """AJAX — pobiera nieprzeczytane wiadomości przez IMAP."""
+    """AJAX — pobiera nieprzeczytane wiadomości przez IMAP i ustawia flagę."""
     from django.http import JsonResponse
+    from django.utils import timezone
     from ..models import AppSettings
     from ..services.imap_service import get_unread_emails
 
@@ -139,9 +140,16 @@ def check_unread_emails(request):
     settings = AppSettings.get()
     try:
         emails = get_unread_emails(settings)
+
+        # Zapisz flagę i czas sprawdzenia
+        settings.has_unread_emails = len(emails) > 0
+        settings.unread_emails_checked_at = timezone.now()
+        settings.save(update_fields=['has_unread_emails', 'unread_emails_checked_at'])
+
         return JsonResponse({
             'ok': True,
             'count': len(emails),
+            'has_unread': settings.has_unread_emails,
             'emails': [
                 {
                     'uid': e['uid'],
