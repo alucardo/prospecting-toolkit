@@ -133,6 +133,28 @@ def fetch_gbp_metrics_all():
 
 
 @shared_task
+def check_unread_emails_task():
+    """Co godzinę sprawdza nieprzeczytane emaile i ustawia flagę."""
+    from django.utils import timezone
+    from .models import AppSettings
+    from .services.imap_service import get_unread_emails
+
+    settings = AppSettings.get()
+    if not settings.imap_host or not settings.imap_username or not settings.imap_password:
+        logger.info('[email check] Brak konfiguracji IMAP — pomijam')
+        return
+
+    try:
+        emails = get_unread_emails(settings)
+        settings.has_unread_emails = len(emails) > 0
+        settings.unread_emails_checked_at = timezone.now()
+        settings.save(update_fields=['has_unread_emails', 'unread_emails_checked_at'])
+        logger.info(f'[email check] Nieprzeczytane: {len(emails)}')
+    except Exception as e:
+        logger.error(f'[email check] Błąd: {e}')
+
+
+@shared_task
 def scrape_lead_email(lead_id):
     lead = Lead.objects.get(pk=lead_id)
     email, source = scrape_email(lead.website)

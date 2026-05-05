@@ -129,6 +129,12 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour='3', minute='0'),
         'options': {'expires': 3600},
     },
+    # Sprawdzanie emaili — co godzinę
+    'check-unread-emails': {
+        'task': 'leads.tasks.check_unread_emails_task',
+        'schedule': crontab(minute='0'),
+        'options': {'expires': 3600},
+    },
 }
 
 CACHES = {
