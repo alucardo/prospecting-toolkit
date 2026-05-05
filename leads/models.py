@@ -974,6 +974,12 @@ class ContentPost(models.Model):
         choices=STATUS_CHOICES, verbose_name='Status',
     )
     published_at = models.DateField(null=True, blank=True, verbose_name='Data publikacji')
+    external_id = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='ID zewnętrzne',
+        help_text='ID posta na zewnętrznej platformie (np. GBP localPosts/XXXX)',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

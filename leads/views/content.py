@@ -189,10 +189,27 @@ def content_index(request, lead_pk):
     for post in posts:
         post.current_ver = post.versions.filter(is_current=True).first()
 
+    # Dane dla kalendarza — tylko posty z datą publikacji
+    import json as _json
+    calendar_posts = [
+        {
+            'pk': p.pk,
+            'title': p.current_ver.title if p.current_ver else '',
+            'status': p.status,
+            'status_label': p.get_status_display(),
+            'status_badge': p.status_badge,
+            'published_at': p.published_at.isoformat() if p.published_at else None,
+            'channel': p.get_channel_display(),
+            'url': f'/klienci/{lead_pk}/content/{p.pk}/',
+        }
+        for p in posts if p.published_at
+    ]
+
     return render(request, 'leads/content/index.html', {
         'lead': lead,
         'posts': posts,
         'status_choices': ContentPost.STATUS_CHOICES,
+        'calendar_posts_json': _json.dumps(calendar_posts, ensure_ascii=False),
     })
 
 
@@ -260,6 +277,9 @@ def content_detail(request, lead_pk, post_pk):
             post.save(update_fields=['status', 'published_at', 'updated_at'])
 
         elif action == 'save_current' and current:
+            # Blokada edycji opublikowanych
+            if post.status == ContentPost.STATUS_PUBLISHED:
+                return redirect('leads:content_detail', lead_pk=lead.pk, post_pk=post.pk)
             current.title = request.POST.get('title', '').strip()
             current.body = request.POST.get('body', '').strip()
             current.drive_url = request.POST.get('drive_url', '').strip()
@@ -269,6 +289,9 @@ def content_detail(request, lead_pk, post_pk):
             current.save()
 
         elif action == 'save_new':
+            # Blokada edycji opublikowanych
+            if post.status == ContentPost.STATUS_PUBLISHED:
+                return redirect('leads:content_detail', lead_pk=lead.pk, post_pk=post.pk)
             post.versions.filter(is_current=True).update(is_current=False)
             last = post.versions.order_by('-version_number').first()
             next_num = (last.version_number + 1) if last else 1

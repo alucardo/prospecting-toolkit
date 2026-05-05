@@ -4,9 +4,20 @@
 <div class="flex items-center gap-4 mb-6">
     <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost btn-sm">← {{ lead.name }}</a>
     <h1 class="text-2xl font-bold">📝 Content</h1>
+
+    {# Przełącznik widoku #}
+    <div class="btn-group ml-2">
+        <button id="btn-feed" onclick="setView('feed')"
+            class="btn btn-sm btn-primary">☰ Lista</button>
+        <button id="btn-calendar" onclick="setView('calendar')"
+            class="btn btn-sm btn-ghost">📅 Kalendarz</button>
+    </div>
+
     <a href="{% url 'leads:content_create' lead.pk %}" class="btn btn-primary btn-sm ml-auto">+ Nowy post</a>
 </div>
 
+{# ===== WIDOK LISTA ===== #}
+<div id="view-feed">
 {% if posts %}
 <div class="flex flex-col gap-3">
     {% for post in posts %}
@@ -31,6 +42,8 @@
                 <div class="text-right shrink-0">
                     {% if post.published_at %}
                     <div class="text-xs text-gray-400">📅 {{ post.published_at|date:"d.m.Y" }}</div>
+                    {% else %}
+                    <div class="text-xs text-gray-300">bez daty</div>
                     {% endif %}
                     {% if cv and cv.drive_preview_url %}
                     <img src="{{ cv.drive_preview_url }}" alt="Podgląd"
@@ -52,4 +65,210 @@
     </div>
 </div>
 {% endif %}
+</div>
+
+{# ===== WIDOK KALENDARZ ===== #}
+<div id="view-calendar" class="hidden">
+    <div class="flex items-center justify-between mb-4">
+        <button onclick="prevMonth()" class="btn btn-ghost btn-sm">← Poprzedni</button>
+        <h2 id="cal-title" class="font-bold text-lg"></h2>
+        <button onclick="nextMonth()" class="btn btn-ghost btn-sm">Następny →</button>
+    </div>
+
+    {# Nagłówki dni tygodnia #}
+    <div class="grid grid-cols-7 gap-1 mb-1">
+        <div class="text-center text-xs text-gray-400 font-medium py-1">Pn</div>
+        <div class="text-center text-xs text-gray-400 font-medium py-1">Wt</div>
+        <div class="text-center text-xs text-gray-400 font-medium py-1">Śr</div>
+        <div class="text-center text-xs text-gray-400 font-medium py-1">Cz</div>
+        <div class="text-center text-xs text-gray-400 font-medium py-1">Pt</div>
+        <div class="text-center text-xs text-gray-400 font-medium py-1">So</div>
+        <div class="text-center text-xs text-gray-400 font-medium py-1">Nd</div>
+    </div>
+
+    {# Siatka kalendarza #}
+    <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
+
+    {# Legenda statusów #}
+    <div class="flex flex-wrap gap-3 mt-4 text-xs text-gray-500">
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-gray-300 inline-block"></span> Szkic</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-400 inline-block"></span> Do zatwierdzenia</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-400 inline-block"></span> Zgłoszone poprawki</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-400 inline-block"></span> Zatwierdzony</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-400 inline-block"></span> Opublikowany</span>
+    </div>
+</div>
+
+{# Modal dla dni z wieloma postami #}
+<dialog id="cal-day-modal" class="modal">
+    <div class="modal-box max-w-sm">
+        <h3 class="font-bold text-base mb-3" id="cal-modal-date"></h3>
+        <div id="cal-modal-list" class="flex flex-col gap-2"></div>
+        <div class="modal-action">
+            <button class="btn btn-sm btn-ghost"
+                onclick="document.getElementById('cal-day-modal').close()">Zamknij</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>zamknij</button></form>
+</dialog>
+
+<script>
+// Dane postów z backendu
+const POSTS = {{ calendar_posts_json|safe }};
+
+// Mapa dat → posty
+const postsByDate = {};
+POSTS.forEach(p => {
+    if (!p.published_at) return;
+    if (!postsByDate[p.published_at]) postsByDate[p.published_at] = [];
+    postsByDate[p.published_at].push(p);
+});
+
+// Kolory statusów
+const STATUS_COLORS = {
+    'draft':     'bg-gray-300 text-gray-700',
+    'review':    'bg-yellow-400 text-yellow-900',
+    'changes':   'bg-red-400 text-white',
+    'approved':  'bg-green-400 text-green-900',
+    'published': 'bg-blue-400 text-white',
+};
+
+// Stan kalendarza
+let calYear, calMonth;
+const today = new Date();
+
+function initCalendar() {
+    calYear = today.getFullYear();
+    calMonth = today.getMonth(); // 0-indexed
+    renderCalendar();
+}
+
+function prevMonth() {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar();
+}
+
+function nextMonth() {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const MONTHS = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec',
+                    'Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+    document.getElementById('cal-title').textContent = `${MONTHS[calMonth]} ${calYear}`;
+
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    // Pierwszy dzień miesiąca (0=Nd → 6, 1=Pn → 0 itd.)
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    const offset = (firstDay + 6) % 7; // Przesuń żeby Poniedziałek był pierwszy
+
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+    // Puste komórki przed pierwszym dniem
+    for (let i = 0; i < offset; i++) {
+        grid.appendChild(emptyCell());
+    }
+
+    // Dni miesiąca
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const posts = postsByDate[dateStr] || [];
+        const isToday = (day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
+
+        grid.appendChild(dayCell(day, dateStr, posts, isToday));
+    }
+}
+
+function emptyCell() {
+    const div = document.createElement('div');
+    div.className = 'min-h-20 rounded-box bg-base-100 opacity-30';
+    return div;
+}
+
+function dayCell(day, dateStr, posts, isToday) {
+    const div = document.createElement('div');
+    div.className = `min-h-20 rounded-box p-1.5 flex flex-col gap-1 ${isToday ? 'ring-2 ring-primary bg-primary/5' : 'bg-base-200'}`;
+
+    // Numer dnia
+    const dayNum = document.createElement('div');
+    dayNum.className = `text-xs font-medium mb-0.5 ${isToday ? 'text-primary' : 'text-gray-500'}`;
+    dayNum.textContent = day;
+    div.appendChild(dayNum);
+
+    // Maksymalnie 2 posty widoczne
+    const visible = posts.slice(0, 2);
+    const hidden = posts.slice(2);
+
+    visible.forEach(p => {
+        const pill = document.createElement('a');
+        pill.href = p.url;
+        pill.className = `text-xs rounded px-1.5 py-0.5 truncate block cursor-pointer hover:opacity-80 ${STATUS_COLORS[p.status] || 'bg-gray-300'}`;
+        pill.title = p.title || p.status_label;
+        pill.textContent = p.title || p.status_label;
+        div.appendChild(pill);
+    });
+
+    if (hidden.length > 0) {
+        const more = document.createElement('button');
+        more.className = 'text-xs text-gray-400 hover:text-primary text-left';
+        more.textContent = `+${hidden.length} więcej`;
+        more.onclick = () => openDayModal(dateStr, posts);
+        div.appendChild(more);
+    } else if (posts.length === 0) {
+        // Klikalna pusta komórka — nic
+    }
+
+    return div;
+}
+
+function openDayModal(dateStr, posts) {
+    const [y, m, d] = dateStr.split('-');
+    document.getElementById('cal-modal-date').textContent =
+        `${d}.${m}.${y} — ${posts.length} postów`;
+
+    const list = document.getElementById('cal-modal-list');
+    list.innerHTML = '';
+    posts.forEach(p => {
+        const a = document.createElement('a');
+        a.href = p.url;
+        a.className = `flex items-center gap-2 p-2 rounded-box hover:bg-base-200 transition-colors`;
+        a.innerHTML = `
+            <span class="w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_COLORS[p.status]?.split(' ')[0] || 'bg-gray-300'}"></span>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">${escHtml(p.title || '(bez tytułu)')}</p>
+                <p class="text-xs text-gray-400">${escHtml(p.status_label)} · ${escHtml(p.channel)}</p>
+            </div>
+        `;
+        list.appendChild(a);
+    });
+
+    document.getElementById('cal-day-modal').showModal();
+}
+
+function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, s =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+// Przełączanie widoków
+function setView(view) {
+    const isFeed = view === 'feed';
+    document.getElementById('view-feed').classList.toggle('hidden', !isFeed);
+    document.getElementById('view-calendar').classList.toggle('hidden', isFeed);
+    document.getElementById('btn-feed').className = `btn btn-sm ${isFeed ? 'btn-primary' : 'btn-ghost'}`;
+    document.getElementById('btn-calendar').className = `btn btn-sm ${!isFeed ? 'btn-primary' : 'btn-ghost'}`;
+    localStorage.setItem('content_view_{{ lead.pk }}', view);
+    if (!isFeed) renderCalendar();
+}
+
+// Init
+const savedView = localStorage.getItem('content_view_{{ lead.pk }}') || 'feed';
+initCalendar();
+setView(savedView);
+</script>
 {% endblock %}
