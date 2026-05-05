@@ -46,9 +46,105 @@
         </div>
         {% endfor %}
     </div>
-    <div class="mt-6">
+    <div class="mt-4">
         <button type="submit" class="btn btn-primary">Zapisz brief</button>
         <a href="{% url 'leads:client_detail' lead.pk %}" class="btn btn-ghost ml-2">Anuluj</a>
     </div>
+
+    {# Kolory i czcionki — poza FIELDS, nie trafiają do AI ani podglądu #}
+    <div class="divider mt-6">Identyfikacja wizualna (wewnętrzne)</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {# Kolory #}
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <label class="font-semibold text-sm mb-2 block">🎨 Kolory marki</label>
+                <div id="colors-list" class="flex flex-col gap-2 mb-2">
+                    {% for color in profile.colors %}
+                    <div class="flex gap-2 items-center color-row">
+                        <input type="color" value="{{ color }}" class="w-10 h-8 rounded cursor-pointer color-picker"
+                            oninput="syncColorText(this)">
+                        <input type="text" name="colors" value="{{ color }}"
+                            class="input input-bordered input-xs flex-1 font-mono color-text"
+                            placeholder="#FF5733" maxlength="20"
+                            oninput="syncColorPicker(this)">
+                        <button type="button" class="btn btn-ghost btn-xs text-error"
+                            onclick="this.closest('.color-row').remove()">✕</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-ghost btn-xs w-full"
+                    onclick="addColorRow()">+ Dodaj kolor</button>
+            </div>
+        </div>
+
+        {# Czcionki #}
+        <div class="card bg-base-200">
+            <div class="card-body py-4">
+                <label class="font-semibold text-sm mb-2 block">🔤 Czcionki marki</label>
+                <div id="fonts-list" class="flex flex-col gap-2 mb-2">
+                    {% for font in profile.fonts %}
+                    <div class="flex gap-2 items-center font-row">
+                        <input type="text" name="fonts" value="{{ font }}"
+                            class="input input-bordered input-xs flex-1"
+                            placeholder="np. Montserrat, Arial, Georgia">
+                        <button type="button" class="btn btn-ghost btn-xs text-error"
+                            onclick="this.closest('.font-row').remove()">✕</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-ghost btn-xs w-full"
+                    onclick="addFontRow()">+ Dodaj czcionkę</button>
+            </div>
+        </div>
+
+    </div>
 </form>
+
+<script>
+function addColorRow() {
+    const list = document.getElementById('colors-list');
+    const row = document.createElement('div');
+    row.className = 'flex gap-2 items-center color-row';
+    row.innerHTML = `
+        <input type="color" value="#000000" class="w-10 h-8 rounded cursor-pointer color-picker"
+            oninput="syncColorText(this)">
+        <input type="text" name="colors" value="#000000"
+            class="input input-bordered input-xs flex-1 font-mono color-text"
+            placeholder="#FF5733" maxlength="20"
+            oninput="syncColorPicker(this)">
+        <button type="button" class="btn btn-ghost btn-xs text-error"
+            onclick="this.closest('.color-row').remove()">✕</button>
+    `;
+    list.appendChild(row);
+}
+
+function addFontRow() {
+    const list = document.getElementById('fonts-list');
+    const row = document.createElement('div');
+    row.className = 'flex gap-2 items-center font-row';
+    row.innerHTML = `
+        <input type="text" name="fonts"
+            class="input input-bordered input-xs flex-1"
+            placeholder="np. Montserrat, Arial, Georgia">
+        <button type="button" class="btn btn-ghost btn-xs text-error"
+            onclick="this.closest('.font-row').remove()">✕</button>
+    `;
+    list.appendChild(row);
+    row.querySelector('input').focus();
+}
+
+function syncColorText(picker) {
+    const row = picker.closest('.color-row');
+    row.querySelector('.color-text').value = picker.value;
+}
+
+function syncColorPicker(textInput) {
+    const val = textInput.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        const row = textInput.closest('.color-row');
+        row.querySelector('.color-picker').value = val;
+    }
+}
+</script>
 {% endblock %}

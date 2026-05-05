@@ -27,6 +27,9 @@ def brand_profile(request, lead_pk):
         profile.archetype = request.POST.get('archetype', '').strip()
         for field, _, _ in FIELDS:
             setattr(profile, field, request.POST.get(field, '').strip())
+        # Kolory i czcionki — listy z wielu pól
+        profile.colors = [c.strip() for c in request.POST.getlist('colors') if c.strip()]
+        profile.fonts = [f.strip() for f in request.POST.getlist('fonts') if f.strip()]
         profile.save()
         return redirect('leads:brand_profile', lead_pk=lead.pk)
 

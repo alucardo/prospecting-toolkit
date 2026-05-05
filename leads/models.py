@@ -875,6 +875,8 @@ class BrandProfile(models.Model):
     avoid = models.TextField(blank=True, verbose_name='Czego unikać')
     seasonality = models.TextField(blank=True, verbose_name='Sezonowość / ważne daty')
     extra_notes = models.TextField(blank=True, verbose_name='Dodatkowe notatki')
+    colors = models.JSONField(default=list, blank=True, verbose_name='Kolory marki')
+    fonts = models.JSONField(default=list, blank=True, verbose_name='Czcionki marki')
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
